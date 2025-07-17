@@ -145,6 +145,7 @@ src
 │               │       Group.java                   -- group model
 │               │       Expense.java                 -- expense model
 │               │       Receipt.java                 -- receipt model
+│               │       Comment.java                 -- comment model  
 │               │       UserGroup.java               -- relationship between users and groups
 │               │       UserExpense.java             -- relationship between users and expenses
 │
@@ -155,6 +156,7 @@ src
 │                       GroupController.java         -- controller for groups
 │                       ExpenseController.java       -- controller for expenses
 │                       ReceiptController.java       -- controller for receipts
+│                       CommentController.java       -- controller for comments
 │                       UserGroupController.java     -- controller for user-group operations
 │                       UserExpenseController.java   -- controller for user-expense operations
 │
