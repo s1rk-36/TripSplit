@@ -28,6 +28,7 @@ create table `group` (
     constraint fk_group_created_by
 		foreign key (created_by)
 		references `user`(user_id)
+        on delete cascade
 );
 
 create table user_group (
@@ -37,10 +38,12 @@ create table user_group (
         primary key (user_id, group_id),
     constraint fk_user_group_user_id
         foreign key (user_id)
-        references `user`(user_id),
-    constraint fk_agency_agent_group_id
+        references `user`(user_id)
+        on delete cascade,
+    constraint fk_user_group_group_id
         foreign key (group_id)
         references `group`(group_id)
+        on delete cascade
 );
 
 create table expense (
@@ -54,10 +57,12 @@ create table expense (
     created_by int not null,
     constraint fk_expense_group_id
 		foreign key (group_id)
-        references `group`(group_id),
+        references `group`(group_id)
+        on delete cascade,
 	constraint fk_expense_created_by
 		foreign key (created_by)
         references `user`(user_id)
+        on delete cascade
 );
 
 create table user_expense (
@@ -69,10 +74,12 @@ create table user_expense (
 		primary key (user_id, expense_id),
     constraint fk_user_expense_user 
 		foreign key (user_id) 
-        references `user`(user_id),
+        references `user`(user_id)
+        on delete cascade,
     constraint fk_user_expense_expense 
 		foreign key (expense_id) 
         references expense(expense_id)
+        on delete cascade
 );
 
 create table receipt (
@@ -83,6 +90,7 @@ create table receipt (
     constraint fk_receipt_expense_id
 		foreign key (expense_id)
 		references expense(expense_id)
+        on delete cascade
 );
 
 create table `comment` (
@@ -93,8 +101,10 @@ create table `comment` (
     created_by int not null,
 	constraint fk_comment_expense_id
 		foreign key (expense_id)
-		references expense(expense_id),
+		references expense(expense_id)
+        on delete cascade,
 	constraint fk_comment_created_by
 		foreign key (created_by)
 		references `user`(user_id)
+        on delete cascade
 );
