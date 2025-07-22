@@ -27,17 +27,21 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     @Override
     public List<Expense> findAll() {
-        final String sql = "select expense_id, group_id, name, total_cost, category, description, created_by, created_at "
-                + "from expenses limit 1000;";
+        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
+                + "u.first_name as creator_first_name, u.last_name as creator_last_name, u.email as creator_email "
+                + "from expense e "
+                + "inner join `user` u on e.created_by = u.user_id "
+                + "order by e.created_at desc "
+                + "limit 1000;";
         return jdbcTemplate.query(sql, new ExpenseMapper());
     }
 
     @Override
     public List<Expense> findByGroupId(int groupId) {
-        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_by, e.created_at, "
-                + "u.first_name as creator_first_name, u.last_name as creator_last_name, u.email as creator_email "
-                + "from expenses e "
-                + "inner join users u on e.created_by = u.user_id "
+        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
+                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
+                + "from expense e "
+                + "inner join `user` u on e.created_by = u.user_id "
                 + "where e.group_id = ? "
                 + "order by e.created_at desc;";
 
@@ -46,7 +50,6 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         for (Expense expense : expenses) {
             addReceipts(expense);
             addComments(expense);
-            addUsers(expense);
         }
 
         return expenses;
@@ -55,10 +58,10 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
     @Override
     @Transactional
     public Expense findById(int expenseId) {
-        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_by, e.created_at, "
-                + "u.first_name as creator_first_name, u.last_name as creator_last_name, u.email as creator_email "
-                + "from expenses e "
-                + "inner join users u on e.created_by = u.user_id "
+        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
+                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
+                + "from expense e "
+                + "inner join `user` u on e.created_by = u.user_id "
                 + "where e.expense_id = ?;";
 
         Expense expense = jdbcTemplate.query(sql, new ExpenseMapper(), expenseId).stream()
@@ -67,7 +70,6 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         if (expense != null) {
             addReceipts(expense);
             addComments(expense);
-            addUsers(expense);
         }
 
         return expense;
@@ -75,7 +77,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     @Override
     public Expense add(Expense expense) {
-        final String sql = "insert into expenses (group_id, name, total_cost, category, description, created_by, created_at) "
+        final String sql = "insert into expense (group_id, name, total_cost, category, description, created_by, created_at) "
                 + "values (?,?,?,?,?,?,?);";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -101,7 +103,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     @Override
     public boolean update(Expense expense) {
-        final String sql = "update expenses set "
+        final String sql = "update expense set "
                 + "name = ?, "
                 + "total_cost = ?, "
                 + "category = ?, "
@@ -121,10 +123,10 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
     public boolean deleteById(int expenseId) {
         // Delete related records first
         jdbcTemplate.update("delete from receipt where expense_id = ?;", expenseId);
-        jdbcTemplate.update("delete from comments where expense_id = ?;", expenseId);
+        jdbcTemplate.update("delete from comment where expense_id = ?;", expenseId);
         jdbcTemplate.update("delete from user_expense where expense_id = ?;", expenseId);
 
-        return jdbcTemplate.update("delete from expenses where expense_id = ?;", expenseId) > 0;
+        return jdbcTemplate.update("delete from expense where expense_id = ?;", expenseId) > 0;
     }
 
     private void addReceipts(Expense expense) {
@@ -139,9 +141,9 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     private void addComments(Expense expense) {
         final String sql = "select c.comment_id, c.expense_id, c.content, c.timestamp, c.created_by, "
-                + "u.first_name as creator_first_name, u.last_name as creator_last_name, u.email as creator_email "
-                + "from comments c "
-                + "inner join users u on c.created_by = u.user_id "
+                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
+                + "from comment c "
+                + "inner join user u on c.created_by = u.user_id "
                 + "where c.expense_id = ? "
                 + "order by c.timestamp asc;";
 
@@ -153,7 +155,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         final String sql = "select ue.id, ue.user_id, ue.expense_id, ue.amount_owed, ue.amount_paid, "
                 + "u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email "
                 + "from user_expense ue "
-                + "inner join users u on ue.user_id = u.user_id "
+                + "inner join user u on ue.user_id = u.user_id "
                 + "where ue.expense_id = ?;";
 
         var userExpenses = jdbcTemplate.query(sql, new UserExpenseMapper(), expense.getExpenseId());
