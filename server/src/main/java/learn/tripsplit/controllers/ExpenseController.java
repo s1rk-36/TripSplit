@@ -14,7 +14,7 @@ import java.util.List;
 @RequestMapping("/api/expenses")
 @CrossOrigin
 public class ExpenseController {
-
+/*
     @Autowired
     private ExpenseService expenseService;
 
@@ -78,5 +78,5 @@ public class ExpenseController {
         }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
+    }*/
 }
