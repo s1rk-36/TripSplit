@@ -14,7 +14,7 @@ public class Expense {
     private BigDecimal totalCost;
     private String category;
     private String description;
-    private User createdBy;
+    private AppUser createdBy;
     private LocalDateTime createdAt;
     private List<Receipt> receipts;
     private List<Comment> comments;
@@ -23,7 +23,7 @@ public class Expense {
     // Constructors
     public Expense() {}
 
-    public Expense(int groupId, String name, BigDecimal totalCost, String category, String description, User createdBy) {
+    public Expense(int groupId, String name, BigDecimal totalCost, String category, String description, AppUser createdBy) {
         this.groupId = groupId;
         this.name = name;
         this.totalCost = totalCost;
@@ -52,8 +52,8 @@ public class Expense {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public User getCreatedBy() { return createdBy; }
-    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+    public AppUser getCreatedBy() { return createdBy; }
+    public void setCreatedBy(AppUser createdBy) { this.createdBy = createdBy; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

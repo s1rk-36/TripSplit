@@ -8,7 +8,7 @@ public class UserGroup {
     private int groupId;
     private boolean isAdmin;
 
-    private User user;
+    private AppUser appUser;
     private Group group;
 
     // Constructors
@@ -46,12 +46,12 @@ public class UserGroup {
         isAdmin = admin;
     }
 
-    public User getUser() {
-        return user;
+    public AppUser getUser() {
+        return appUser;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setUser(AppUser appUser) {
+        this.appUser = appUser;
     }
 
     public Group getGroup() {

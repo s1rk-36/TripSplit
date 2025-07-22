@@ -1,56 +1,56 @@
 package learn.tripsplit.domain;
 
-import learn.tripsplit.data.UserRepository;
-import learn.tripsplit.models.User;
+import learn.tripsplit.data.AppUserRepository;
+import learn.tripsplit.models.AppUser;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class UserService {
-    private final UserRepository repository;
+    private final AppUserRepository repository;
 
-    public UserService(UserRepository repository) {
+    public UserService(AppUserRepository repository) {
         this.repository = repository;
     }
 
-    public List<User> findAll() {
+    public List<AppUser> findAll() {
         return repository.findAll();
     }
 
-    public User findById(int userId) {
+    public AppUser findById(int userId) {
         return repository.findById(userId);
     }
 
-    public Result<User> add(User user) {
-        Result<User> result = validate(user);
+    public Result<AppUser> add(AppUser appUser) {
+        Result<AppUser> result = validate(appUser);
         if (!result.isSuccess()) {
             return result;
         }
 
-        if (user.getUserId() != 0) {
+        if (appUser.getAppUserId() != 0) {
             result.addMessage("user id cannot be set for `add` operation", ResultType.INVALID);
             return result;
         }
 
-        user = repository.add(user);
-        result.setPayload(user);
+        appUser = repository.add(appUser);
+        result.setPayload(appUser);
         return result;
     }
 
-    public Result<User> update(User user) {
-        Result<User> result = validate(user);
+    public Result<AppUser> update(AppUser appUser) {
+        Result<AppUser> result = validate(appUser);
         if (!result.isSuccess()) {
             return result;
         }
 
-        if (user.getUserId() <= 0) {
+        if (appUser.getAppUserId() <= 0) {
             result.addMessage("user id must be set for `update` operation", ResultType.INVALID);
             return result;
         }
 
-        if (!repository.update(user)) {
-            String msg = String.format("userId: %s, not found", user.getUserId());
+        if (!repository.update(appUser)) {
+            String msg = String.format("userId: %s, not found", appUser.getAppUserId());
             result.addMessage(msg, ResultType.NOT_FOUND);
         }
 
@@ -61,40 +61,40 @@ public class UserService {
         return repository.deleteById(userId);
     }
 
-    private Result<User> validate(User user) {
-        Result<User> result = new Result<>();
-        if (user == null) {
+    private Result<AppUser> validate(AppUser appUser) {
+        Result<AppUser> result = new Result<>();
+        if (appUser == null) {
             result.addMessage("user cannot be null", ResultType.INVALID);
             return result;
         }
 
-        if (user.getFirstName() == null || user.getFirstName().isBlank()) {
+        if (appUser.getFirstName() == null || appUser.getFirstName().isBlank()) {
             result.addMessage("firstName is required", ResultType.INVALID);
         }
 
-        if (user.getLastName() == null || user.getLastName().isBlank()) {
+        if (appUser.getLastName() == null || appUser.getLastName().isBlank()) {
             result.addMessage("lastName is required", ResultType.INVALID);
         }
 
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
+        if (appUser.getEmail() == null || appUser.getEmail().isBlank()) {
             result.addMessage("email is required", ResultType.INVALID);
-        } else if (repository.findByEmail(user.getEmail()) != null) {
+        } else if (repository.findByEmail(appUser.getEmail()) != null) {
             result.addMessage("email cannot be duplicated", ResultType.INVALID);
             return result;
         }
 
-        if (user.getUsername() == null || user.getUsername().isBlank()) {
+        if (appUser.getUsername() == null || appUser.getUsername().isBlank()) {
             result.addMessage("username is required", ResultType.INVALID);
-        } else if (repository.findByUsername(user.getUsername()) != null) {
+        } else if (repository.findByUsername(appUser.getUsername()) != null) {
             result.addMessage("username cannot be duplicated", ResultType.INVALID);
             return result;
         }
 
-        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+        if (appUser.getPasswordHash() == null || appUser.getPasswordHash().isBlank()) {
             result.addMessage("passwordHash is required", ResultType.INVALID);
         }
 
-        if (user.getRoleId() <= 0) {
+        if (appUser.getRoleId() <= 0) {
             result.addMessage("role id is required", ResultType.INVALID);
         }
 

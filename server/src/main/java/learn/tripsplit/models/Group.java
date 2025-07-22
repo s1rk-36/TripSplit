@@ -9,14 +9,14 @@ public class Group {
     private int groupId;
     private String name;
     private String description;
-    private User createdBy;
+    private AppUser createdBy;
     private List<UserGroup> users = new ArrayList<>();
 
     // Constructors
     public Group() {
     }
 
-    public Group(int groupId, String name, String description, User createdBy) {
+    public Group(int groupId, String name, String description, AppUser createdBy) {
         this.groupId = groupId;
         this.name = name;
         this.description = description;
@@ -48,11 +48,11 @@ public class Group {
         this.description = description;
     }
 
-    public User getCreatedBy() {
+    public AppUser getCreatedBy() {
         return createdBy;
     }
 
-    public void setCreatedBy(User createdBy) {
+    public void setCreatedBy(AppUser createdBy) {
         this.createdBy = createdBy;
     }
 

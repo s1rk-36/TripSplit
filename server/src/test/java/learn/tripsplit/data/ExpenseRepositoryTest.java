@@ -1,7 +1,7 @@
 package learn.tripsplit.data;
 
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.Expense;
-import learn.tripsplit.models.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,8 +85,8 @@ class ExpenseRepositoryTest {
 
     @Test
     void add_NewExpense_ShouldGenerateIdAndSave() {
-        User creator = new User();
-        creator.setUserId(1);
+        AppUser creator = new AppUser();
+        creator.setAppUserId(1);
 
         Expense newExpense = new Expense();
         newExpense.setName("Test Museum Entry");

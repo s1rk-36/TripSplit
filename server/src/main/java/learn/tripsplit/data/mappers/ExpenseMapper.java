@@ -1,7 +1,7 @@
 package learn.tripsplit.data.mappers;
 
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.Expense;
-import learn.tripsplit.models.User;
 import org.springframework.jdbc.core.RowMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,8 +20,8 @@ public class ExpenseMapper implements RowMapper<Expense> {
         expense.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
 
         // Map created_by user - handle both cases (with and without user join)
-        User createdBy = new User();
-        createdBy.setUserId(resultSet.getInt("created_by"));
+        AppUser createdBy = new AppUser();
+        createdBy.setAppUserId(resultSet.getInt("created_by"));
 
         // Check if user columns are available (when joined with user table)
         try {

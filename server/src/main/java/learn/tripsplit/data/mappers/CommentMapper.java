@@ -1,7 +1,7 @@
 package learn.tripsplit.data.mappers;
 
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.Comment;
-import learn.tripsplit.models.User;
 import org.springframework.jdbc.core.RowMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -18,8 +18,8 @@ public class CommentMapper implements RowMapper<Comment> {
 
         // Map created_by user if available
         if (resultSet.getMetaData().getColumnCount() > 4) {
-            User createdBy = new User();
-            createdBy.setUserId(resultSet.getInt("created_by"));
+            AppUser createdBy = new AppUser();
+            createdBy.setAppUserId(resultSet.getInt("created_by"));
             if (resultSet.getString("first_name") != null) {
                 createdBy.setFirstName(resultSet.getString("first_name"));
                 createdBy.setLastName(resultSet.getString("last_name"));

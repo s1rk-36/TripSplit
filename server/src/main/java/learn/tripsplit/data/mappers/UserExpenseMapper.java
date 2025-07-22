@@ -1,7 +1,7 @@
 package learn.tripsplit.data.mappers;
 
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.UserExpense;
-import learn.tripsplit.models.User;
 import org.springframework.jdbc.core.RowMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,14 +19,14 @@ public class UserExpenseMapper implements RowMapper<UserExpense> {
 
         // Map user if available
         if (resultSet.getMetaData().getColumnCount() > 5) {
-            User user = new User();
-            user.setUserId(resultSet.getInt("user_id"));
+            AppUser appUser = new AppUser();
+            appUser.setAppUserId(resultSet.getInt("user_id"));
             if (resultSet.getString("user_first_name") != null) {
-                user.setFirstName(resultSet.getString("user_first_name"));
-                user.setLastName(resultSet.getString("user_last_name"));
-                user.setEmail(resultSet.getString("user_email"));
+                appUser.setFirstName(resultSet.getString("user_first_name"));
+                appUser.setLastName(resultSet.getString("user_last_name"));
+                appUser.setEmail(resultSet.getString("user_email"));
             }
-            userExpense.setUser(user);
+            userExpense.setUser(appUser);
         }
 
         return userExpense;

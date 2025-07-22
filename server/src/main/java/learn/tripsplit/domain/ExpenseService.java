@@ -1,8 +1,6 @@
 package learn.tripsplit.domain;
 
 import learn.tripsplit.data.ExpenseRepository;
-import learn.tripsplit.domain.Result;
-import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.Expense;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -104,7 +102,7 @@ public class ExpenseService {
             result.addMessage("totalCost can be less than or equal to 0", ResultType.INVALID);
         }
 
-        if(expense.getCreatedBy() == null || expense.getCreatedBy().getUserId() <= 0){
+        if(expense.getCreatedBy() == null || expense.getCreatedBy().getAppUserId() <= 0){
             result.addMessage("valid creator required", ResultType.INVALID);
         }
 

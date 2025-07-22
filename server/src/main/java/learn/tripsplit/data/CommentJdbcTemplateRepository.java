@@ -62,7 +62,7 @@ public class CommentJdbcTemplateRepository implements CommentRepository {
             ps.setInt(1, comment.getExpenseId());
             ps.setString(2, comment.getContent());
             ps.setTimestamp(3, Timestamp.valueOf(comment.getTimestamp()));
-            ps.setInt(4, comment.getCreatedBy().getUserId());
+            ps.setInt(4, comment.getCreatedBy().getAppUserId());
             return ps;
         }, keyHolder);
 

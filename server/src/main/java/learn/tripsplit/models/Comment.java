@@ -9,12 +9,12 @@ public class Comment {
     private int expenseId;
     private String content;
     private LocalDateTime timestamp;
-    private User createdBy;
+    private AppUser createdBy;
 
     // Constructors
     public Comment() {}
 
-    public Comment(int expenseId, String content, User createdBy) {
+    public Comment(int expenseId, String content, AppUser createdBy) {
         this.expenseId = expenseId;
         this.content = content;
         this.createdBy = createdBy;
@@ -34,8 +34,8 @@ public class Comment {
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 
-    public User getCreatedBy() { return createdBy; }
-    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+    public AppUser getCreatedBy() { return createdBy; }
+    public void setCreatedBy(AppUser createdBy) { this.createdBy = createdBy; }
 
     // equals & hashCode
     @Override
