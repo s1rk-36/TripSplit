@@ -3,6 +3,7 @@ package learn.tripsplit.data;
 import learn.tripsplit.data.mappers.GroupMapper;
 import learn.tripsplit.data.mappers.UserGroupMapper;
 import learn.tripsplit.models.Group;
+import learn.tripsplit.models.UserGroup;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -48,7 +49,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
                 .orElse(null);
 
         if (group != null) {
-            //addUsers(group);
+            addUsers(group);
         }
 
         return group;
@@ -106,17 +107,42 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
     }
 
     private void addUsers(Group group) {
-        final String sql = "select ug.user_id, ug.group_id, ug.is_admin, "
-                + "u.first_name, u.last_name, u.email, u.username, u.password_hash, u.role_id, "
-                + "r.`name` as role_name "
-                + "g.group_id, g.`name` as group_name, g.`description` as group_description, "
-                + "from user_group as ug "
-                + "inner join user as u on ug.user_id = u.user_id "
-                + "inner join role as r on u.role_id = r.role_id "
-                + "inner join `group` as g on ug.group_id = g.group_id "
+        final String sql = "select "
+                + "ug.user_id as ug_user_id, "
+                + "ug.group_id as ug_group_id, "
+                + "ug.is_admin as ug_is_admin, "
+
+                + "u.user_id as u_user_id, "
+                + "u.first_name as u_first_name, "
+                + "u.last_name as u_last_name, "
+                + "u.email as u_email, "
+                + "u.username as u_username, "
+                + "u.password_hash as u_password_hash, "
+                + "u.role_id as u_role_id, "
+
+                + "g.group_id, "
+                + "g.`name` as group_name, "
+                + "g.`description` as group_description, "
+
+                + "gcb.user_id as gcb_user_id, "
+                + "gcb.first_name as gcb_first_name, "
+                + "gcb.last_name as gcb_last_name, "
+                + "gcb.email as gcb_email, "
+                + "gcb.username as gcb_username, "
+                + "gcb.password_hash as gcb_password_hash, "
+                + "gcb.role_id as gcb_role_id "
+
+                + "from user_group ug "
+                + "inner join `user` u on ug.user_id = u.user_id "
+                + "inner join `group` g on ug.group_id = g.group_id "
+                + "inner join `user` gcb on g.created_by = gcb.user_id "
                 + "where ug.group_id = ?;";
 
-        var userGroups = jdbcTemplate.query(sql, new UserGroupMapper(), group.getGroupId());
+        List<UserGroup> userGroups = jdbcTemplate.query(sql,
+                (rs, rowNum) -> new UserGroupMapper().mapRow(rs, rowNum, "ug_", "u_", "", "gcb_"),
+                group.getGroupId()
+        );
+
         group.setUsers(userGroups);
     }
 
