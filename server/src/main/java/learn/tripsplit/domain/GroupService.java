@@ -77,7 +77,7 @@ public class GroupService {
             result.addMessage("group name is required", ResultType.INVALID);
         }
 
-        if (group.getCreatedBy() == null || group.getCreatedBy().getUserId() <= 0) {
+        if (group.getCreatedBy() == null || group.getCreatedBy().getAppUserId() <= 0) {
             result.addMessage("no user found for createdBy", ResultType.INVALID);
         }
 
@@ -94,11 +94,11 @@ public class GroupService {
 
         Set<Integer> seen = new HashSet<>();
         for (UserGroup userGroup : group.getUsers()) {
-            if (userGroup.getUser() == null || userGroup.getUser().getUserId() <= 0) {
+            if (userGroup.getUser() == null || userGroup.getUser().getAppUserId() <= 0) {
                 result.addMessage("each UserGroup must have a valid user", ResultType.INVALID);
                 break;
             }
-            if (!seen.add(userGroup.getUser().getUserId())) {
+            if (!seen.add(userGroup.getUser().getAppUserId())) {
                 result.addMessage("duplicate users are not allowed in the group", ResultType.INVALID);
                 break;
             }

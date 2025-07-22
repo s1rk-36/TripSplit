@@ -1,6 +1,6 @@
 package learn.tripsplit.data;
 
-import learn.tripsplit.models.User;
+import learn.tripsplit.models.AppUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,11 +11,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-class UserJdbcTemplateRepositoryTest {
+class AppUserJdbcTemplateRepositoryTest {
     final static int NEXT_USER_ID = 6;
 
     @Autowired
-    UserJdbcTemplateRepository repository;
+    AppUserJdbcTemplateRepository repository;
 
     @Autowired
     KnownGoodState knownGoodState;
@@ -27,14 +27,14 @@ class UserJdbcTemplateRepositoryTest {
 
     @Test
     void shouldFindAllUser() {
-        List<User> actual = repository.findAll();
+        List<AppUser> actual = repository.findAll();
         assertNotNull(actual);
         assertTrue(actual.size() >= 5 && actual.size() <= 6);
     }
 
     @Test
     void shouldFindUserById() {
-        User actual = repository.findById(1);
+        AppUser actual = repository.findById(1);
         assertNotNull(actual);
         assertEquals("Alice", actual.getFirstName());
         assertEquals("Johnson", actual.getLastName());
@@ -45,30 +45,30 @@ class UserJdbcTemplateRepositoryTest {
 
     @Test
     void shouldNotFindUserByNonexistentId() {
-        User actual = repository.findById(100);
+        AppUser actual = repository.findById(100);
         assertNull(actual);
     }
 
     @Test
     void shouldAddUser() {
-        User user = makeUser();
-        User actual = repository.add(user);
+        AppUser appUser = makeUser();
+        AppUser actual = repository.add(appUser);
         assertNotNull(actual);
-        assertEquals(NEXT_USER_ID, actual.getUserId());
+        assertEquals(NEXT_USER_ID, actual.getAppUserId());
     }
 
     @Test
     void shouldUpdateUser() {
-        User user = new User();
-        user.setUserId(5);
-        user.setFirstName("Eve");
-        user.setLastName("Martinez");
-        user.setEmail("eve.martinez@example.com");
-        user.setUsername("evem");
-        user.setPasswordHash("hash_6_example");
-        user.setRoleId(2);
+        AppUser appUser = new AppUser();
+        appUser.setAppUserId(5);
+        appUser.setFirstName("Eve");
+        appUser.setLastName("Martinez");
+        appUser.setEmail("eve.martinez@example.com");
+        appUser.setUsername("evem");
+        appUser.setPasswordHash("hash_6_example");
+        appUser.setRoleId(2);
 
-        assertTrue(repository.update(user));
+        assertTrue(repository.update(appUser));
     }
 
     @Test
@@ -81,14 +81,14 @@ class UserJdbcTemplateRepositoryTest {
         assertFalse(repository.deleteById(100));
     }
 
-    User makeUser() {
-        User user = new User();
-        user.setFirstName("Grace");
-        user.setLastName("Wong");
-        user.setEmail("grace.wong@example.com");
-        user.setUsername("gracew");
-        user.setPasswordHash("hash_6_example");
-        user.setRoleId(2);
-        return user;
+    AppUser makeUser() {
+        AppUser appUser = new AppUser();
+        appUser.setFirstName("Grace");
+        appUser.setLastName("Wong");
+        appUser.setEmail("grace.wong@example.com");
+        appUser.setUsername("gracew");
+        appUser.setPasswordHash("hash_6_example");
+        appUser.setRoleId(2);
+        return appUser;
     }
 }

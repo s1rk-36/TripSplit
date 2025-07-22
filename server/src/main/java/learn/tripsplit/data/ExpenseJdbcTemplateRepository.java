@@ -27,12 +27,40 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     @Override
     public List<Expense> findAll() {
-        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
-                + "u.first_name as creator_first_name, u.last_name as creator_last_name, u.email as creator_email "
+        final String sql = "select "
+                + "e.expense_id, "
+                + "e.`name` as expense_name, "
+                + "e.total_cost, "
+                + "e.category, "
+                + "e.`description` as expense_description, "
+                + "e.created_at, "
+
+                + "e.group_id, "
+                + "g.`name` as group_name, "
+                + "g.`description` as group_description, "
+
+                + "g.created_by, "
+                + "gcb.first_name as gcb_first_name, "
+                + "gcb.last_name as gcb_last_name, "
+                + "gcb.email as gcb_email, "
+                + "gcb.username as gcb_username, "
+                + "gcb.password_hash as gcb_password_hash, "
+                + "gcb.disabled as gcb_disabled, "
+
+                + "e.created_by, "
+                + "ecb.first_name as ecb_first_name, "
+                + "ecb.last_name as ecb_last_name, "
+                + "ecb.email as ecb_email, "
+                + "ecb.username as ecb_username, "
+                + "ecb.password_hash as ecb_password_hash, "
+                + "ecb.disabled as ecb_disabled "
+
                 + "from expense e "
-                + "inner join `user` u on e.created_by = u.user_id "
-                + "order by e.created_at desc "
+                + "inner join `group` as g on e.group_id = g.group_id "
+                + "inner join `user` as gcb on g.created_by = gcb.user_id "
+                + "inner join `user` as ecb on e.created_by = ecb.user_id "
                 + "limit 1000;";
+
         return jdbcTemplate.query(sql, new ExpenseMapper());
     }
 
@@ -83,12 +111,12 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         int rowsAffected = jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setInt(1, expense.getGroupId());
+            //ps.setInt(1, expense.getGroupId());
             ps.setString(2, expense.getName());
             ps.setBigDecimal(3, expense.getTotalCost());
             ps.setString(4, expense.getCategory());
             ps.setString(5, expense.getDescription());
-            ps.setInt(6, expense.getCreatedBy().getUserId());
+            ps.setInt(6, expense.getCreatedBy().getAppUserId());
             ps.setTimestamp(7, Timestamp.valueOf(expense.getCreatedAt()));
             return ps;
         }, keyHolder);
@@ -152,13 +180,57 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
     }
 
     private void addUsers(Expense expense) {
-        final String sql = "select ue.id, ue.user_id, ue.expense_id, ue.amount_owed, ue.amount_paid, "
-                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
-                + "from user_expense ue "
-                + "inner join user u on ue.user_id = u.user_id "
+        final String sql = "select"
+                + "ue.user_id, "
+                + "ue.expense_id, "
+                + "ue.amount_owned, "
+                + "ue.amount_paid, "
+
+                + "u.user_id as u_user_id, "
+                + "u.first_name as u_first_name, "
+                + "u.last_name as u_last_name, "
+                + "u.email as u_email, "
+                + "u.username as u_username, "
+                + "u.password_hash as u_password_hash, "
+                + "u.disabled as u_disabled, "
+
+                + "e.expense_id, "
+                + "e.`name` as expense_name, "
+                + "e.total_cost, "
+                + "e.category, "
+                + "e.`description` as expense_description, "
+                + "e.created_at, "
+
+                + "eg.group_id as eg_group_id, "
+                + "eg.`name` as eg_group_name, "
+                + "eg.`description` as eg_group_description, "
+
+                + "egcb.user_id as egcb_user_id, "
+                + "egcb.first_name as egcb_first_name, "
+                + "egcb.last_name as egcb_last_name, "
+                + "egcb.email as egcb_email, "
+                + "egcb.username as egcb_username, "
+                + "egcb.password_hash as egcb_password_hash, "
+                + "egcb.disabled as egcb_disabled, "
+
+                + "ecb.user_id as ecb_user_id, "
+                + "ecb.first_name as ecb_first_name, "
+                + "ecb.last_name as ecb_last_name, "
+                + "ecb.email as ecb_email, "
+                + "ecb.username as ecb_username, "
+                + "ecb.password_hash as ecb_password_hash, "
+                + "ecb.disabled as ecb_disabled "
+
+                + "from user_expense as ue "
+                + "inner join `user` as u on ue.user_id = u.user_id "
+                + "inner join expense as e on ue.expense_id = e.expense_id "
+                + "inner join `group` as eg on e.group_id = eg.group_id "
+                + "inner join `user` as egcb on eg.created_by = egcb.user_id "
+                + "inner join `user` as ecb on e.created_by = ecb.user_id "
                 + "where ue.expense_id = ?;";
 
         var userExpenses = jdbcTemplate.query(sql, new UserExpenseMapper(), expense.getExpenseId());
+
         expense.setUsers(userExpenses);
     }
 }

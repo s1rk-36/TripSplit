@@ -1,7 +1,7 @@
 package learn.tripsplit.data;
 
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.Group;
-import learn.tripsplit.models.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +35,8 @@ public class GroupJdbcTemplateRepositoryTest {
 
     @Test
     void shouldFindById() throws DataAccessException {
-        User user1 = getUser1();
-        Group expected = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", user1);
+        AppUser appUser1 = getUser1();
+        Group expected = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser1);
 
         Group actual = repository.findById(1);
 
@@ -57,8 +57,8 @@ public class GroupJdbcTemplateRepositoryTest {
         group.setName("Added Group Name");
         group.setDescription("Added Description");
 
-        User user1 = getUser1();
-        group.setCreatedBy(user1);
+        AppUser appUser1 = getUser1();
+        group.setCreatedBy(appUser1);
 
         Group actual = repository.add(group);
 
@@ -66,7 +66,7 @@ public class GroupJdbcTemplateRepositoryTest {
         assertTrue(actual.getGroupId() > 0);
         assertEquals("Added Group Name", actual.getName());
         assertEquals("Added Description", actual.getDescription());
-        assertEquals(1, actual.getCreatedBy().getUserId());
+        assertEquals(1, actual.getCreatedBy().getAppUserId());
     }
 
     @Test
@@ -83,8 +83,8 @@ public class GroupJdbcTemplateRepositoryTest {
         group.setName("Updated Group Name");
         group.setDescription("Updated Description");
 
-        User user1 = getUser1();
-        group.setCreatedBy(user1);
+        AppUser appUser1 = getUser1();
+        group.setCreatedBy(appUser1);
 
         assertTrue(repository.update(group));
     }
@@ -99,8 +99,8 @@ public class GroupJdbcTemplateRepositoryTest {
         Group nonExistent = new Group();
         nonExistent.setGroupId(9999);
 
-        User user1 = getUser1();
-        nonExistent.setCreatedBy(user1);
+        AppUser appUser1 = getUser1();
+        nonExistent.setCreatedBy(appUser1);
 
         assertFalse(repository.update(nonExistent));
     }
@@ -111,8 +111,8 @@ public class GroupJdbcTemplateRepositoryTest {
         group.setName("Group To Be Deleted");
         group.setDescription("Description To Be Deleted");
 
-        User user1 = getUser1();
-        group.setCreatedBy(user1);
+        AppUser appUser1 = getUser1();
+        group.setCreatedBy(appUser1);
 
         Group toBeDeleted = repository.add(group);
         assertNotNull(toBeDeleted);
@@ -125,16 +125,16 @@ public class GroupJdbcTemplateRepositoryTest {
         assertFalse(repository.deleteById(9999));
     }
 
-    private User getUser1() {
-        User user1 = new User();
-        user1.setUserId(1);
-        user1.setFirstName("Alice");
-        user1.setLastName("Johnson");
-        user1.setEmail("alice.johnson@example.com");
-        user1.setUsername("alicej");
-        user1.setPasswordHash("hash_1_example");
-        user1.setRoleId(1);
-        return user1;
+    private AppUser getUser1() {
+        AppUser appUser1 = new AppUser();
+        appUser1.setAppUserId(1);
+        appUser1.setFirstName("Alice");
+        appUser1.setLastName("Johnson");
+        appUser1.setEmail("alice.johnson@example.com");
+        appUser1.setUsername("alicej");
+        appUser1.setPasswordHash("hash_1_example");
+        appUser1.setRoleId(1);
+        return appUser1;
     }
 
 }

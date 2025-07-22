@@ -4,8 +4,6 @@ import learn.tripsplit.data.CommentRepository;
 import learn.tripsplit.data.ExpenseRepository;
 import learn.tripsplit.models.Comment;
 import learn.tripsplit.models.Expense;
-import learn.tripsplit.domain.Result;
-import learn.tripsplit.domain.ResultType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +52,7 @@ public class CommentService {
             result.addMessage("Comment content cannot exceed 1000 characters.", ResultType.INVALID);
         }
 
-        if (comment.getCreatedBy() == null || comment.getCreatedBy().getUserId() <= 0) {
+        if (comment.getCreatedBy() == null || comment.getCreatedBy().getAppUserId() <= 0) {
             result.addMessage("Valid creator is required.", ResultType.INVALID);
         }
 
