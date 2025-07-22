@@ -22,7 +22,7 @@ public class UserJdbcTemplateRepository implements UserRepository{
     @Override
     public List<User> findAll() {
         final String sql = "select user_id, first_name, last_name, email, username, password_hash, role_id "
-                + "from `user limit 1000;";
+                + "from `user` limit 1000;";
 
         return jdbcTemplate.query(sql, new UserMapper());
     }
@@ -30,7 +30,7 @@ public class UserJdbcTemplateRepository implements UserRepository{
     @Override
     public User findById(int userId) {
         final String sql = "select user_id, first_name, last_name, email, username, password_hash, role_id "
-                + "from `user "
+                + "from `user` "
                 + "where user_id = ?;";
 
         return jdbcTemplate.query(sql, new UserMapper(), userId).stream()
@@ -67,10 +67,10 @@ public class UserJdbcTemplateRepository implements UserRepository{
     public boolean update(User user) {
         final String sql = "update user set "
                 + "first_name = ?, "
-                + "middle_name = ?, "
+                + "last_name = ?, "
                 + "email = ?, "
                 + "username = ?, "
-                + "password_hash = ? "
+                + "password_hash = ?, "
                 + "role_id = ? "
                 + "where user_id = ?;";
 
@@ -80,7 +80,8 @@ public class UserJdbcTemplateRepository implements UserRepository{
                 user.getEmail(),
                 user.getUsername(),
                 user.getPasswordHash(),
-                user.getRoleId()) > 0;
+                user.getRoleId(),
+                user.getUserId()) > 0;
     }
 
     @Override
