@@ -78,10 +78,16 @@ public class UserService {
 
         if (user.getEmail() == null || user.getEmail().isBlank()) {
             result.addMessage("email is required", ResultType.INVALID);
+        } else if (repository.findByEmail(user.getEmail()) != null) {
+            result.addMessage("email cannot be duplicated", ResultType.INVALID);
+            return result;
         }
 
         if (user.getUsername() == null || user.getUsername().isBlank()) {
             result.addMessage("username is required", ResultType.INVALID);
+        } else if (repository.findByUsername(user.getUsername()) != null) {
+            result.addMessage("username cannot be duplicated", ResultType.INVALID);
+            return result;
         }
 
         if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {

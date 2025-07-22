@@ -38,6 +38,26 @@ public class UserJdbcTemplateRepository implements UserRepository{
     }
 
     @Override
+    public User findByUsername(String username) {
+        final String sql = "select user_id, first_name, last_name, email, username, password_hash, role_id "
+                + "from `user` "
+                + "where lower(username) = lower(?);";
+
+        return jdbcTemplate.query(sql, new UserMapper(), username).stream()
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        final String sql = "select user_id, first_name, last_name, email, username, password_hash, role_id "
+                + "from `user` "
+                + "where lower(email) = lower(?);";
+
+        return jdbcTemplate.query(sql, new UserMapper(), email).stream()
+                .findFirst().orElse(null);
+    }
+
+    @Override
     public User add(User user) {
         final String sql = "insert into user (first_name, last_name, email, username, password_hash, role_id) "
                 + "values (?,?,?,?,?,?);";

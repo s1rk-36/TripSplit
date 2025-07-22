@@ -95,6 +95,16 @@ class UserServiceTest {
     }
 
     @Test
+    void shouldNotAddWhenEmailIsDuplicate() {
+        User user = makeUser();
+        User mockOut = makeUser();
+
+        when(repository.findByEmail(user.getEmail())).thenReturn(mockOut);
+        Result<User> actual = service.add(user);
+        assertEquals(ResultType.INVALID, actual.getType());
+    }
+
+    @Test
     void shouldNotAddUserWhenUsernameIsNullOrBlank() {
         User user = makeUser();
         user.setUsername(null);
@@ -103,6 +113,16 @@ class UserServiceTest {
 
         user.setUsername("\t");
         actual = service.add(user);
+        assertEquals(ResultType.INVALID, actual.getType());
+    }
+
+    @Test
+    void shouldNotAddWhenUsernameIsDuplicate() {
+        User user = makeUser();
+        User mockOut = makeUser();
+
+        when(repository.findByUsername(user.getUsername())).thenReturn(mockOut);
+        Result<User> actual = service.add(user);
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
@@ -173,6 +193,16 @@ class UserServiceTest {
     }
 
     @Test
+    void shouldNotUpdateWhenEmailIsDuplicate() {
+        User user = makeUser();
+        User mockOut = makeUser();
+
+        when(repository.findByEmail(user.getEmail())).thenReturn(mockOut);
+        Result<User> actual = service.update(user);
+        assertEquals(ResultType.INVALID, actual.getType());
+    }
+
+    @Test
     void shouldNotUpdateUserWhenUsernameIsNullOrBlank() {
         User user = makeUser();
         user.setUsername(null);
@@ -181,6 +211,16 @@ class UserServiceTest {
 
         user.setUsername("\t");
         actual = service.update(user);
+        assertEquals(ResultType.INVALID, actual.getType());
+    }
+
+    @Test
+    void shouldNotUpdateWhenUsernameIsDuplicate() {
+        User user = makeUser();
+        User mockOut = makeUser();
+
+        when(repository.findByUsername(user.getUsername())).thenReturn(mockOut);
+        Result<User> actual = service.update(user);
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
