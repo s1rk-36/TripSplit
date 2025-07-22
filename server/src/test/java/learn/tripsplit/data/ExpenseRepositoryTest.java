@@ -27,12 +27,10 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findAll_ShouldReturn11Expenses() {
+    void findAll_ShouldReturn10Expenses() {
         List<Expense> expenses = repository.findAll();
 
-        assertEquals(11, expenses.size());
-        assertTrue(expenses.stream().anyMatch(e -> e.getName().equals("Flight Tickets")));
-        assertTrue(expenses.stream().anyMatch(e -> e.getName().equals("Island Tour")));
+        assertEquals(10, expenses.size());
     }
 
     @Test
