@@ -21,10 +21,10 @@ public class UserExpenseMapper implements RowMapper<UserExpense> {
         if (resultSet.getMetaData().getColumnCount() > 5) {
             User user = new User();
             user.setUserId(resultSet.getInt("user_id"));
-            if (resultSet.getString("user_first_name") != null) {
-                user.setFirstName(resultSet.getString("user_first_name"));
-                user.setLastName(resultSet.getString("user_last_name"));
-                user.setEmail(resultSet.getString("user_email"));
+            if (resultSet.getString("first_name") != null) {
+                user.setFirstName(resultSet.getString("first_name"));
+                user.setLastName(resultSet.getString("last_name"));
+                user.setEmail(resultSet.getString("email"));
             }
             userExpense.setUser(user);
         }

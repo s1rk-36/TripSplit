@@ -65,20 +65,8 @@ public class ExpenseService {
     }
 
     @Transactional
-    public Result<Void> deleteById(int expenseId) {
-        if (expenseId <= 0) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Expense ID must be greater than zero.", ResultType.INVALID);
-            return result;
-        }
-
-        if (!expenseRepository.deleteById(expenseId)) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Expense not found or delete failed.", ResultType.NOT_FOUND);
-            return result;
-        }
-
-        return new Result<>(); // Success
+    public boolean deleteById(int expenseId) {
+        return expenseRepository.deleteById(expenseId);
     }
 
     private Result<Expense> validate(Expense expense) {

@@ -87,20 +87,8 @@ public class ReceiptService {
     }
 
     @Transactional
-    public Result<Void> deleteById(int receiptId) {
-        if (receiptId <= 0) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Receipt ID must be greater than zero.", ResultType.INVALID);
-            return result;
-        }
-
-        if (!receiptRepository.deleteById(receiptId)) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Receipt not found or delete failed.", ResultType.NOT_FOUND);
-            return result;
-        }
-
-        return new Result<>(); // Success
+    public boolean deleteById(int receiptId) {
+        return receiptRepository.deleteById(receiptId);
     }
 
     // Helper methods
