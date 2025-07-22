@@ -69,7 +69,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, group.getName());
             ps.setString(2, group.getDescription());
-            ps.setInt(3, group.getCreatedBy().getUserId());
+            ps.setInt(3, group.getCreatedBy().getAppUserId());
             return ps;
         }, keyHolder);
 
@@ -96,7 +96,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
         return jdbcTemplate.update(sql,
                 group.getName(),
                 group.getDescription(),
-                group.getCreatedBy().getUserId(),
+                group.getCreatedBy().getAppUserId(),
                 group.getGroupId()) > 0;
     }
 

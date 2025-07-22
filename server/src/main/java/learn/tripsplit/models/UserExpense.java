@@ -11,7 +11,7 @@ public class UserExpense {
     private BigDecimal amountOwed;
     private BigDecimal amountPaid;
 
-    private User user;
+    private AppUser appUser;
     private Expense expense;
 
     // Constructors
@@ -40,8 +40,8 @@ public class UserExpense {
     public BigDecimal getAmountPaid() { return amountPaid; }
     public void setAmountPaid(BigDecimal amountPaid) { this.amountPaid = amountPaid; }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    public AppUser getUser() { return appUser; }
+    public void setUser(AppUser appUser) { this.appUser = appUser; }
 
     public Expense getExpense() {
         return expense;

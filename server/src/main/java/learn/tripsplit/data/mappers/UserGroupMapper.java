@@ -19,8 +19,8 @@ public class UserGroupMapper implements RowMapper<UserGroup> {
         userGroup.setGroupId(resultSet.getInt(userGroupPrefix + "group_id"));
         userGroup.setIsAdmin(resultSet.getBoolean(userGroupPrefix + "is_admin"));
 
-        UserMapper userMapper = new UserMapper();
-        userGroup.setUser(userMapper.mapRow(resultSet, i, userPrefix));
+        AppUserMapper appUserMapper = new AppUserMapper();
+        userGroup.setUser(appUserMapper.mapRow(resultSet, i, userPrefix));
 
         GroupMapper groupMapper = new GroupMapper();
         userGroup.setGroup(groupMapper.mapRow(resultSet, i, groupPrefix, createdByPrefix));

@@ -88,7 +88,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
             ps.setBigDecimal(3, expense.getTotalCost());
             ps.setString(4, expense.getCategory());
             ps.setString(5, expense.getDescription());
-            ps.setInt(6, expense.getCreatedBy().getUserId());
+            ps.setInt(6, expense.getCreatedBy().getAppUserId());
             ps.setTimestamp(7, Timestamp.valueOf(expense.getCreatedAt()));
             return ps;
         }, keyHolder);
