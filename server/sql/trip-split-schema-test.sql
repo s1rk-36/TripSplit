@@ -49,7 +49,7 @@ create table user_group (
 );
 
 create table expense (
-	expense_id int primary key not null,
+	expense_id int primary key auto_increment,
     `name` varchar(100) not null,
     total_cost decimal(10, 2) not null,
     category varchar(50) not null,

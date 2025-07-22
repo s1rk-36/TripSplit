@@ -19,17 +19,22 @@ public class ExpenseMapper implements RowMapper<Expense> {
         expense.setDescription(resultSet.getString("description"));
         expense.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
 
-        // Map created_by user if available
-        if (resultSet.getMetaData().getColumnCount() > 7) {
-            User createdBy = new User();
-            createdBy.setUserId(resultSet.getInt("created_by"));
-            if (resultSet.getString("creator_first_name") != null) {
-                createdBy.setFirstName(resultSet.getString("creator_first_name"));
-                createdBy.setLastName(resultSet.getString("creator_last_name"));
-                createdBy.setEmail(resultSet.getString("creator_email"));
+        // Map created_by user - handle both cases (with and without user join)
+        User createdBy = new User();
+        createdBy.setUserId(resultSet.getInt("created_by"));
+
+        // Check if user columns are available (when joined with user table)
+        try {
+            if (resultSet.getString("first_name") != null) {
+                createdBy.setFirstName(resultSet.getString("first_name"));
+                createdBy.setLastName(resultSet.getString("last_name"));
+                createdBy.setEmail(resultSet.getString("email"));
             }
-            expense.setCreatedBy(createdBy);
+        } catch (SQLException e) {
+            // No need to do anything
         }
+
+        expense.setCreatedBy(createdBy);
 
         return expense;
     }

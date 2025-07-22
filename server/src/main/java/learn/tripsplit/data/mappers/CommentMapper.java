@@ -20,10 +20,10 @@ public class CommentMapper implements RowMapper<Comment> {
         if (resultSet.getMetaData().getColumnCount() > 4) {
             User createdBy = new User();
             createdBy.setUserId(resultSet.getInt("created_by"));
-            if (resultSet.getString("creator_first_name") != null) {
-                createdBy.setFirstName(resultSet.getString("creator_first_name"));
-                createdBy.setLastName(resultSet.getString("creator_last_name"));
-                createdBy.setEmail(resultSet.getString("creator_email"));
+            if (resultSet.getString("first_name") != null) {
+                createdBy.setFirstName(resultSet.getString("first_name"));
+                createdBy.setLastName(resultSet.getString("last_name"));
+                createdBy.setEmail(resultSet.getString("email"));
             }
             comment.setCreatedBy(createdBy);
         }
