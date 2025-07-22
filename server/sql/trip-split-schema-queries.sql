@@ -36,6 +36,10 @@ where group_id = 1;
 
 delete from `group` where group_id = 1;
 
+select count(*) 
+from `group`
+where lower(`name`) = lower('Japan Spring Trip') and not group_id = 5;
+
 select
   ug.user_id,
   ug.group_id,

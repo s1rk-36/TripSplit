@@ -5,7 +5,7 @@ use trip_split;
 -- create tables and relationships
 create table `role` (
 	role_id int primary key not null,
-    `name` varchar(20) not null # (admin, user)  
+    `name` varchar(20) not null -- (admin, user)  
 );
 
 create table `user` (
