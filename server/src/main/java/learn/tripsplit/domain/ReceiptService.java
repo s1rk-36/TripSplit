@@ -36,23 +36,24 @@ public class ReceiptService {
 
     @Transactional
     public Result<Receipt> add(Receipt receipt) {
+        Result<Receipt> result = new Result<>();
         // Validation
         if (receipt == null) {
-            return makeResult("Receipt cannot be null.");
+            result.addMessage("Receipt cannot be null.", ResultType.INVALID);
         }
 
         if (receipt.getExpenseId() <= 0) {
-            return makeResult("Valid expense ID is required.");
+            result.addMessage("Valid expense ID is required.", ResultType.INVALID);
         }
 
         if (receipt.getImageUrl() == null || receipt.getImageUrl().isBlank()) {
-            return makeResult("Image URL is required.");
+            result.addMessage("Image URL is required.", ResultType.INVALID);
         }
 
         // Verify expense exists
         Expense expense = expenseRepository.findById(receipt.getExpenseId());
         if (expense == null) {
-            return makeResult("Expense not found with ID: " + receipt.getExpenseId());
+            result.addMessage("Expense not found with ID: " + receipt.getExpenseId(), ResultType.NOT_FOUND);
         }
 
         // Set upload time if not provided
@@ -60,65 +61,40 @@ public class ReceiptService {
             receipt.setUploadedAt(LocalDateTime.now());
         }
 
-        Receipt result = receiptRepository.add(receipt);
-        if (result == null) {
-            return makeResult("Failed to add receipt.");
+        Receipt receipt1 = receiptRepository.add(receipt);
+        if (receipt1 == null) {
+            result.addMessage("Failed to add receipt.", ResultType.INVALID);
         }
 
-        return makeResult(null, result);
+        result.setPayload(receipt1);
+        return result;
     }
 
     @Transactional
     public Result<Receipt> update(Receipt receipt) {
+        Result<Receipt> result = new Result<>();
+
         // Validation
         if (receipt.getReceiptId() <= 0) {
-            return makeResult("Receipt ID must be set for update.");
+            result.addMessage("Receipt ID must be set for update.", ResultType.INVALID);
         }
 
         if (receipt.getImageUrl() == null || receipt.getImageUrl().isBlank()) {
-            return makeResult("Image URL is required.");
+            result.addMessage("Image URL is required.", ResultType.INVALID);
         }
 
         if (!receiptRepository.update(receipt)) {
-            return makeResult("Receipt not found or update failed.");
+            result.addMessage("Receipt not found.", ResultType.NOT_FOUND);
         }
 
-        return makeResult(null, receipt);
+        return result;
     }
 
     @Transactional
-    public Result<Void> deleteById(int receiptId) {
-        if (receiptId <= 0) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Receipt ID must be greater than zero.", ResultType.INVALID);
-            return result;
-        }
-
-        if (!receiptRepository.deleteById(receiptId)) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Receipt not found or delete failed.", ResultType.NOT_FOUND);
-            return result;
-        }
-
-        return new Result<>(); // Success
+    public boolean deleteById(int receiptId) {
+        return receiptRepository.deleteById(receiptId);
     }
 
-    // Helper methods
-    private Result<Receipt> makeResult(String message) {
-        Result<Receipt> result = new Result<>();
-        result.addMessage(message, ResultType.INVALID);
-        return result;
-    }
-
-    private Result<Receipt> makeResult(String message, Receipt receipt) {
-        Result<Receipt> result = new Result<>();
-        if (message != null) {
-            result.addMessage(message, ResultType.INVALID);
-        } else {
-            result.setPayload(receipt);
-        }
-        return result;
-    }
 }
 
 

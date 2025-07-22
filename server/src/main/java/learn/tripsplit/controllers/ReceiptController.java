@@ -69,15 +69,9 @@ public class ReceiptController {
 
     @DeleteMapping("/{receiptId}")
     public ResponseEntity<?> deleteById(@PathVariable int receiptId) {
-        Result<Void> result = receiptService.deleteById(receiptId);
-
-        if (!result.isSuccess()) {
-            if (result.getType() == ResultType.NOT_FOUND) {
-                return new ResponseEntity<>(result.getMessages(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
+        if (receiptService.deleteById(receiptId)) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 }

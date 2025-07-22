@@ -69,15 +69,9 @@ public class CommentController {
 
     @DeleteMapping("/{commentId}")
     public ResponseEntity<?> deleteById(@PathVariable int commentId) {
-        Result<Void> result = commentService.deleteById(commentId);
-
-        if (!result.isSuccess()) {
-            if (result.getType() == ResultType.NOT_FOUND) {
-                return new ResponseEntity<>(result.getMessages(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
+        if (commentService.deleteById(commentId)) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 }

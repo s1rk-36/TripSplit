@@ -153,7 +153,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     private void addUsers(Expense expense) {
         final String sql = "select ue.id, ue.user_id, ue.expense_id, ue.amount_owed, ue.amount_paid, "
-                + "u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email "
+                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
                 + "from user_expense ue "
                 + "inner join user u on ue.user_id = u.user_id "
                 + "where ue.expense_id = ?;";

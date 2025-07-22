@@ -69,15 +69,9 @@ public class ExpenseController {
 
     @DeleteMapping("/{expenseId}")
     public ResponseEntity<?> deleteById(@PathVariable int expenseId) {
-        Result<Void> result = expenseService.deleteById(expenseId);
-
-        if (!result.isSuccess()) {
-            if (result.getType() == ResultType.NOT_FOUND) {
-                return new ResponseEntity<>(result.getMessages(), HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
+        if (expenseService.deleteById(expenseId)) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 }
