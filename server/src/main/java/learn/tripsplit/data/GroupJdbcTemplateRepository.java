@@ -128,7 +128,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
                 + "u.email as u_email, "
                 + "u.username as u_username, "
                 + "u.password_hash as u_password_hash, "
-                + "u.role_id as u_role_id, "
+                + "u.disabled as u_disabled, "
 
                 + "g.group_id, "
                 + "g.`name` as group_name, "
@@ -140,7 +140,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
                 + "gcb.email as gcb_email, "
                 + "gcb.username as gcb_username, "
                 + "gcb.password_hash as gcb_password_hash, "
-                + "gcb.role_id as gcb_role_id "
+                + "gcb.disabled as gcb_disabled "
 
                 + "from user_group ug "
                 + "inner join `user` u on ug.user_id = u.user_id "

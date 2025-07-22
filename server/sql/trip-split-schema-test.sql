@@ -5,7 +5,7 @@ use trip_split_test;
 -- create tables and relationships
 create table `role` (
 	role_id int primary key auto_increment,
-    `name` varchar(50) not null unique -- (admin, user)  
+    `name` varchar(50) not null unique -- (admin, user)
 );
 
 create table `user` (
@@ -126,7 +126,7 @@ create procedure set_known_good_state()
 begin
 
 	set sql_safe_updates = 0;
-    
+
 	-- clear existing data
     delete from `comment`;
     delete from receipt;
@@ -137,9 +137,9 @@ begin
     delete from user_role;
     delete from `user`;
     delete from `role`;
-    
+
     -- reset auto-increments
-    alter table comment auto_increment = 1;
+    alter table `comment` auto_increment = 1;
     alter table receipt auto_increment = 1;
     alter table expense auto_increment = 1;
     alter table `group` auto_increment = 1;
@@ -156,8 +156,8 @@ begin
 	('Carol', 'Davis', 'carol.davis@example.com', 'carold', 'hash_3_example'),
 	('David', 'Lee', 'david.lee@example.com', 'davidl', 'hash_4_example'),
 	('Eve', 'Martinez', 'eve.martinez@example.com', 'evem', 'hash_5_example');
-    
-    insert into user_role (user_id, role_id)values 
+
+    insert into user_role (user_id, role_id)values
 	(1, 1),
     (2, 2),
     (3, 2),
@@ -270,7 +270,7 @@ begin
 	(12, '2025-07-08 10:00:00', 'Show tickets were amazing!', 8, 5),
 	(13, '2025-07-08 10:15:42', 'Totally worth it!', 8, 4),
 	(15, '2025-07-10 13:00:00', 'Let’s settle this one soon.', 10, 3);
-    
+
     set sql_safe_updates = 1;
 
 end //
