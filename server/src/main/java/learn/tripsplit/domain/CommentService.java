@@ -99,20 +99,9 @@ public class CommentService {
     }
 
     @Transactional
-    public Result<Void> deleteById(int commentId) {
-        if (commentId <= 0) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Comment ID must be greater than zero.", ResultType.INVALID);
-            return result;
-        }
+    public boolean deleteById(int commentId) {
+        return commentRepository.deleteById(commentId);
 
-        if (!commentRepository.deleteById(commentId)) {
-            Result<Void> result = new Result<>();
-            result.addMessage("Comment not found or delete failed.", ResultType.NOT_FOUND);
-            return result;
-        }
-
-        return new Result<>(); // Success
     }
 
     // Helper methods

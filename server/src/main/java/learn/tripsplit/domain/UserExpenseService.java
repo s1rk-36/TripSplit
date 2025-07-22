@@ -1,0 +1,130 @@
+package learn.tripsplit.domain;
+
+import learn.tripsplit.data.UserExpenseRepository;
+import learn.tripsplit.data.ExpenseRepository;
+import learn.tripsplit.data.UserRepository;
+import learn.tripsplit.models.UserExpense;
+import learn.tripsplit.models.Expense;
+import learn.tripsplit.models.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Service
+public class UserExpenseService {
+
+    @Autowired
+    private UserExpenseRepository userExpenseRepository;
+
+    @Autowired
+    private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public List<UserExpense> findByUserId(int userId) {
+        return userExpenseRepository.findByUserId(userId);
+    }
+
+    public List<UserExpense> findByExpenseId(int expenseId) {
+        return userExpenseRepository.findByExpenseId(expenseId);
+    }
+
+    public UserExpense findByUserIdAndExpenseId(int userId, int expenseId) {
+        return userExpenseRepository.findByUserIdAndExpenseId(userId, expenseId);
+    }
+
+    @Transactional
+    public Result<UserExpense> add(UserExpense userExpense) {
+        Result<UserExpense> result = new Result<>();
+        // Validation
+        if (userExpense == null) {
+            result.addMessage("UserExpense cannot be null", ResultType.INVALID);
+        }
+
+        if (userExpense.getUserId() <= 0) {
+            result.addMessage("Valid user ID is required", ResultType.INVALID);
+        }
+
+        if (userExpense.getExpenseId() <= 0) {
+            result.addMessage("Valid expense ID is required", ResultType.INVALID);
+        }
+
+        if (userExpense.getAmountOwed() == null || userExpense.getAmountOwed().compareTo(BigDecimal.ZERO) < 0) {
+            result.addMessage("Amount owed cannot be negative", ResultType.INVALID);
+        }
+
+        if (userExpense.getAmountPaid() == null || userExpense.getAmountPaid().compareTo(BigDecimal.ZERO) < 0) {
+            result.addMessage("Amount paid cannot be negative", ResultType.INVALID);
+        }
+
+        // Verify user and expense exist
+        User user = userRepository.findById(userExpense.getUserId());
+        if (user == null) {
+            result.addMessage("User not found with ID: " + userExpense.getUserId(), ResultType.INVALID);
+        }
+
+        Expense expense = expenseRepository.findById(userExpense.getExpenseId());
+        if (expense == null) {
+            result.addMessage("Expense not found with ID: " + userExpense.getExpenseId(), ResultType.INVALID);
+        }
+
+        UserExpense ue = userExpenseRepository.add(userExpense);
+        if (ue == null) {
+            result.addMessage("Failed to add user expense", ResultType.INVALID);
+        }
+
+        result.setPayload(ue);
+        return result;
+    }
+
+    @Transactional
+    public Result<UserExpense> update(UserExpense userExpense) {
+        Result<UserExpense> result = new Result<>();
+
+        // Validation
+        if (userExpense.getUserId() <= 0) {
+            result.addMessage("Valid user ID is required for update", ResultType.INVALID);
+        }
+
+        if (userExpense.getExpenseId() <= 0) {
+            result.addMessage("Valid expense ID is required for update", ResultType.INVALID);
+        }
+
+        if (userExpense.getAmountOwed() == null || userExpense.getAmountOwed().compareTo(BigDecimal.ZERO) < 0) {
+            result.addMessage("Amount owed cannot be negative", ResultType.INVALID);
+        }
+
+        if (userExpense.getAmountPaid() == null || userExpense.getAmountPaid().compareTo(BigDecimal.ZERO) < 0) {
+            result.addMessage("Amount paid cannot be negative", ResultType.INVALID);
+        }
+
+        if (!userExpenseRepository.update(userExpense)) {
+            result.addMessage("Failed to update UserExpense userId=" + userExpense.getUserId() + " and expenseId=" + userExpense.getExpenseId(), ResultType.INVALID);
+        }
+        result.setPayload(userExpense);
+        return result;
+    }
+
+    @Transactional
+    public boolean deleteByUserIdAndExpenseId(int userId, int expenseId) {
+        return userExpenseRepository.deleteByUserIdAndExpenseId(userId, expenseId);
+    }
+
+    public BigDecimal calculateUserBalance(int userId) {
+        List<UserExpense> userExpenses = findByUserId(userId);
+
+        BigDecimal totalOwed = userExpenses.stream()
+                .map(UserExpense::getAmountOwed)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPaid = userExpenses.stream()
+                .map(UserExpense::getAmountPaid)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return totalPaid.subtract(totalOwed);
+    }
+}
