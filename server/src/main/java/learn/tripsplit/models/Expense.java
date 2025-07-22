@@ -2,9 +2,12 @@ package learn.tripsplit.models;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Expense {
+    // Fields
     private int expenseId;
     private int groupId;
     private String name;
@@ -15,8 +18,9 @@ public class Expense {
     private LocalDateTime createdAt;
     private List<Receipt> receipts;
     private List<Comment> comments;
-    private List<UserExpense> userExpenses;
+    private List<UserExpense> users = new ArrayList<>();
 
+    // Constructors
     public Expense() {}
 
     public Expense(int groupId, String name, BigDecimal totalCost, String category, String description, User createdBy) {
@@ -60,6 +64,20 @@ public class Expense {
     public List<Comment> getComments() { return comments; }
     public void setComments(List<Comment> comments) { this.comments = comments; }
 
-    public List<UserExpense> getUserExpenses() { return userExpenses; }
-    public void setUserExpenses(List<UserExpense> userExpenses) { this.userExpenses = userExpenses; }
+    public List<UserExpense> getUsers() { return users; }
+    public void setUsers(List<UserExpense> users) { this.users = users; }
+
+    // equals & hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Expense expense = (Expense) o;
+        return groupId == expense.groupId && Objects.equals(name, expense.name) && Objects.equals(totalCost, expense.totalCost) && Objects.equals(category, expense.category) && Objects.equals(description, expense.description) && Objects.equals(createdBy, expense.createdBy) && Objects.equals(createdAt, expense.createdAt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupId, name, totalCost, category, description, createdBy, createdAt);
+    }
+
 }
