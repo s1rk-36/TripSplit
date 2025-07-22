@@ -3,10 +3,9 @@ create database trip_split;
 use trip_split;
 
 -- create tables and relationships
--- create tables and relationships
 create table `role` (
 	role_id int primary key auto_increment,
-    `name` varchar(50) not null unique -- (admin, user)  
+    `name` varchar(50) not null unique -- (admin, user)
 );
 
 create table `user` (
