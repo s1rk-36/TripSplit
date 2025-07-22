@@ -36,31 +36,32 @@ public class CommentService {
 
     @Transactional
     public Result<Comment> add(Comment comment) {
+        Result<Comment> result = new Result<>();
         // Validation
         if (comment == null) {
-            return makeResult("Comment cannot be null.");
+            result.addMessage("Comment cannot be null.", ResultType.INVALID);
         }
 
         if (comment.getExpenseId() <= 0) {
-            return makeResult("Valid expense ID is required.");
+            result.addMessage("Valid expense ID is required.", ResultType.INVALID);
         }
 
         if (comment.getContent() == null || comment.getContent().isBlank()) {
-            return makeResult("Comment content is required.");
+            result.addMessage("Comment content is required.", ResultType.INVALID);
         }
 
         if (comment.getContent().length() > 1000) {
-            return makeResult("Comment content cannot exceed 1000 characters.");
+            result.addMessage("Comment content cannot exceed 1000 characters.", ResultType.INVALID);
         }
 
         if (comment.getCreatedBy() == null || comment.getCreatedBy().getUserId() <= 0) {
-            return makeResult("Valid creator is required.");
+            result.addMessage("Valid creator is required.", ResultType.INVALID);
         }
 
         // Verify expense exists
         Expense expense = expenseRepository.findById(comment.getExpenseId());
         if (expense == null) {
-            return makeResult("Expense not found with ID: " + comment.getExpenseId());
+            result.addMessage("Expense not found with ID: " + comment.getExpenseId(), ResultType.NOT_FOUND);
         }
 
         // Set timestamp if not provided
@@ -68,56 +69,42 @@ public class CommentService {
             comment.setTimestamp(LocalDateTime.now());
         }
 
-        Comment result = commentRepository.add(comment);
-        if (result == null) {
-            return makeResult("Failed to add comment.");
+        Comment comment1 = commentRepository.add(comment);
+        if (comment1 == null) {
+            result.addMessage("Failed to add comment.", ResultType.INVALID);
         }
 
-        return makeResult(null, result);
+        result.setPayload(comment1);
+        return result;
     }
 
     @Transactional
     public Result<Comment> update(Comment comment) {
+        Result<Comment> result = new Result<>();
+
         // Validation
         if (comment.getCommentId() <= 0) {
-            return makeResult("Comment ID must be set for update.");
+            result.addMessage("Comment ID must be set for update.", ResultType.INVALID);
         }
 
         if (comment.getContent() == null || comment.getContent().isBlank()) {
-            return makeResult("Comment content is required.");
+            result.addMessage("Comment content is required.", ResultType.INVALID);
         }
 
         if (comment.getContent().length() > 1000) {
-            return makeResult("Comment content cannot exceed 1000 characters.");
+            result.addMessage("Comment content cannot exceed 1000 characters.", ResultType.INVALID);
         }
 
         if (!commentRepository.update(comment)) {
-            return makeResult("Comment not found or update failed.");
+            result.addMessage("Comment not found or update failed.", ResultType.NOT_FOUND);
         }
 
-        return makeResult(null, comment);
+        return result;
     }
 
     @Transactional
     public boolean deleteById(int commentId) {
         return commentRepository.deleteById(commentId);
-
     }
 
-    // Helper methods
-    private Result<Comment> makeResult(String message) {
-        Result<Comment> result = new Result<>();
-        result.addMessage(message, ResultType.INVALID);
-        return result;
-    }
-
-    private Result<Comment> makeResult(String message, Comment comment) {
-        Result<Comment> result = new Result<>();
-        if (message != null) {
-            result.addMessage(message, ResultType.INVALID);
-        } else {
-            result.setPayload(comment);
-        }
-        return result;
-    }
 }
