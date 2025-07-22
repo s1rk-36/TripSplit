@@ -1,14 +1,17 @@
 package learn.tripsplit.models;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class Comment {
+    // Fields
     private int commentId;
     private int expenseId;
     private String content;
     private LocalDateTime timestamp;
     private User createdBy;
 
+    // Constructors
     public Comment() {}
 
     public Comment(int expenseId, String content, User createdBy) {
@@ -33,4 +36,18 @@ public class Comment {
 
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+
+    // equals & hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Comment comment = (Comment) o;
+        return expenseId == comment.expenseId && Objects.equals(content, comment.content) && Objects.equals(timestamp, comment.timestamp) && Objects.equals(createdBy, comment.createdBy);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expenseId, content, timestamp, createdBy);
+    }
+
 }

@@ -46,7 +46,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         for (Expense expense : expenses) {
             addReceipts(expense);
             addComments(expense);
-            addUserExpenses(expense);
+            addUsers(expense);
         }
 
         return expenses;
@@ -67,7 +67,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         if (expense != null) {
             addReceipts(expense);
             addComments(expense);
-            addUserExpenses(expense);
+            addUsers(expense);
         }
 
         return expense;
@@ -149,7 +149,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         expense.setComments(comments);
     }
 
-    private void addUserExpenses(Expense expense) {
+    private void addUsers(Expense expense) {
         final String sql = "select ue.id, ue.user_id, ue.expense_id, ue.amount_owed, ue.amount_paid, "
                 + "u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email "
                 + "from user_expense ue "
@@ -157,6 +157,6 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
                 + "where ue.expense_id = ?;";
 
         var userExpenses = jdbcTemplate.query(sql, new UserExpenseMapper(), expense.getExpenseId());
-        expense.setUserExpenses(userExpenses);
+        expense.setUsers(userExpenses);
     }
 }
