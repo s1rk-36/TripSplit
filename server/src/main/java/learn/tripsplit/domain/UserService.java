@@ -88,6 +88,10 @@ public class UserService {
             result.addMessage("passwordHash is required", ResultType.INVALID);
         }
 
+        if (user.getRoleId() <= 0) {
+            result.addMessage("role id is required", ResultType.INVALID);
+        }
+
         return result;
     }
 }
