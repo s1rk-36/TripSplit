@@ -31,7 +31,7 @@ public class CommentJdbcTemplateRepository implements CommentRepository {
     @Override
     public List<Comment> findByExpenseId(int expenseId) {
         final String sql = "select c.comment_id, c.expense_id, c.content, c.timestamp, c.created_by, "
-                + "u.first_name as creator_first_name, u.last_name as creator_last_name, u.email as creator_email "
+                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
                 + "from comments c "
                 + "inner join users u on c.created_by = u.user_id "
                 + "where c.expense_id = ? "
@@ -42,7 +42,7 @@ public class CommentJdbcTemplateRepository implements CommentRepository {
     @Override
     public Comment findById(int commentId) {
         final String sql = "select c.comment_id, c.expense_id, c.content, c.timestamp, c.created_by, "
-                + "u.first_name as creator_first_name, u.last_name as creator_last_name, u.email as creator_email "
+                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
                 + "from comments c "
                 + "inner join users u on c.created_by = u.user_id "
                 + "where c.comment_id = ?;";

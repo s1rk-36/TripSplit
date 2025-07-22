@@ -1,13 +1,16 @@
 package learn.tripsplit.models;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class Receipt {
+    // Fields
     private int receiptId;
     private int expenseId;
     private String imageUrl;
     private LocalDateTime uploadedAt;
 
+    // Constructors
     public Receipt() {}
 
     public Receipt(int expenseId, String imageUrl) {
@@ -28,4 +31,18 @@ public class Receipt {
 
     public LocalDateTime getUploadedAt() { return uploadedAt; }
     public void setUploadedAt(LocalDateTime uploadedAt) { this.uploadedAt = uploadedAt; }
+
+    // equals & hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Receipt receipt = (Receipt) o;
+        return expenseId == receipt.expenseId && Objects.equals(imageUrl, receipt.imageUrl) && Objects.equals(uploadedAt, receipt.uploadedAt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expenseId, imageUrl, uploadedAt);
+    }
+
 }

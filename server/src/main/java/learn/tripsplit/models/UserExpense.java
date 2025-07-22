@@ -1,15 +1,20 @@
 package learn.tripsplit.models;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public class UserExpense {
+    // Fields
     private int id;
     private int userId;
     private int expenseId;
     private BigDecimal amountOwed;
     private BigDecimal amountPaid;
-    private User user;
 
+    private User user;
+    private Expense expense;
+
+    // Constructors
     public UserExpense() {}
 
     public UserExpense(int userId, int expenseId, BigDecimal amountOwed, BigDecimal amountPaid) {
@@ -37,4 +42,25 @@ public class UserExpense {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    public Expense getExpense() {
+        return expense;
+    }
+    public void setExpense(Expense expense) {
+        this.expense = expense;
+    }
+
+    // equals & hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        UserExpense that = (UserExpense) o;
+        return userId == that.userId && expenseId == that.expenseId && Objects.equals(amountOwed, that.amountOwed) && Objects.equals(amountPaid, that.amountPaid);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId, expenseId, amountOwed, amountPaid);
+    }
+
 }
