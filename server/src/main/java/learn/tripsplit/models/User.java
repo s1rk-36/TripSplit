@@ -3,6 +3,7 @@ package learn.tripsplit.models;
 import java.util.Objects;
 
 public class User {
+    // Fields
     private int userId;
     private String firstName;
     private String lastName;
@@ -11,6 +12,7 @@ public class User {
     private String passwordHash;
     private int roleId;
 
+    // Constructors
     public User() {
     }
 
@@ -24,6 +26,7 @@ public class User {
         this.roleId = roleId;
     }
 
+    // Getters and Setters
     public int getUserId() {
         return userId;
     }
@@ -80,6 +83,7 @@ public class User {
         this.roleId = roleId;
     }
 
+    // equals & hashCode
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -92,4 +96,5 @@ public class User {
     public int hashCode() {
         return Objects.hash(userId, firstName, lastName, email, username, passwordHash, roleId);
     }
+
 }

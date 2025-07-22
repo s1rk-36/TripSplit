@@ -1,5 +1,7 @@
 package learn.tripsplit.models;
 
+import java.util.Objects;
+
 public class UserGroup {
     // Fields
     private int userId;
@@ -58,6 +60,19 @@ public class UserGroup {
 
     public void setGroup(Group group) {
         this.group = group;
+    }
+
+    // equals & hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        UserGroup userGroup = (UserGroup) o;
+        return userId == userGroup.userId && groupId == userGroup.groupId && isAdmin == userGroup.isAdmin;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId, groupId, isAdmin);
     }
 
 }

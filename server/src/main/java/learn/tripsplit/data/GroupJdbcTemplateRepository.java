@@ -1,18 +1,20 @@
 package learn.tripsplit.data;
 
 import learn.tripsplit.data.mappers.GroupMapper;
+import learn.tripsplit.data.mappers.UserGroupMapper;
 import learn.tripsplit.models.Group;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 
 @Repository
-public class GroupJdbcTemplateRepository {
+public class GroupJdbcTemplateRepository implements GroupRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -20,6 +22,7 @@ public class GroupJdbcTemplateRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Override
     public List<Group> findAll() {
         final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.role_id "
@@ -30,6 +33,8 @@ public class GroupJdbcTemplateRepository {
         return jdbcTemplate.query(sql, new GroupMapper());
     }
 
+    @Override
+    @Transactional
     public Group findById(int groupId) {
         final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.role_id "
@@ -37,12 +42,19 @@ public class GroupJdbcTemplateRepository {
                 + "inner join user as u on g.created_by = u.user_id "
                 + "where g.group_id = ?;";
 
-        return jdbcTemplate.query(sql, new GroupMapper(), groupId)
+        Group group = jdbcTemplate.query(sql, new GroupMapper(), groupId)
                 .stream()
                 .findFirst()
                 .orElse(null);
+
+        if (group != null) {
+            //addUsers(group);
+        }
+
+        return group;
     }
 
+    @Override
     public Group add(Group group) {
         if (group == null) {
             return null;
@@ -68,6 +80,7 @@ public class GroupJdbcTemplateRepository {
         return group;
     }
 
+    @Override
     public boolean update(Group group) {
         if (group == null) {
             return false;
@@ -86,8 +99,25 @@ public class GroupJdbcTemplateRepository {
                 group.getGroupId()) > 0;
     }
 
+    @Override
+    @Transactional
     public boolean deleteById(int groupId) {
         return jdbcTemplate.update("delete from `group` where group_id = ?;", groupId) > 0;
+    }
+
+    private void addUsers(Group group) {
+        final String sql = "select ug.user_id, ug.group_id, ug.is_admin, "
+                + "u.first_name, u.last_name, u.email, u.username, u.password_hash, u.role_id, "
+                + "r.`name` as role_name "
+                + "g.group_id, g.`name` as group_name, g.`description` as group_description, "
+                + "from user_group as ug "
+                + "inner join user as u on ug.user_id = u.user_id "
+                + "inner join role as r on u.role_id = r.role_id "
+                + "inner join `group` as g on ug.group_id = g.group_id "
+                + "where ug.group_id = ?;";
+
+        var userGroups = jdbcTemplate.query(sql, new UserGroupMapper(), group.getGroupId());
+        group.setUsers(userGroups);
     }
 
 }

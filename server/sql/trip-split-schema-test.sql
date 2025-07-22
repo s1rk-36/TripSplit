@@ -35,6 +35,7 @@ create table `group` (
 create table user_group (
 	user_id int not null,
     group_id int not null,
+    is_admin boolean not null default false,
 	constraint pk_user_group
         primary key (user_id, group_id),
     constraint fk_user_group_user_id
@@ -149,25 +150,25 @@ begin
 	('Vegas Bachelor Party', 'Weekend celebration with the crew.', 4),
 	('Thailand Escape', 'Group trip to explore Bangkok and the islands.', 5);
 
-	INSERT INTO user_group (user_id, group_id) VALUES
-	(1, 1),  -- Alice in her Japan trip
-	(2, 1),
-	(3, 1),
+	insert into user_group (user_id, group_id, is_admin) values
+	(1, 1, true),   -- Alice (admin) in her Japan trip
+	(2, 1, false),
+	(3, 1, false),
 
-	(2, 2),  -- Bob's business trip
-	(4, 2),
-	(5, 2),
+	(2, 2, true),   -- Bob (admin) on his business trip
+	(4, 2, false),
+	(5, 2, false),
 
-	(3, 3),  -- Carol's Iceland adventure
-	(1, 3),
+	(3, 3, true),   -- Carol (admin) on Iceland adventure
+	(1, 3, false),
 
-	(4, 4),  -- David's Vegas trip
-	(2, 4),
-	(5, 4),
+	(4, 4, true),   -- David (admin) in Vegas trip
+	(2, 4, false),
+	(5, 4, false),
 
-	(5, 5),  -- Eve's Thailand trip
-	(3, 5),
-	(4, 5);
+	(5, 5, true),   -- Eve (admin) in Thailand trip
+	(3, 5, false),
+	(4, 5, false);
 
 	insert into expense (expense_id, `name`, total_cost, category, `description`, created_at, group_id, created_by) values
 	(1, 'Flight Tickets', 1200.00, 'Travel', 'Round trip flights to Tokyo', '2025-03-10', 1, 1),
@@ -252,4 +253,3 @@ begin
 end //
 -- Change the statement terminator back to the original.
 delimiter ;
-
