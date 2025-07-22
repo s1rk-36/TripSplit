@@ -1,6 +1,6 @@
-drop database if exists trip_split;
-create database trip_split;
-use trip_split;
+drop database if exists trip_split_test;
+create database trip_split_test;
+use trip_split_test;
 
 create table `role` (
 	role_id int primary key not null,
