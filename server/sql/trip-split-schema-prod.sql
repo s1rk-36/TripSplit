@@ -3,9 +3,10 @@ create database trip_split;
 use trip_split;
 
 -- create tables and relationships
+-- create tables and relationships
 create table `role` (
-	role_id int primary key not null,
-    `name` varchar(20) not null -- (admin, user)  
+	role_id int primary key auto_increment,
+    `name` varchar(50) not null unique -- (admin, user)  
 );
 
 create table `user` (
@@ -13,12 +14,22 @@ create table `user` (
     first_name varchar(100) not null,
     last_name varchar(100) not null,
     email varchar(254) not null,
-	username varchar(100) not null,
-    password_hash varchar(128) not null,
+	username varchar(100) not null unique,
+    password_hash varchar(2048) not null,
+    disabled boolean not null default(0)
+);
+
+create table user_role (
+    user_id int not null,
     role_id int not null,
-	constraint fk_user_role_id
-		foreign key (role_id)
-		references `role`(role_id)
+    constraint pk_user_role
+        primary key (user_id, role_id),
+    constraint fk_user_role_user_id
+        foreign key (user_id)
+        references user(user_id),
+    constraint fk_user_role_role_id
+        foreign key (role_id)
+        references `role`(role_id)
 );
 
 create table `group` (
@@ -113,15 +124,22 @@ create table `comment` (
 
 -- data
 insert into `role`(role_id, `name`) values
-	(1, 'Admin'),
-	(2, 'User');
+(1, 'Admin'),
+(2, 'User');
 
-insert into `user` (first_name, last_name, email, username, password_hash, role_id) values
-('Alice', 'Johnson', 'alice.johnson@example.com', 'alicej', 'hash_1_example', 1),
-('Bob', 'Smith', 'bob.smith@example.com', 'bobsmith', 'hash_2_example', 2),
-('Carol', 'Davis', 'carol.davis@example.com', 'carold', 'hash_3_example', 2),
-('David', 'Lee', 'david.lee@example.com', 'davidl', 'hash_4_example', 2),
-('Eve', 'Martinez', 'eve.martinez@example.com', 'evem', 'hash_5_example', 2);
+insert into `user` (first_name, last_name, email, username, password_hash) values
+('Alice', 'Johnson', 'alice.johnson@example.com', 'alicej', 'hash_1_example'),
+('Bob', 'Smith', 'bob.smith@example.com', 'bobsmith', 'hash_2_example'),
+('Carol', 'Davis', 'carol.davis@example.com', 'carold', 'hash_3_example'),
+('David', 'Lee', 'david.lee@example.com', 'davidl', 'hash_4_example'),
+('Eve', 'Martinez', 'eve.martinez@example.com', 'evem', 'hash_5_example');
+
+insert into user_role (user_id, role_id)values 
+(1, 1),
+(2, 2),
+(3, 2),
+(4, 2),
+(5, 2);
 
 insert into `group` (`name`, `description`, created_by) values
 ('Japan Spring Trip', 'A cherry blossom tour across Tokyo and Kyoto.', 1),
