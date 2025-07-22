@@ -1,5 +1,6 @@
 package learn.tripsplit.controllers;
 
+import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.Expense;
 import learn.tripsplit.domain.ExpenseService;
 import learn.tripsplit.domain.Result;
@@ -57,7 +58,7 @@ public class ExpenseController {
         Result<Expense> result = expenseService.update(expense);
 
         if (!result.isSuccess()) {
-            if (result.getType() == com.tripsplit.domain.ResultType.NOT_FOUND) {
+            if (result.getType() == ResultType.NOT_FOUND) {
                 return new ResponseEntity<>(result.getMessages(), HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
@@ -71,7 +72,7 @@ public class ExpenseController {
         Result<Void> result = expenseService.deleteById(expenseId);
 
         if (!result.isSuccess()) {
-            if (result.getType() == com.tripsplit.domain.ResultType.NOT_FOUND) {
+            if (result.getType() == ResultType.NOT_FOUND) {
                 return new ResponseEntity<>(result.getMessages(), HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
