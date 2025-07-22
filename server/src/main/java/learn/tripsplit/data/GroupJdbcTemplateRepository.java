@@ -106,6 +106,16 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
         return jdbcTemplate.update("delete from `group` where group_id = ?;", groupId) > 0;
     }
 
+    @Override
+    public boolean nameExists(Group group) {
+        final String sql = "select count(*) "
+                + "from `group` "
+                + "where lower(`name`) = lower(?) and not group_id = ?;";
+
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, group.getName(), group.getGroupId());
+        return count != null && count > 0;
+    }
+
     private void addUsers(Group group) {
         final String sql = "select "
                 + "ug.user_id as ug_user_id, "

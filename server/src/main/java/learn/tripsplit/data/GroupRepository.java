@@ -14,4 +14,7 @@ public interface GroupRepository {
     boolean update(Group group);
 
     boolean deleteById(int groupId);
+
+    boolean nameExists(Group group);
+
 }
