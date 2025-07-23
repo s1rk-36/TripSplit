@@ -29,7 +29,9 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
     @Override
     public List<AppUser> findAll() {
         final String sql = "select user_id, first_name, last_name, email, username, password_hash, disabled "
-                + "from `user` limit 1000;";
+                + "from `user` "
+                + "order by user_id asc "
+                + "limit 1000;";
 
         return jdbcTemplate.query(sql, new AppUserMapper(this));
     }

@@ -1,0 +1,103 @@
+@url = http://localhost:8080/api/group
+
+### Token (This is unique to everyone)
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYm9iaiIsImF1dGhvcml0aWVzIjoiUk9MRV9Vc2VyIiwiZXhwIjoxNzUzMjkyNTgwfQ.3f9KdXW5ySAM7jrR6OP6yDFpME9ab6cm0t9fpql5tkU
+
+### findAll()
+
+GET {{url}} HTTP/1.1
+Authorization: Bearer {{token}}
+
+### findById()
+
+GET {{url}}/2 HTTP/1.1
+Authorization: Bearer {{token}}
+
+### add()
+
+POST {{url}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Added Group",
+  "description": "Added Group",
+  "createdBy": {
+    "appUserId": 2,
+    "firstName": "Bob",
+    "lastName": "Smith",
+    "email": "bob.smith@example.com",
+    "username": "bobsmith",
+    "passwordHash": "hash_2_example",
+    "disabled": false,
+    "groups": [],
+    "expenses": [],
+    "roles": ["User"]
+  },
+  "users": [
+    {
+      "groupId": 0,
+      "isAdmin": true,
+      "user": {
+        "appUserId": 2,
+        "firstName": "Bob",
+        "lastName": "Smith",
+        "email": "bob.smith@example.com",
+        "username": "bobsmith",
+        "passwordHash": "hash_2_example",
+        "disabled": false,
+        "groups": [],
+        "expenses": [],
+        "roles": ["User"]
+      }
+    }
+  ]
+}
+
+### update()
+
+PUT {{url}}/2 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "groupId": 2,
+  "name": "Updated Group",
+  "description": "Updated Group",
+  "createdBy": {
+    "appUserId": 2,
+    "firstName": "Bob",
+    "lastName": "Smith",
+    "email": "bob.smith@example.com",
+    "username": "bobsmith",
+    "passwordHash": "hash_2_example",
+    "disabled": false,
+    "groups": [],
+    "expenses": [],
+    "roles": ["User"]
+  },
+  "users": [
+    {
+      "userId": 2,
+      "groupId": 2,
+      "isAdmin": true,
+      "user": {
+        "appUserId": 2,
+        "firstName": "Bob",
+        "lastName": "Smith",
+        "email": "bob.smith@example.com",
+        "username": "bobsmith",
+        "passwordHash": "hash_2_example",
+        "disabled": false,
+        "groups": [],
+        "expenses": [],
+        "roles": ["User"]
+      }
+    }
+  ]
+}
+
+### deleteById()
+
+DELETE {{url}}/5 HTTP/1.1
+Authorization: Bearer {{token}}
