@@ -8,11 +8,22 @@ import java.sql.SQLException;
 
 public class GroupMapper implements RowMapper<Group> {
 
+    // Fields
+    private final AppUserMapper appUserMapper;
+
+    // Constructor
+    public GroupMapper(RoleFetcher roleFetcher) {
+        this.appUserMapper = new AppUserMapper(roleFetcher);
+    }
+
+    // Mapper entry point used by Spring JDBC
+    // Overload that delegates to main method
     @Override
     public Group mapRow(ResultSet resultSet, int i) throws SQLException {
         return mapRow(resultSet, i, "", "");
     }
 
+    // Main method with prefix support
     public Group mapRow(ResultSet resultSet, int i, String groupPrefix, String createdByPrefix) throws SQLException {
         Group group = new Group();
         group.setGroupId(resultSet.getInt(groupPrefix + "group_id"));
@@ -21,9 +32,9 @@ public class GroupMapper implements RowMapper<Group> {
         String description = resultSet.getString(groupPrefix + "group_description");
         group.setDescription(description != null ? description : resultSet.getString(groupPrefix + "description"));
 
-        // AppUserMapper appUserMapper = new AppUserMapper();
-        // group.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix));
+        group.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix));
 
         return group;
     }
+
 }

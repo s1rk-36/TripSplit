@@ -1,6 +1,7 @@
 package learn.tripsplit.data;
 
 import learn.tripsplit.data.mappers.GroupMapper;
+import learn.tripsplit.data.mappers.RoleFetcher;
 import learn.tripsplit.data.mappers.UserGroupMapper;
 import learn.tripsplit.models.Group;
 import learn.tripsplit.models.UserGroup;
@@ -15,7 +16,7 @@ import java.sql.Statement;
 import java.util.List;
 
 @Repository
-public class GroupJdbcTemplateRepository implements GroupRepository {
+public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,24 +27,24 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
     @Override
     public List<Group> findAll() {
         final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
-                + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.role_id "
+                + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "
                 + "limit 1000;";
 
-        return jdbcTemplate.query(sql, new GroupMapper());
+        return jdbcTemplate.query(sql, new GroupMapper(this));
     }
 
     @Override
     @Transactional
     public Group findById(int groupId) {
         final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
-                + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.role_id "
+                + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "
                 + "where g.group_id = ?;";
 
-        Group group = jdbcTemplate.query(sql, new GroupMapper(), groupId)
+        Group group = jdbcTemplate.query(sql, new GroupMapper(this), groupId)
                 .stream()
                 .findFirst()
                 .orElse(null);
@@ -116,6 +117,15 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
         return count != null && count > 0;
     }
 
+    @Override
+    public List<String> getRolesByAppUserId(int userId) {
+        final String sql = "select r.name "
+                + "from user_role ur "
+                + "inner join role r on ur.role_id = r.role_id "
+                + "where ur.user_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("name"), userId);
+    }
+
     private void addUsers(Group group) {
         final String sql = "select "
                 + "ug.user_id as ug_user_id, "
@@ -148,8 +158,10 @@ public class GroupJdbcTemplateRepository implements GroupRepository {
                 + "inner join `user` gcb on g.created_by = gcb.user_id "
                 + "where ug.group_id = ?;";
 
+        UserGroupMapper userGroupMapper = new UserGroupMapper(this);
+
         List<UserGroup> userGroups = jdbcTemplate.query(sql,
-                (rs, rowNum) -> new UserGroupMapper().mapRow(rs, rowNum, "ug_", "u_", "", "gcb_"),
+                (rs, rowNum) -> userGroupMapper.mapRow(rs, rowNum, "ug_", "u_", "", "gcb_"),
                 group.getGroupId()
         );
 
