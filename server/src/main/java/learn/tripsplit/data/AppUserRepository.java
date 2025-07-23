@@ -25,4 +25,7 @@ public interface AppUserRepository {
 
     @Transactional
     boolean deleteById(int userId);
+
+    List<String> getRolesByAppUserId(int userId);
+
 }

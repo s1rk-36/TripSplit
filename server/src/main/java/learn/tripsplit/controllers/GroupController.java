@@ -5,6 +5,7 @@ import learn.tripsplit.domain.Result;
 import learn.tripsplit.models.Group;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -62,6 +63,7 @@ public class GroupController {
         return ErrorResponse.build(result);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("{groupId}")
     public ResponseEntity<Void> deleteById(@PathVariable int groupId) {
         if (service.deleteById(groupId)) {
