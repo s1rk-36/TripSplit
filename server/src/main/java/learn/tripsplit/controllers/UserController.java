@@ -29,14 +29,14 @@ public class UserController {
         return service.findById(userId);
     }
 
-    @PostMapping
-    public ResponseEntity<Object> add (@RequestBody AppUser appUser) {
-        Result<AppUser> result = service.add(appUser);
-        if (result.isSuccess()) {
-            return new ResponseEntity<>(result.getPayload(), HttpStatus.CREATED);
-        }
-        return ErrorResponse.build(result);
-    }
+//    @PostMapping
+//    public ResponseEntity<Object> add (@RequestBody AppUser appUser) {
+//        Result<AppUser> result = service.add(appUser);
+//        if (result.isSuccess()) {
+//            return new ResponseEntity<>(result.getPayload(), HttpStatus.CREATED);
+//        }
+//        return ErrorResponse.build(result);
+//    }
 
     @PutMapping("/{userId}")
     public ResponseEntity<Object> update(@PathVariable int userId, @RequestBody AppUser appUser) {
