@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaDollarSign, FaEye, FaEyeSlash, FaEnvelope, FaLock, FaUser, FaCheck } from 'react-icons/fa';
-// import { apiService } from '../services/apiService';
-// import { auth, validatePassword } from '../utils/auth';
+import { FaEye, FaEyeSlash, FaEnvelope, FaLock, FaUser } from 'react-icons/fa';
+import { apiService } from '../services/apiService';
+import { auth } from '../utils/auth';
 
 function Register() {
   const navigate = useNavigate();
@@ -10,25 +10,18 @@ function Register() {
     firstName: '',
     lastName: '',
     email: '',
+    username: '',
     password: '',
     confirmPassword: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
-  const [passwordStrength, setPasswordStrength] = useState({
-    length: false,
-    number: false,
-    letter: false
-  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    if (name === 'password') {
-    //   setPasswordStrength(validatePassword(value));
-    }
+    setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -42,30 +35,52 @@ function Register() {
         return;
       }
       
-      if (!passwordStrength.length || !passwordStrength.number || !passwordStrength.letter) {
-        setError('Password does not meet requirements');
-        return;
-      }
-      
-    //   const response = await apiService.register(formData);
-    //   auth.setCurrentUser(response);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Registration failed');
-      
-      // Fallback for development
-      const mockUser = {
-        userId: Date.now(),
+      // All other validation happens on backend
+      const response = await apiService.register({
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email
+        email: formData.email,
+        username: formData.username || formData.email.split('@')[0], // Default username from email
+        password: formData.password
+      });
+      
+      // Expected response: { token, user }
+      if (!response.token) {
+        throw new Error('Invalid response format: missing token');
+      }
+      
+      // Store user data with JWT token
+      const userData = {
+        userId: response.user.id,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        email: response.user.email,
+        username: response.user.username,
+        token: response.token
       };
-    //   auth.setCurrentUser(mockUser);
+      
+      auth.setCurrentUser(userData);
       navigate('/dashboard');
+      
+    } catch (err) {
+      console.error('Registration error:', err);
+      
+      // Handle different error formats
+      if (err.response && err.response.data) {
+        // Backend returned validation errors array
+        if (Array.isArray(err.response.data)) {
+          setError(err.response.data.join('. '));
+        } else {
+          setError(err.response.data.message || 'Registration failed');
+        }
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+      
     }
   };
-
-  const isPasswordValid = passwordStrength.length && passwordStrength.number && passwordStrength.letter;
 
   return (
     <div className="min-vh-100 d-flex align-items-center bg-light py-5">
@@ -76,16 +91,19 @@ function Register() {
               <div className="card-body p-5">
                 <div className="text-center mb-4">
                   <h4 className="fw-bold text-dark">Create Account</h4>
+                  <p className="text-muted">Join thousands of users splitting expenses</p>
                 </div>
 
                 {error && (
-                  <div className="alert alert-danger">{error}</div>
+                  <div className="alert alert-danger" role="alert">
+                    {error}
+                  </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">First Name</label>
+                      <label className="form-label">First Name *</label>
                       <div className="input-group">
                         <span className="input-group-text">
                           <FaUser className="text-muted" />
@@ -98,12 +116,13 @@ function Register() {
                           onChange={handleChange}
                           placeholder="First name"
                           required
+                          autoComplete="given-name"
                         />
                       </div>
                     </div>
 
                     <div className="col-md-6 mb-3">
-                      <label className="form-label">Last Name</label>
+                      <label className="form-label">Last Name *</label>
                       <input
                         type="text"
                         className="form-control"
@@ -112,12 +131,13 @@ function Register() {
                         onChange={handleChange}
                         placeholder="Last name"
                         required
+                        autoComplete="family-name"
                       />
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Email Address</label>
+                    <label className="form-label">Email Address *</label>
                     <div className="input-group">
                       <span className="input-group-text">
                         <FaEnvelope className="text-muted" />
@@ -130,12 +150,28 @@ function Register() {
                         onChange={handleChange}
                         placeholder="Enter your email"
                         required
+                        autoComplete="email"
                       />
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Password</label>
+                    <label className="form-label">Username *</label>
+                    <div className="input-group">
+                      <span className="input-group-text">@</span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        placeholder="Choose a username"
+                        autoComplete="username"
+                      />
+                    </div>                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Password *</label>
                     <div className="input-group">
                       <span className="input-group-text">
                         <FaLock className="text-muted" />
@@ -148,41 +184,32 @@ function Register() {
                         onChange={handleChange}
                         placeholder="Create a password"
                         required
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
                         className="btn btn-outline-secondary"
                         onClick={() => setShowPassword(!showPassword)}
+                        tabIndex={-1}
                       >
                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                       </button>
                     </div>
                     
+                    {/* Static Password Requirements */}
                     <div className="mt-2">
-                      <small className="text-muted">Password must contain:</small>
-                      <div className="mt-1">
-                        <small className={passwordStrength.length ? 'text-success' : 'text-muted'}>
-                          <FaCheck className={passwordStrength.length ? 'text-success' : 'text-muted'} size={12} />
-                          <span className="ms-1">At least 8 characters</span>
-                        </small>
-                      </div>
-                      <div>
-                        <small className={passwordStrength.number ? 'text-success' : 'text-muted'}>
-                          <FaCheck className={passwordStrength.number ? 'text-success' : 'text-muted'} size={12} />
-                          <span className="ms-1">At least one number</span>
-                        </small>
-                      </div>
-                      <div>
-                        <small className={passwordStrength.letter ? 'text-success' : 'text-muted'}>
-                          <FaCheck className={passwordStrength.letter ? 'text-success' : 'text-muted'} size={12} />
-                          <span className="ms-1">At least one letter</span>
-                        </small>
-                      </div>
+                      <small className="text-muted">Password must include:</small>
+                      <ul className="mt-1 mb-0 small text-muted">
+                        <li>At least 8 characters long</li>
+                        <li>At least one number</li>
+                        <li>At least one letter</li>
+                        <li>At least one special character</li>
+                      </ul>
                     </div>
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Confirm Password</label>
+                    <label className="form-label">Confirm Password *</label>
                     <div className="input-group">
                       <span className="input-group-text">
                         <FaLock className="text-muted" />
@@ -195,11 +222,13 @@ function Register() {
                         onChange={handleChange}
                         placeholder="Confirm your password"
                         required
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
                         className="btn btn-outline-secondary"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        tabIndex={-1}
                       >
                         {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                       </button>

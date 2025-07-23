@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaDollarSign, FaEye, FaEyeSlash, FaEnvelope, FaLock } from 'react-icons/fa';
-// import { apiService } from '../services/apiService';
-// import { auth } from '../utils/auth';
+import { apiService } from '../services/apiService';
+import { auth } from '../utils/auth';
 
 function Login() {
   const navigate = useNavigate();
@@ -16,31 +16,43 @@ function Login() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       setError('');
       
-    //   const response = await apiService.login(formData);
-    //   auth.setCurrentUser(response);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Login failed');
+      // Call login API
+      const response = await apiService.login({
+        username: formData.email,
+        password: formData.password
+      });
       
-      // Fallback for development
-      if (formData.email === 'custom@example.com' && formData.password === 'password') {
-        const mockUser = {
-          userId: 1,
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'custom@example.com'
-        };
-        // auth.setCurrentUser(mockUser);
-        navigate('/dashboard');
+      if (!response.token) {
+        throw new Error('Invalid response format: missing token');
       }
+      
+      // Store user data with JWT token
+      const userData = {
+        userId: response.user.id,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        email: response.user.email,
+        username: response.user.username,
+        token: response.token
+      };
+      
+      auth.setCurrentUser(userData);
+      
+      // Redirect to dashboard
+      // navigate('/dashboard');
+      
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -75,6 +87,7 @@ function Login() {
                         onChange={handleChange}
                         placeholder="Enter your email"
                         required
+                        autoComplete="email"
                       />
                     </div>
                   </div>
@@ -93,11 +106,13 @@ function Login() {
                         onChange={handleChange}
                         placeholder="Enter your password"
                         required
+                        autoComplete="current-password"
                       />
                       <button
                         type="button"
                         className="btn btn-outline-secondary"
                         onClick={() => setShowPassword(!showPassword)}
+                        tabIndex={-1}
                       >
                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                       </button>

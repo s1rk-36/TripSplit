@@ -1,9 +1,11 @@
 package learn.tripsplit.controllers;
 
 import learn.tripsplit.App;
+import learn.tripsplit.data.AppUserJdbcTemplateRepository;
 import learn.tripsplit.domain.Result;
 import learn.tripsplit.models.AppUser;
 import learn.tripsplit.security.AppUserService;
+import learn.tripsplit.security.AuthorityUtils;
 import learn.tripsplit.security.JwtConverter;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +40,7 @@ public class AuthController {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<Map<String, String>> authenticate(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<HashMap<String, Object>> authenticate(@RequestBody Map<String, String> credentials) {
 
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(credentials.get("username"), credentials.get("password"));
@@ -49,8 +52,29 @@ public class AuthController {
 
                 String jwtToken = converter.getTokenFromUser((User) authentication.getPrincipal());
 
-                HashMap<String, String> map = new HashMap<>();
+                String username = credentials.get("username");
+                AppUser appUser = appUserService.findByEmail(username);
+
+                if (appUser == null) {
+                    System.out.println("User NOT found in database: " + username);
+                } else {
+                    System.out.println("User found in database: " + appUser.getEmail());
+                    System.out.println("Stored password hash: " + appUser.getPasswordHash().substring(0, 10) + "...");
+                }
+
+
+                HashMap<String, Object> map = new HashMap<>();
                 map.put("jwt_token", jwtToken);
+
+                if (appUser != null) {
+                    Map<String, Object> user = new HashMap<>();
+                    user.put("id", appUser.getAppUserId());
+                    user.put("username", appUser.getUsername());
+                    user.put("email", appUser.getEmail());
+                    user.put("firstName", appUser.getFirstName());
+                    user.put("lastName", appUser.getLastName());
+                    map.put("user", user);
+                }
 
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
@@ -59,7 +83,7 @@ public class AuthController {
             System.out.println(ex);
         }
 
-        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
     @PostMapping("/register")
@@ -82,12 +106,18 @@ public class AuthController {
                     false,
                     List.of("USER")
             );
+            System.out.println(newAppUser.getUsername());
 
             Result<AppUser> result = appUserService.add(newAppUser);
             if (!result.isSuccess()) {
-                return new ResponseEntity<>(List.of(result.getMessages()), HttpStatus.BAD_REQUEST);
+                System.out.println("Service add failed: " + result.getMessages());
+                return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
             }
             appUser = result.getPayload();
+            if (appUser == null) {
+                System.out.println("Result payload is null despite success");
+                return new ResponseEntity<>(List.of("Failed to create user"), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
         } catch (ValidationException ex) {
             return new ResponseEntity<>(List.of(ex.getMessage()), HttpStatus.BAD_REQUEST);
@@ -96,10 +126,23 @@ public class AuthController {
         }
 
         // happy path...
+        UserDetails userDetails = AuthorityUtils.convertToUserDetails(appUser);
+        String jwtToken = converter.getTokenFromUser((User) userDetails);
 
-        HashMap<String, Integer> map = new HashMap<>();
-        map.put("appUserId", appUser.getAppUserId());
+        Map<String, Object> map = new HashMap<>();
+        map.put("token", jwtToken);
 
+        Map<String, Object> user = new HashMap<>();
+        user.put("id", appUser.getAppUserId());
+        user.put("username", appUser.getUsername());
+        user.put("email", appUser.getEmail());
+        user.put("firstName", appUser.getFirstName());
+        user.put("lastName", appUser.getLastName());
+
+        map.put("user", user);
+
+        System.out.println("Registration successful for user: " + appUser.getUsername());
         return new ResponseEntity<>(map, HttpStatus.CREATED);
+
     }
 }
