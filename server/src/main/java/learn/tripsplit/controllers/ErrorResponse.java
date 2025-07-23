@@ -9,24 +9,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class ErrorResponse {
+    private LocalDateTime timestamp = LocalDateTime.now();
     private String message;
-    private int status;
-    private LocalDateTime timestamp;
-    private List<String> details;
 
-    public ErrorResponse() {
-        this.timestamp = LocalDateTime.now();
-    }
-
-    public ErrorResponse(String message, int status, List<String> details) {
-        this(message, status);
-        this.details = details;
-    }
-
-    public ErrorResponse(String message, int status) {
-        this();
+    public ErrorResponse(String message) {
         this.message = message;
-        this.status = status;
     }
 
     public LocalDateTime getTimestamp() {
@@ -37,35 +24,26 @@ public class ErrorResponse {
         return message;
     }
 
-    public List<String> getDetails() {
-        return details;
+    // Static method to build a response from a single message
+    public static ResponseEntity<Object> build(String message) {
+        return new ResponseEntity<>(
+                new ErrorResponse(message),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
     }
 
-    public ErrorResponse(String message) {
-        this.message = message;
-    }
+    public static <T> ResponseEntity<Object> build(Result<T> result) {
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR; // 500
 
-    public static ResponseEntity<Object> build(Result<?> result) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-
-        if (result.getType() == ResultType.NOT_FOUND) {
-            status = HttpStatus.NOT_FOUND;
-        } else if (result.getType() == ResultType.INVALID) {
-            status = HttpStatus.BAD_REQUEST;
+        if (result.getType() == null || result.getType() == ResultType.INVALID) {
+            status = HttpStatus.BAD_REQUEST; // 400
+        } else if (result.getType() == ResultType.NOT_FOUND) {
+            status = HttpStatus.NOT_FOUND; //404
+        } else if (result.getType() == ResultType.UNSUPPORTED) {
+            status = HttpStatus.UNSUPPORTED_MEDIA_TYPE; // 415
         }
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                "Validation failed",
-                status.value(),
-                result.getMessages()
-        );
-
-        return new ResponseEntity<>(errorResponse, status);
-    }
-
-    public static ResponseEntity<Object> build(String message, HttpStatus status) {
-        ErrorResponse errorResponse = new ErrorResponse(message, status.value());
-        return new ResponseEntity<>(errorResponse, status);
+        return new ResponseEntity<>(result.getMessages(), status);
     }
 
 }
