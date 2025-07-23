@@ -1,5 +1,6 @@
 package learn.tripsplit.data;
 
+import learn.tripsplit.data.mappers.RoleFetcher;
 import learn.tripsplit.data.mappers.UserExpenseMapper;
 import learn.tripsplit.models.UserExpense;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,7 +12,7 @@ import java.sql.Statement;
 import java.util.List;
 
 @Repository
-public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository {
+public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository, RoleFetcher {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -25,7 +26,7 @@ public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository 
                 + "u.first_name as first_name, u.last_name as last_name, u.email as email "
                 + "from user_expense ue "
                 + "inner join user u on ue.user_id = u.user_id";
-        return jdbcTemplate.query(sql, new UserExpenseMapper());
+        return jdbcTemplate.query(sql, new UserExpenseMapper(this));
     }
 
     @Override
@@ -35,7 +36,7 @@ public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository 
                 + "from user_expense ue "
                 + "inner join user u on ue.user_id = u.user_id "
                 + "where ue.user_id = ?";
-        return jdbcTemplate.query(sql, new UserExpenseMapper(), userId);
+        return jdbcTemplate.query(sql, new UserExpenseMapper(this), userId);
     }
 
     @Override
@@ -45,7 +46,7 @@ public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository 
                 + "from user_expense ue "
                 + "inner join user u on ue.user_id = u.user_id "
                 + "where ue.expense_id = ?";
-        return jdbcTemplate.query(sql, new UserExpenseMapper(), expenseId);
+        return jdbcTemplate.query(sql, new UserExpenseMapper(this), expenseId);
     }
 
     @Override
@@ -55,7 +56,7 @@ public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository 
                 + "from user_expense ue "
                 + "inner join user u on ue.user_id = u.user_id "
                 + "where ue.user_id = ? and ue.expense_id = ?";
-        return jdbcTemplate.query(sql, new UserExpenseMapper(), userId, expenseId).stream()
+        return jdbcTemplate.query(sql, new UserExpenseMapper(this), userId, expenseId).stream()
                 .findFirst().orElse(null);
     }
 
@@ -96,4 +97,14 @@ public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository 
         return jdbcTemplate.update("delete from user_expense where user_id = ? and expense_id = ?",
                 userId, expenseId) > 0;
     }
+
+    @Override
+    public List<String> getRolesByAppUserId(int userId) {
+        final String sql = "select r.name "
+                + "from user_role ur "
+                + "inner join role r on ur.role_id = r.role_id "
+                + "where ur.user_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("name"), userId);
+    }
+
 }

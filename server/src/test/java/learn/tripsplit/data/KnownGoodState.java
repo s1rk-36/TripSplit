@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class KnownGoodState {
+
     @Autowired
     JdbcTemplate jdbcTemplate;
 

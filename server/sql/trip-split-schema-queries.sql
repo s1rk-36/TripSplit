@@ -1,6 +1,9 @@
 use trip_split_test;
 -- set sql_safe_updates = 0;
 call set_known_good_state();
+SELECT @@global.time_zone, @@session.time_zone;
+SET GLOBAL time_zone = '+00:00';
+SET time_zone = '+00:00';
 
 -- This is just for testing purposes
 select * from `role`;
@@ -88,85 +91,94 @@ where ug.group_id = 1;
 
 -- Expense CRUD
 -- findAll()
-select 
+select
 	e.expense_id, 
-    e.`name` as expense_name, 
-    e.total_cost, 
-    e.category, 
-    e.`description` as expense_description, 
-    e.created_at,
-    
-    e.group_id,
-    g.`name` as group_name, 
-    g.`description` as group_description, 
-    
-    g.created_by,
-    gcb.first_name as gcb_first_name, 
-    gcb.last_name as gcb_last_name, 
-    gcb.email as gcb_email, 
-    gcb.username as gcb_username, 
-    gcb.password_hash as gcb_password_hash, 
-    gcb.disabled as gcb_disabled, 
-    
-    e.created_by, 
+	e.`name` as expense_name, 
+	e.total_cost, 
+	e.category, 
+	e.`description` as expense_description, 
+	e.created_at, 
+
+	g.group_id, 
+	g.`name` as group_name, 
+	g.`description` as group_description, 
+
+	gcb.user_id as gcb_user_id, 
+	gcb.first_name as gcb_first_name, 
+	gcb.last_name as gcb_last_name, 
+	gcb.email as gcb_email, 
+	gcb.username as gcb_username, 
+	gcb.password_hash as gcb_password_hash, 
+	gcb.disabled as gcb_disabled, 
+
+	ecb.user_id as ecb_user_id, 
     ecb.first_name as ecb_first_name, 
     ecb.last_name as ecb_last_name, 
-    ecb.email as ecb_email, 
+	ecb.email as ecb_email, 
     ecb.username as ecb_username, 
     ecb.password_hash as ecb_password_hash, 
-    ecb.disabled as ecb_disabled
-    
+    ecb.disabled as ecb_disabled 
+
 from expense e 
 inner join `group` as g on e.group_id = g.group_id 
 inner join `user` as gcb on g.created_by = gcb.user_id 
 inner join `user` as ecb on e.created_by = ecb.user_id 
-limit 1000; 
+limit 1000;
 
 -- findById()
-select 
+select
 	e.expense_id, 
-    e.`name` as expense_name, 
-    e.total_cost, 
-    e.category, 
-    e.`description` as expense_description, 
-    e.created_at,
-    
-    e.group_id,
-    g.`name` as group_name, 
-    g.`description` as group_description, 
-    
-    g.created_by,
-    gcb.first_name as gcb_first_name, 
-    gcb.last_name as gcb_last_name, 
-    gcb.email as gcb_email, 
-    gcb.username as gcb_username, 
-    gcb.password_hash as gcb_password_hash, 
-    gcb.disabled as gcb_disabled, 
-    
-    e.created_by, 
+	e.`name` as expense_name, 
+	e.total_cost, 
+	e.category, 
+	e.`description` as expense_description, 
+	e.created_at, 
+
+	g.group_id, 
+	g.`name` as group_name, 
+	g.`description` as group_description, 
+
+	gcb.user_id as gcb_user_id, 
+	gcb.first_name as gcb_first_name, 
+	gcb.last_name as gcb_last_name, 
+	gcb.email as gcb_email, 
+	gcb.username as gcb_username, 
+	gcb.password_hash as gcb_password_hash, 
+	gcb.disabled as gcb_disabled, 
+
+	ecb.user_id as ecb_user_id, 
     ecb.first_name as ecb_first_name, 
     ecb.last_name as ecb_last_name, 
-    ecb.email as ecb_email, 
+	ecb.email as ecb_email, 
     ecb.username as ecb_username, 
     ecb.password_hash as ecb_password_hash, 
-    ecb.disabled as ecb_disabled
-    
+    ecb.disabled as ecb_disabled 
+
 from expense e 
 inner join `group` as g on e.group_id = g.group_id 
 inner join `user` as gcb on g.created_by = gcb.user_id 
-inner join `user` as ecb on e.created_by = ecb.user_id 
+inner join `user` as ecb on e.created_by = ecb.user_id  
 where e.expense_id = 1; 
 
 -- add()
 insert into expense (`name`, total_cost, category, `description`, created_at, group_id, created_by) values
-('Hotel Stay', 850.00, 'Lodging', '3-night stay at Grand Hotel', '2025-03-11', 1, 2);
+('Hotel Stay', 850.00, 'LODGING', '3-night stay at Grand Hotel', '2025-03-11', 1, 2);
+
+-- update()
+update expense set
+`name` = "1",
+total_cost = 1,
+category = "LODGING",
+`description` = "1"
+where expense_id = 1;
+
 
 -- UserExpense get users
 select
-	ue.user_id, 
-    ue.expense_id, 
-    ue.amount_owned, 
-    ue.amount_paid, 
+	ue.user_id as ue_user_id, 
+    ue.expense_id as ue_expense_id, 
+    ue.amount_owned as ue_amount_owned, 
+    ue.amount_paid as ue_amount_paid, 
     
     -- Full columns for the user in the expense (u)
 	u.user_id as u_user_id, 

@@ -2,22 +2,19 @@ package learn.tripsplit.data;
 
 import learn.tripsplit.data.mappers.AppUserMapper;
 import learn.tripsplit.data.mappers.RoleFetcher;
+import learn.tripsplit.data.mappers.UserExpenseMapper;
 import learn.tripsplit.data.mappers.UserGroupMapper;
 import learn.tripsplit.models.AppUser;
-
+import learn.tripsplit.models.UserExpense;
 import learn.tripsplit.models.UserGroup;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
-import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -51,6 +48,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
 
         if (appUser != null) {
             addGroups(appUser);
+            addExpenses(appUser);
         }
 
         return appUser;
@@ -130,7 +128,6 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
     @Override
     @Transactional
     public boolean deleteById(int userId) {
-        jdbcTemplate.update("delete from user_role where user_id = ?;", userId);
         return jdbcTemplate.update("delete from `user` where user_id =?;", userId) > 0;
     }
 
@@ -221,5 +218,64 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
         user.setGroups(userGroups);
     }
 
+    private void addExpenses(AppUser user) {
+        final String sql = "select "
+                + "ue.user_id as ue_user_id, "
+                + "ue.expense_id as ue_expense_id, "
+                + "ue.amount_owned as ue_amount_owned, "
+                + "ue.amount_paid as ue_amount_paid, "
+
+                + "u.user_id as u_user_id, "
+                + "u.first_name as u_first_name, "
+                + "u.last_name as u_last_name, "
+                + "u.email as u_email, "
+                + "u.username as u_username, "
+                + "u.password_hash as u_password_hash, "
+                + "u.disabled as u_disabled, "
+
+                + "e.expense_id, "
+                + "e.`name` as expense_name, "
+                + "e.total_cost, "
+                + "e.category, "
+                + "e.`description` as expense_description, "
+                + "e.created_at, "
+
+                + "eg.group_id as eg_group_id, "
+                + "eg.`name` as eg_group_name, "
+                + "eg.`description` as eg_group_description, "
+
+                + "egcb.user_id as egcb_user_id, "
+                + "egcb.first_name as egcb_first_name, "
+                + "egcb.last_name as egcb_last_name, "
+                + "egcb.email as egcb_email, "
+                + "egcb.username as egcb_username, "
+                + "egcb.password_hash as egcb_password_hash, "
+                + "egcb.disabled as egcb_disabled, "
+
+                + "ecb.user_id as ecb_user_id, "
+                + "ecb.first_name as ecb_first_name, "
+                + "ecb.last_name as ecb_last_name, "
+                + "ecb.email as ecb_email, "
+                + "ecb.username as ecb_username, "
+                + "ecb.password_hash as ecb_password_hash, "
+                + "ecb.disabled as ecb_disabled "
+
+                + "from user_expense as ue "
+                + "inner join `user` as u on ue.user_id = u.user_id "
+                + "inner join expense as e on ue.expense_id = e.expense_id "
+                + "inner join `group` as eg on e.group_id = eg.group_id "
+                + "inner join `user` as egcb on eg.created_by = egcb.user_id "
+                + "inner join `user` as ecb on e.created_by = ecb.user_id "
+                + "where ue.user_id = ?;";
+
+        UserExpenseMapper userExpenseMapper = new UserExpenseMapper(this);
+
+        List<UserExpense> userExpenses = jdbcTemplate.query(sql,
+                (rs, rowNum) -> userExpenseMapper.mapRow(rs, rowNum, "ue_", "u_", "", "eg_", "egcb_", "ecb_"),
+                user.getAppUserId()
+        );
+
+        user.setExpenses(userExpenses);
+    }
 
 }
