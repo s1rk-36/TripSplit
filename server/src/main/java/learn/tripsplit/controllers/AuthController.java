@@ -84,6 +84,9 @@ public class AuthController {
             );
 
             Result<AppUser> result = appUserService.add(newAppUser);
+            if (!result.isSuccess()) {
+                return new ResponseEntity<>(List.of(result.getMessages()), HttpStatus.BAD_REQUEST);
+            }
             appUser = result.getPayload();
 
         } catch (ValidationException ex) {
