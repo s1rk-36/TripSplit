@@ -1,7 +1,11 @@
-package learn.tripsplit.domain;
+package learn.tripsplit.security;
 
 import learn.tripsplit.data.AppUserRepository;
+import learn.tripsplit.domain.Result;
+import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.AppUser;
+import learn.tripsplit.security.AppUserService;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +20,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class AppUserServiceTest {
     @Autowired
-    UserService service;
+    AppUserService service;
 
     @MockBean
     AppUserRepository repository;
@@ -25,9 +29,16 @@ class AppUserServiceTest {
     void shouldFindAllUser() {
         List<AppUser> appUsers = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
-            AppUser appUser = new AppUser();
-            appUser.setAppUserId(i);
-            appUser.setFirstName("User " + i);
+            AppUser appUser = new AppUser(
+                    i,
+                    "User" + i,
+                    "Johnson",
+                    "user" + i + "@example.com",
+                    "user" + i,
+                    "hash_" + i + "_example",
+                    false, // not disabled
+                    List.of("USER")
+            );
             appUsers.add(appUser);
         }
 
@@ -54,7 +65,7 @@ class AppUserServiceTest {
         when(repository.add(appUser)).thenReturn(mockOut);
 
         Result<AppUser> actual = service.add(appUser);
-        assertEquals(ResultType.SUCCESS, actual.getType());
+        Assertions.assertEquals(ResultType.SUCCESS, actual.getType());
         assertEquals(mockOut, actual.getPayload());
     }
 
@@ -106,13 +117,30 @@ class AppUserServiceTest {
 
     @Test
     void shouldNotAddUserWhenUsernameIsNullOrBlank() {
-        AppUser appUser = makeUser();
-        appUser.setUsername(null);
-        Result<AppUser> actual = service.add(appUser);
+        AppUser nullUsernameUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                null, // null username
+                "hash_6_example",
+                false,
+                List.of("USER")
+        );
+        Result<AppUser> actual = service.add(nullUsernameUser);
         assertEquals(ResultType.INVALID, actual.getType());
 
-        appUser.setUsername("\t");
-        actual = service.add(appUser);
+        AppUser blankUsernameUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                "\t", // blank username
+                "hash_6_example",
+                false,
+                List.of("USER")
+        );
+        actual = service.add(blankUsernameUser);
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
@@ -128,21 +156,30 @@ class AppUserServiceTest {
 
     @Test
     void shouldNotAddUserWhenPasswordHashIsNullOrBlank() {
-        AppUser appUser = makeUser();
-        appUser.setPasswordHash(null);
-        Result<AppUser> actual = service.add(appUser);
+        AppUser nullPasswordUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                "gracew",
+                null, // null password
+                false,
+                List.of("USER")
+        );
+        Result<AppUser> actual = service.add(nullPasswordUser);
         assertEquals(ResultType.INVALID, actual.getType());
 
-        appUser.setPasswordHash("\t");
-        actual = service.add(appUser);
-        assertEquals(ResultType.INVALID, actual.getType());
-    }
-
-    @Test
-    void shouldNotAddUserWhenRoleIdIsNotSet() {
-        AppUser appUser = makeUser();
-        appUser.setRoleId(0);
-        Result<AppUser> actual = service.add(appUser);
+        AppUser blankPasswordUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                "gracew",
+                "\t", // blank password
+                false,
+                List.of("USER")
+        );
+        actual = service.add(blankPasswordUser);
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
@@ -204,13 +241,30 @@ class AppUserServiceTest {
 
     @Test
     void shouldNotUpdateUserWhenUsernameIsNullOrBlank() {
-        AppUser appUser = makeUser();
-        appUser.setUsername(null);
-        Result<AppUser> actual = service.update(appUser);
+        AppUser nullUsernameUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                null, // null username
+                "hash_6_example",
+                false,
+                List.of("USER")
+        );
+        Result<AppUser> actual = service.update(nullUsernameUser);
         assertEquals(ResultType.INVALID, actual.getType());
 
-        appUser.setUsername("\t");
-        actual = service.update(appUser);
+        AppUser blankUsernameUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                "\t", // blank username
+                "hash_6_example",
+                false,
+                List.of("USER")
+        );
+        actual = service.update(blankUsernameUser);
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
@@ -226,21 +280,30 @@ class AppUserServiceTest {
 
     @Test
     void shouldNotUpdateUserWhenPasswordHashIsNullOrBlank() {
-        AppUser appUser = makeUser();
-        appUser.setPasswordHash(null);
-        Result<AppUser> actual = service.update(appUser);
+        AppUser nullPasswordUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                "gracew",
+                null, // null password
+                false,
+                List.of("USER")
+        );
+        Result<AppUser> actual = service.update(nullPasswordUser);
         assertEquals(ResultType.INVALID, actual.getType());
 
-        appUser.setPasswordHash("\t");
-        actual = service.update(appUser);
-        assertEquals(ResultType.INVALID, actual.getType());
-    }
-
-    @Test
-    void shouldNotUpdateUserWhenRoleIdIsNotSet() {
-        AppUser appUser = makeUser();
-        appUser.setRoleId(0);
-        Result<AppUser> actual = service.update(appUser);
+        AppUser blankPasswordUser = new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                "gracew",
+                "\t", // null password
+                false,
+                List.of("USER")
+        );
+        actual = service.update(blankPasswordUser);
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
@@ -257,14 +320,15 @@ class AppUserServiceTest {
     }
 
     AppUser makeUser() {
-        AppUser appUser = new AppUser();
-        appUser.setAppUserId(1);
-        appUser.setFirstName("Alice");
-        appUser.setLastName("Johnson");
-        appUser.setEmail("alice.johnson@example.com");
-        appUser.setUsername("alicej");
-        appUser.setPasswordHash("hash_1_example");
-        appUser.setRoleId(1);
-        return appUser;
+        return new AppUser(
+                1,
+                "Alice",
+                "Johnson",
+                "alice.johnson@example.com",
+                "alicej",
+                "hash_1_example",
+                false, // not disabled
+                List.of("ADMIN")
+        );
     }
 }

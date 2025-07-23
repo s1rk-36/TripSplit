@@ -1,11 +1,11 @@
 package learn.tripsplit.domain;
 
+import learn.tripsplit.data.AppUserRepository;
 import learn.tripsplit.data.UserExpenseRepository;
 import learn.tripsplit.data.ExpenseRepository;
-import learn.tripsplit.data.UserRepository;
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.UserExpense;
 import learn.tripsplit.models.Expense;
-import learn.tripsplit.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,7 @@ public class UserExpenseService {
     private ExpenseRepository expenseRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private AppUserRepository appUserRepository;
 
     public List<UserExpense> findByUserId(int userId) {
         return userExpenseRepository.findByUserId(userId);
@@ -62,7 +62,7 @@ public class UserExpenseService {
         }
 
         // Verify user and expense exist
-        User user = userRepository.findById(userExpense.getUserId());
+        AppUser user = appUserRepository.findById(userExpense.getUserId());
         if (user == null) {
             result.addMessage("User not found with ID: " + userExpense.getUserId(), ResultType.INVALID);
         }

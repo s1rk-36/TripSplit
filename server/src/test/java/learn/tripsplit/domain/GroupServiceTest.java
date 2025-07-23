@@ -265,7 +265,17 @@ public class GroupServiceTest {
     @Test
     void shouldNotValidateWhenUserGroupHasInvalidUser() {
         AppUser appUser = getUser1();
-        AppUser invalidAppUser = new AppUser(); // no userId
+        AppUser invalidAppUser = new AppUser(
+                    0, // no appUserId
+                    "Alice",
+                    "Johnson",
+                    "alice.johnson@example.com",
+                    "alicej",
+                    "hash_1_example",
+                    false, // not disabled
+                    List.of("ADMIN")
+        );
+
         Group group = new Group(0, "Group", "", appUser);
 
         UserGroup userGroup = new UserGroup(0, 0, false);
@@ -322,15 +332,16 @@ public class GroupServiceTest {
     }
 
     private AppUser getUser1() {
-        AppUser appUser1 = new AppUser();
-        appUser1.setAppUserId(1);
-        appUser1.setFirstName("Alice");
-        appUser1.setLastName("Johnson");
-        appUser1.setEmail("alice.johnson@example.com");
-        appUser1.setUsername("alicej");
-        appUser1.setPasswordHash("hash_1_example");
-        appUser1.setRoleId(1);
-        return appUser1;
+        return new AppUser(
+                1,
+                "Alice",
+                "Johnson",
+                "alice.johnson@example.com",
+                "alicej",
+                "hash_1_example",
+                false, // not disabled
+                List.of("ADMIN")
+        );
     }
 
 }

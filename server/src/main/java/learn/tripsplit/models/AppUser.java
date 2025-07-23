@@ -8,6 +8,7 @@ import org.springframework.util.Assert;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class AppUser extends User {
@@ -17,10 +18,12 @@ public class AppUser extends User {
     private String firstName;
     private String lastName;
     private String email;
+    private List<UserExpense> expenses = new ArrayList<>();
+    private List<UserGroup> groups = new ArrayList<>();
+    private List<String> roles = new ArrayList<>();
 
 
     // Constructors
-
     public AppUser(int appUserId,
                    String firstName,
                    String lastName,
@@ -88,5 +91,35 @@ public class AppUser extends User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public List<UserExpense> getExpenses() {
+        return expenses;
+    }
+
+    public void setExpenses(List<UserExpense> expenses) {
+        this.expenses = expenses;
+    }
+
+    public List<UserGroup> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<UserGroup> groups) {
+        this.groups = groups;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        AppUser appUser = (AppUser) o;
+        return appUserId == appUser.appUserId && Objects.equals(firstName, appUser.firstName) && Objects.equals(lastName, appUser.lastName) && Objects.equals(email, appUser.email);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), appUserId, firstName, lastName, email);
     }
 }
