@@ -6,7 +6,7 @@ function CreateGroupModal({ show, onHide, onSubmit, currentUser }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    members: [{ email: '', name: '' }]
+    members: [{ email: ''}]
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,7 +25,7 @@ function CreateGroupModal({ show, onHide, onSubmit, currentUser }) {
   const addMember = () => {
     setFormData(prev => ({
       ...prev,
-      members: [...prev.members, { email: '', name: '' }]
+      members: [...prev.members, { email: ''}]
     }));
   };
 
@@ -47,7 +47,7 @@ function CreateGroupModal({ show, onHide, onSubmit, currentUser }) {
 
     // Filter out empty members
     const validMembers = formData.members.filter(member => 
-      member.email.trim() && member.name.trim()
+      member.email.trim()
     );
 
     try {
@@ -65,7 +65,7 @@ function CreateGroupModal({ show, onHide, onSubmit, currentUser }) {
       setFormData({
         name: '',
         description: '',
-        members: [{ email: '', name: '' }]
+        members: [{ email: ''}]
       });
     } catch (err) {
       setError(err.message || 'Failed to create group');
@@ -78,7 +78,7 @@ function CreateGroupModal({ show, onHide, onSubmit, currentUser }) {
     setFormData({
       name: '',
       description: '',
-      members: [{ email: '', name: '' }]
+      members: [{ email: ''}]
     });
     setError('');
     onHide();
@@ -132,15 +132,7 @@ function CreateGroupModal({ show, onHide, onSubmit, currentUser }) {
             
             {formData.members.map((member, index) => (
               <div key={index} className="row mb-2">
-                <div className="col-md-5">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Full Name"
-                    value={member.name}
-                    onChange={(e) => handleMemberChange(index, 'name', e.target.value)}
-                  />
-                </div>
+                
                 <div className="col-md-5">
                   <input
                     type="email"
@@ -173,7 +165,7 @@ function CreateGroupModal({ show, onHide, onSubmit, currentUser }) {
           </div>
 
           <div className="alert alert-info">
-            <strong>Tip:</strong> You can always invite more members later using the group's invite code.
+            You can always invite more members later using the group's invite code.
           </div>
         </Modal.Body>
         

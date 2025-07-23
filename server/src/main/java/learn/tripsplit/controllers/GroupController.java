@@ -2,12 +2,18 @@ package learn.tripsplit.controllers;
 
 import learn.tripsplit.domain.GroupService;
 import learn.tripsplit.domain.Result;
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.Group;
+import learn.tripsplit.models.UserGroup;
+import learn.tripsplit.security.AppUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:3000"})
@@ -15,9 +21,11 @@ import java.util.List;
 public class GroupController {
 
     private final GroupService service;
+    private final AppUserService appUserService;
 
-    public GroupController(GroupService service) {
+    public GroupController(GroupService service, AppUserService appUserService) {
         this.service = service;
+        this.appUserService = appUserService;
     }
 
     @GetMapping
@@ -38,15 +46,70 @@ public class GroupController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> add (@RequestBody Group group) {
-        Result<Group> result = service.add(group);
-        if (result.isSuccess()) {
-            return new ResponseEntity<>(result.getPayload(), HttpStatus.CREATED); // 201
+    public ResponseEntity<Object> add(@RequestBody Map<String, Object> groupData, Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Get current user
+            String username = authentication.getName();
+            AppUser currentUser = appUserService.findByUsername(username);
+            if (currentUser == null) {
+                currentUser = appUserService.findByEmail(username);
+            }
+
+            if (currentUser == null) {
+                return new ResponseEntity<>("User not found", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Create Group object with required fields
+            Group group = new Group();
+            group.setName((String) groupData.get("name"));
+            group.setDescription((String) groupData.get("description"));
+            group.setCreatedBy(currentUser.getAppUserId());
+
+            // Create UserGroup list for validation
+            List<UserGroup> userGroups = new ArrayList<>();
+
+            // Add creator as admin
+            UserGroup creatorUserGroup = new UserGroup();
+            creatorUserGroup.setUser(currentUser);
+            creatorUserGroup.setIsAdmin(true);
+            userGroups.add(creatorUserGroup);
+
+            // Handle additional members from modal
+            List<Map<String, String>> members = (List<Map<String, String>>) groupData.get("members");
+            if (members != null) {
+                for (Map<String, String> member : members) {
+                    String email = member.get("email");
+                    if (email != null && !email.trim().isEmpty()) {
+                        AppUser existingUser = appUserService.findByEmail(email.trim());
+                        if (existingUser != null && existingUser.getAppUserId() != currentUser.getAppUserId()) {
+                            UserGroup memberUserGroup = new UserGroup();
+                            memberUserGroup.setUser(existingUser);
+                            memberUserGroup.setIsAdmin(false);
+                            userGroups.add(memberUserGroup);
+                        }
+                    }
+                }
+            }
+
+            group.setUsers(userGroups);
+
+            // Use your existing service
+            Result<Group> result = service.add(group);
+
+            if (result.isSuccess()) {
+                return new ResponseEntity<>(result.getPayload(), HttpStatus.CREATED);
+            }
+
+            return ErrorResponse.build(result);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error creating group: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        return ErrorResponse.build(result);
     }
-
     @PutMapping("/{groupId}")
     public ResponseEntity<Object> update(@PathVariable int groupId, @RequestBody Group group) {
         if (groupId != group.getGroupId()) {

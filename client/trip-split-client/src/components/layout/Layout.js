@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from './Navbar';
 import { useAuth } from '../../utils/auth';
 
 function Layout({ children }) {
@@ -26,7 +25,6 @@ function Layout({ children }) {
 
   return (
     <>
-      <Navbar />
       <main className="container mt-4">
         {children}
       </main>

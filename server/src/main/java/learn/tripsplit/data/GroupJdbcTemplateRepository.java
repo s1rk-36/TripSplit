@@ -80,6 +80,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
         }
 
         group.setGroupId(keyHolder.getKey().intValue());
+
         return group;
     }
 
@@ -165,6 +166,33 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
         );
 
         group.setUsers(userGroups);
+    }
+
+    @Override
+    public boolean addUserToGroup(int groupId, int userId, boolean isAdmin) {
+        final String sql = "INSERT INTO user_group (group_id, user_id, is_admin) VALUES (?, ?, ?);";
+
+        try {
+            int result = jdbcTemplate.update(sql, groupId, userId, isAdmin);
+            System.out.println("Added user " + userId + " to group " + groupId + " as " + (isAdmin ? "admin" : "member"));
+            return result > 0;
+        } catch (Exception e) {
+            System.out.println("Error adding user to group: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isUserMember(int groupId, int userId) {
+        final String sql = "SELECT COUNT(*) FROM user_group WHERE group_id = ? AND user_id = ?;";
+
+        try {
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, groupId, userId);
+            return count > 0;
+        } catch (Exception e) {
+            System.out.println("Error checking group membership: " + e.getMessage());
+            return false;
+        }
     }
 
     @Override

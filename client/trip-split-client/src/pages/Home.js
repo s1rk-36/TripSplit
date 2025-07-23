@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FaDollarSign, FaUsers, FaReceipt, FaCalculator, FaArrowRight, FaCheck } from 'react-icons/fa';
 
+
 function Home() {
   return (
     <div>

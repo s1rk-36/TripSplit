@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPlus, FaUsers, FaDollarSign, FaCalendar, FaEdit, FaTrash, FaEye, FaCopy, FaShare, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaUsers, FaDollarSign, FaCalendar, FaEdit, FaTrash, FaEye, FaCopy, FaShare, FaSearch, FaUserPlus } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
 import CreateGroupModal from '../components/modals/CreateGroupModal';
 import EditGroupModal from '../components/modals/EditGroupModal';
 import GroupDetailsModal from '../components/modals/GroupDetailsModal';
+import JoinGroupModal from '../components/modals/JoinGroupModal';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
 import { formatCurrency } from '../utils/helpers';
@@ -21,6 +22,7 @@ function Groups() {
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
@@ -47,13 +49,23 @@ function Groups() {
 
   const handleCreateGroup = async (groupData) => {
     try {
-        console.log(groupData);
       const newGroup = await apiService.createGroup(groupData);
       setGroups([...groups, newGroup]);
       setShowCreateModal(false);
     } catch (err) {
       console.error('Failed to create group:', err);
       throw new Error(err.message || 'Failed to create group');
+    }
+  };
+
+  const handleJoinGroup = async (inviteCode) => {
+    try {
+      const joinedGroup = await apiService.joinGroup({ inviteCode });
+      setGroups([...groups, joinedGroup]);
+      setShowJoinModal(false);
+    } catch (err) {
+      console.error('Failed to join group:', err);
+      throw new Error(err.message || 'Failed to join group');
     }
   };
 
@@ -133,12 +145,20 @@ function Groups() {
           <h2>My Groups</h2>
           <p className="text-muted">Manage your expense groups and track shared costs</p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <FaPlus className="me-1" /> Create Group
-        </button>
+        <div className="btn-group">
+          <button 
+            className="btn btn-outline-primary"
+            onClick={() => setShowJoinModal(true)}
+          >
+            <FaUserPlus className="me-1" /> Join Group
+          </button>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <FaPlus className="me-1" /> Create Group
+          </button>
+        </div>
       </div>
 
       {error && <ErrorAlert error={error} onRetry={loadGroups} />}
@@ -226,16 +246,24 @@ function Groups() {
           <p className="text-muted mb-4">
             {searchTerm || filterStatus !== 'all' 
               ? 'Try adjusting your search or filters'
-              : 'Create your first group to start splitting expenses with friends'
+              : 'Create your first group or join an existing one to start splitting expenses'
             }
           </p>
           {(!searchTerm && filterStatus === 'all') && (
-            <button 
-              className="btn btn-primary btn-lg"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <FaPlus className="me-2" /> Create Your First Group
-            </button>
+            <div className="d-flex gap-2 justify-content-center">
+              <button 
+                className="btn btn-outline-primary btn-lg"
+                onClick={() => setShowJoinModal(true)}
+              >
+                <FaUserPlus className="me-2" /> Join a Group
+              </button>
+              <button 
+                className="btn btn-primary btn-lg"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <FaPlus className="me-2" /> Create Your First Group
+              </button>
+            </div>
           )}
         </div>
       ) : (
@@ -364,6 +392,12 @@ function Groups() {
         onHide={() => setShowCreateModal(false)}
         onSubmit={handleCreateGroup}
         currentUser={currentUser}
+      />
+
+      <JoinGroupModal
+        show={showJoinModal}
+        onHide={() => setShowJoinModal(false)}
+        onSubmit={handleJoinGroup}
       />
 
       <EditGroupModal

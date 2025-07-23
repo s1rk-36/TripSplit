@@ -38,10 +38,24 @@ public class GroupService {
         }
 
         group = repository.add(group);
+
+        if (group != null) {
+            // Add all users to user_group table
+            for (UserGroup userGroup : group.getUsers()) {
+                boolean success = repository.addUserToGroup(
+                        group.getGroupId(),
+                        userGroup.getUser().getAppUserId(),
+                        userGroup.getIsAdmin()
+                );
+                if (!success) {
+                    result.addMessage("Failed to add user " + userGroup.getUser().getEmail() + " to group", ResultType.INVALID);
+                }
+            }
+        }
+
         result.setPayload(group);
         return result;
     }
-
     public Result<Group> update(Group group) {
         Result<Group> result = validate(group);
         if (!result.isSuccess()) {

@@ -18,4 +18,8 @@ public interface GroupRepository {
     boolean nameExists(Group group);
 
     List<Group> findGroupsByUserId(int userId);
+
+    boolean addUserToGroup(int groupId, int userId, boolean isAdmin);
+
+    boolean isUserMember(int groupId, int userId);
 }
