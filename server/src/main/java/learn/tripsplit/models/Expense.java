@@ -11,7 +11,7 @@ public class Expense {
     private int expenseId;
     private String name;
     private BigDecimal totalCost;
-    private String category;
+    private Category category;
     private String description;
     private LocalDateTime createdAt;
     private Group group;
@@ -23,13 +23,13 @@ public class Expense {
     // Constructors
     public Expense() {}
 
-    public Expense(int expenseId, String name, BigDecimal totalCost, String category, String description, LocalDateTime createdAt, Group group, AppUser createdBy) {
+    public Expense(int expenseId, String name, BigDecimal totalCost, Category category, String description, LocalDateTime createdAt, Group group, AppUser createdBy) {
         this.expenseId = expenseId;
         this.name = name;
         this.totalCost = totalCost;
         this.category = category;
         this.description = description;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = createdAt;
         this.group = group;
         this.createdBy = createdBy;
     }
@@ -59,11 +59,11 @@ public class Expense {
         this.totalCost = totalCost;
     }
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
     }
 

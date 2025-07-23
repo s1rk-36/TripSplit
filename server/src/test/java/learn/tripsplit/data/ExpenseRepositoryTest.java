@@ -1,7 +1,9 @@
 package learn.tripsplit.data;
 
 import learn.tripsplit.models.AppUser;
+import learn.tripsplit.models.Category;
 import learn.tripsplit.models.Expense;
+import learn.tripsplit.models.Group;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,12 +11,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class ExpenseRepositoryTest {
 
     @Autowired
@@ -35,119 +37,129 @@ class ExpenseRepositoryTest {
         assertNotNull(all);
         assertTrue(all.size() >= 10);
     }
-    /*
+
     @Test
-    void findByGroupId_JapanTrip_ShouldReturn5Expenses() {
-        List<Expense> japanExpenses = repository.findByGroupId(1);
+    void shouldFindById() throws DataAccessException {
+        AppUser appUser = getUser1();
+        Group group = getGroup1();
+        Expense expected = new Expense (
+                1,
+                "Flight Tickets",
+                BigDecimal.valueOf(1200).setScale(2),
+                Category.TRAVEL_FEES,
+                "Round trip flights to Tokyo",
+                LocalDateTime.of(2025, 3, 10, 0, 0),
+                group,
+                appUser);
 
-        assertEquals(5, japanExpenses.size());
-        assertTrue(japanExpenses.stream().allMatch(e -> e.getGroupId() == 1));
+        Expense actual = repository.findById(1);
 
-        // Verify specific Japan trip expenses
-        assertTrue(japanExpenses.stream().anyMatch(e -> e.getName().equals("Flight Tickets")));
-        assertTrue(japanExpenses.stream().anyMatch(e -> e.getName().equals("Hotel Accommodation")));
-        assertTrue(japanExpenses.stream().anyMatch(e -> e.getName().equals("Taxi Fare")));
-        assertTrue(japanExpenses.stream().anyMatch(e -> e.getName().equals("Dinner at Local Eatery")));
+        assertNotNull(actual);
+        assertEquals(expected, actual);
     }
 
     @Test
-    void findByGroupId_NYCConference_ShouldReturn1Expense() {
-        List<Expense> nycExpenses = repository.findByGroupId(2);
+    void shouldNotFindNonExistent() {
+        Expense expense = repository.findById(9999);
 
-        assertEquals(1, nycExpenses.size());
-        assertEquals("Conference Fee", nycExpenses.get(0).getName());
-        assertEquals(new BigDecimal("350.00"), nycExpenses.get(0).getTotalCost());
-        assertEquals("Registration", nycExpenses.get(0).getCategory());
+        assertNull(expense);
     }
 
     @Test
-    void findById_FlightTickets_ShouldReturnCompleteExpense() {
-        Expense expense = repository.findById(1);
+    void shouldAdd() throws DataAccessException {
+        AppUser appUser = getUser1();
+        Group group = getGroup1();
+        Expense expense = new Expense (
+                9999,
+                "Added Expense Name",
+                BigDecimal.valueOf(1200).setScale(2),
+                Category.TRAVEL_FEES,
+                "Added Description",
+                LocalDateTime.now(),
+                group,
+                appUser);
 
-        assertNotNull(expense);
-        assertEquals(1, expense.getExpenseId());
-        assertEquals("Flight Tickets", expense.getName());
-        assertEquals(new BigDecimal("1200.00"), expense.getTotalCost());
-        assertEquals("Travel", expense.getCategory());
-        assertEquals("Round trip flights to Tokyo", expense.getDescription());
-        assertEquals(1, expense.getGroupId());
+        Expense actual = repository.add(expense);
 
+        assertNotNull(actual);
+        assertTrue(actual.getExpenseId() > 0);
+        assertEquals(expense, actual);
     }
 
     @Test
-    void findById_IslandTour_ShouldReturnSingleUserExpense() {
-        Expense expense = repository.findById(10);
+    void shouldNotAddNull() {
+        Expense nullExpense = repository.add(null);
 
-        assertNotNull(expense);
-        assertEquals("Island Tour", expense.getName());
-        assertEquals(new BigDecimal("180.00"), expense.getTotalCost());
-        assertEquals(5, expense.getGroupId()); // Thailand Escape group
+        assertNull(nullExpense);
     }
 
     @Test
-    void add_NewExpense_ShouldGenerateIdAndSave() {
-        AppUser creator = new AppUser();
-        creator.setAppUserId(1);
+    void shouldUpdate() {
+        Expense expense = new Expense();
+        expense.setExpenseId(1);
+        expense.setName("Updated Expense Name");
+        expense.setTotalCost(BigDecimal.ONE);
+        expense.setCategory(Category.TRAVEL_FEES);
+        expense.setDescription("Updated Description");
 
-        Expense newExpense = new Expense();
-        newExpense.setName("Test Museum Entry");
-        newExpense.setTotalCost(new BigDecimal("75.00"));
-        newExpense.setCategory("Entertainment");
-        newExpense.setDescription("Museum tickets for group");
-        newExpense.setCreatedAt(LocalDate.now().atStartOfDay());
-        newExpense.setGroupId(1);
-        newExpense.setCreatedBy(creator);
-
-        Expense saved = repository.add(newExpense);
-
-        assertNotNull(saved);
-        assertTrue(saved.getExpenseId() > 10); // Should be 11 or higher
-        assertEquals("Test Museum Entry", saved.getName());
-
-        // Verify it can be retrieved
-        Expense retrieved = repository.findById(saved.getExpenseId());
-        assertEquals(saved.getName(), retrieved.getName());
+        assertTrue(repository.update(expense));
     }
 
     @Test
-    void update_ExistingExpense_ShouldUpdateSuccessfully() {
-        // Update the taxi fare expense
-        Expense expense = repository.findById(4);
-        expense.setName("Updated Taxi Fare");
-        expense.setTotalCost(new BigDecimal("50.00"));
-        expense.setDescription("Updated description");
-
-        boolean updated = repository.update(expense);
-
-        assertTrue(updated);
-
-        // Verify changes
-        Expense updatedExpense = repository.findById(4);
-        assertEquals("Updated Taxi Fare", updatedExpense.getName());
-        assertEquals(new BigDecimal("50.00"), updatedExpense.getTotalCost());
-        assertEquals("Updated description", updatedExpense.getDescription());
+    void shouldNotUpdateNull() {
+        assertFalse(repository.update(null));
     }
 
     @Test
-    void deleteById_ExistingExpense_ShouldDeleteCascade() {
-        // Verify expense exists
-        Expense expense = repository.findById(5);
-        assertNotNull(expense);
+    void shouldNotUpdateNonExistent() {
+        Expense nonExistent = new Expense();
+        nonExistent.setExpenseId(9999);
+        nonExistent.setCategory(Category.TRAVEL_FEES);
 
-        // Delete expense
-        boolean deleted = repository.deleteById(5);
-
-        assertTrue(deleted);
-
-        // Verify expense is deleted
-        assertNull(repository.findById(5));
+        assertFalse(repository.update(nonExistent));
     }
 
     @Test
-    void findByGroupId_NonExistentGroup_ShouldReturnEmpty() {
-        List<Expense> expenses = repository.findByGroupId(999);
+    void shouldDeleteById() {
+        AppUser appUser = getUser1();
+        Group group = getGroup1();
+        Expense expense = new Expense (
+                9999,
+                "Expense To Be Deleted",
+                BigDecimal.valueOf(1200).setScale(2),
+                Category.TRAVEL_FEES,
+                "Description To Be Deleted",
+                LocalDateTime.now(),
+                group,
+                appUser);
 
-        assertTrue(expenses.isEmpty());
+        Expense toBeDeleted = repository.add(expense);
+
+        assertNotNull(toBeDeleted);
+        assertTrue(repository.deleteById(toBeDeleted.getExpenseId()));
     }
-    */
+
+    @Test
+    void shouldNotDeleteNonExistent() throws DataAccessException {
+        assertFalse(repository.deleteById(9999));
+    }
+
+    private AppUser getUser1() {
+        return new AppUser(
+                1,
+                "Alice",
+                "Johnson",
+                "alice.johnson@example.com",
+                "alicej",
+                "hash_1_example",
+                false, // not disabled
+                List.of("ADMIN")
+        );
+    }
+
+    private Group getGroup1() {
+        AppUser appUser1 = getUser1();
+        return new Group (1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser1);
+    }
+
 }

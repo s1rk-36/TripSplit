@@ -1,10 +1,8 @@
 package learn.tripsplit.data;
 
-import learn.tripsplit.data.mappers.ExpenseMapper;
-import learn.tripsplit.data.mappers.ReceiptMapper;
-import learn.tripsplit.data.mappers.CommentMapper;
-import learn.tripsplit.data.mappers.UserExpenseMapper;
+import learn.tripsplit.data.mappers.*;
 import learn.tripsplit.models.Expense;
+import learn.tripsplit.models.UserExpense;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -17,7 +15,7 @@ import java.sql.Timestamp;
 import java.util.List;
 
 @Repository
-public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
+public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFetcher {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -35,11 +33,11 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
                 + "e.`description` as expense_description, "
                 + "e.created_at, "
 
-                + "e.group_id, "
+                + "g.group_id, "
                 + "g.`name` as group_name, "
                 + "g.`description` as group_description, "
 
-                + "g.created_by, "
+                + "gcb.user_id as gcb_user_id, "
                 + "gcb.first_name as gcb_first_name, "
                 + "gcb.last_name as gcb_last_name, "
                 + "gcb.email as gcb_email, "
@@ -47,7 +45,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
                 + "gcb.password_hash as gcb_password_hash, "
                 + "gcb.disabled as gcb_disabled, "
 
-                + "e.created_by, "
+                + "ecb.user_id as ecb_user_id, "
                 + "ecb.first_name as ecb_first_name, "
                 + "ecb.last_name as ecb_last_name, "
                 + "ecb.email as ecb_email, "
@@ -61,7 +59,10 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
                 + "inner join `user` as ecb on e.created_by = ecb.user_id "
                 + "limit 1000;";
 
-        return jdbcTemplate.query(sql, new ExpenseMapper());
+        return jdbcTemplate.query(sql,
+                (rs, rowNum) -> new ExpenseMapper(this)
+                        .mapRow(rs, rowNum, "", "", "gcb_", "ecb_")
+        );
     }
 
     @Override
@@ -73,7 +74,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
                 + "where e.group_id = ? "
                 + "order by e.created_at desc;";
 
-        List<Expense> expenses = jdbcTemplate.query(sql, new ExpenseMapper(), groupId);
+        List<Expense> expenses = jdbcTemplate.query(sql, new ExpenseMapper(this), groupId);
 
         for (Expense expense : expenses) {
             addReceipts(expense);
@@ -86,18 +87,52 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
     @Override
     @Transactional
     public Expense findById(int expenseId) {
-        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
-                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
+        final String sql = "select "
+                + "e.expense_id, "
+                + "e.`name` as expense_name, "
+                + "e.total_cost, "
+                + "e.category, "
+                + "e.`description` as expense_description, "
+                + "e.created_at, "
+
+                + "g.group_id, "
+                + "g.`name` as group_name, "
+                + "g.`description` as group_description, "
+
+                + "gcb.user_id as gcb_user_id, "
+                + "gcb.first_name as gcb_first_name, "
+                + "gcb.last_name as gcb_last_name, "
+                + "gcb.email as gcb_email, "
+                + "gcb.username as gcb_username, "
+                + "gcb.password_hash as gcb_password_hash, "
+                + "gcb.disabled as gcb_disabled, "
+
+                + "ecb.user_id as ecb_user_id, "
+                + "ecb.first_name as ecb_first_name, "
+                + "ecb.last_name as ecb_last_name, "
+                + "ecb.email as ecb_email, "
+                + "ecb.username as ecb_username, "
+                + "ecb.password_hash as ecb_password_hash, "
+                + "ecb.disabled as ecb_disabled "
+
                 + "from expense e "
-                + "inner join `user` u on e.created_by = u.user_id "
+                + "inner join `group` as g on e.group_id = g.group_id "
+                + "inner join `user` as gcb on g.created_by = gcb.user_id "
+                + "inner join `user` as ecb on e.created_by = ecb.user_id "
                 + "where e.expense_id = ?;";
 
-        Expense expense = jdbcTemplate.query(sql, new ExpenseMapper(), expenseId).stream()
-                .findFirst().orElse(null);
+        Expense expense = jdbcTemplate.query(sql,
+                        (rs, rowNum) -> new ExpenseMapper(this)
+                                .mapRow(rs, rowNum, "", "", "gcb_", "ecb_")
+                        , expenseId)
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
 
         if (expense != null) {
-            addReceipts(expense);
-            addComments(expense);
+            //addReceipts(expense);
+            //addComments(expense);
+            addUsers(expense);
         }
 
         return expense;
@@ -105,19 +140,24 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     @Override
     public Expense add(Expense expense) {
-        final String sql = "insert into expense (group_id, name, total_cost, category, description, created_by, created_at) "
+        if (expense == null) {
+            return null;
+        }
+
+        final String sql = "insert into expense (`name`, total_cost, category, `description`, created_at, group_id, created_by) "
                 + "values (?,?,?,?,?,?,?);";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         int rowsAffected = jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            //ps.setInt(1, expense.getGroupId());
-            ps.setString(2, expense.getName());
-            ps.setBigDecimal(3, expense.getTotalCost());
-            ps.setString(4, expense.getCategory());
-            ps.setString(5, expense.getDescription());
-            ps.setInt(6, expense.getCreatedBy().getAppUserId());
-            ps.setTimestamp(7, Timestamp.valueOf(expense.getCreatedAt()));
+            ps.setString(1, expense.getName());
+            ps.setBigDecimal(2, expense.getTotalCost());
+            ps.setString(3, expense.getCategory().toString());
+            ps.setString(4, expense.getDescription());
+            ps.setTimestamp(5, Timestamp.valueOf(expense.getCreatedAt()));
+            ps.setInt(6, expense.getGroup().getGroupId());
+            ps.setInt(7, expense.getCreatedBy().getAppUserId());
+
             return ps;
         }, keyHolder);
 
@@ -131,17 +171,21 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
 
     @Override
     public boolean update(Expense expense) {
+        if (expense == null) {
+            return false;
+        }
+
         final String sql = "update expense set "
-                + "name = ?, "
+                + "`name` = ?, "
                 + "total_cost = ?, "
                 + "category = ?, "
-                + "description = ? "
+                + "`description` = ? "
                 + "where expense_id = ?;";
 
         return jdbcTemplate.update(sql,
                 expense.getName(),
                 expense.getTotalCost(),
-                expense.getCategory(),
+                expense.getCategory().toString(),
                 expense.getDescription(),
                 expense.getExpenseId()) > 0;
     }
@@ -149,11 +193,6 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
     @Override
     @Transactional
     public boolean deleteById(int expenseId) {
-        // Delete related records first
-        jdbcTemplate.update("delete from receipt where expense_id = ?;", expenseId);
-        jdbcTemplate.update("delete from comment where expense_id = ?;", expenseId);
-        jdbcTemplate.update("delete from user_expense where expense_id = ?;", expenseId);
-
         return jdbcTemplate.update("delete from expense where expense_id = ?;", expenseId) > 0;
     }
 
@@ -179,12 +218,21 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
         expense.setComments(comments);
     }
 
+    @Override
+    public List<String> getRolesByAppUserId(int userId) {
+        final String sql = "select r.name "
+                + "from user_role ur "
+                + "inner join role r on ur.role_id = r.role_id "
+                + "where ur.user_id = ?";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("name"), userId);
+    }
+
     private void addUsers(Expense expense) {
-        final String sql = "select"
-                + "ue.user_id, "
-                + "ue.expense_id, "
-                + "ue.amount_owned, "
-                + "ue.amount_paid, "
+        final String sql = "select "
+                + "ue.user_id as ue_user_id, "
+                + "ue.expense_id as ue_expense_id, "
+                + "ue.amount_owned as ue_amount_owned, "
+                + "ue.amount_paid as ue_amount_paid, "
 
                 + "u.user_id as u_user_id, "
                 + "u.first_name as u_first_name, "
@@ -229,8 +277,14 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository {
                 + "inner join `user` as ecb on e.created_by = ecb.user_id "
                 + "where ue.expense_id = ?;";
 
-        var userExpenses = jdbcTemplate.query(sql, new UserExpenseMapper(), expense.getExpenseId());
+        UserExpenseMapper userExpenseMapper = new UserExpenseMapper(this);
+
+        List<UserExpense> userExpenses = jdbcTemplate.query(sql,
+                (rs, rowNum) -> userExpenseMapper.mapRow(rs, rowNum, "ue_", "u_", "", "eg_", "egcb_", "ecb_"),
+                expense.getExpenseId()
+        );
 
         expense.setUsers(userExpenses);
     }
+
 }

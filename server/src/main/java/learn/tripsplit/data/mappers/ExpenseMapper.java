@@ -1,5 +1,6 @@
 package learn.tripsplit.data.mappers;
 
+import learn.tripsplit.models.Category;
 import learn.tripsplit.models.Expense;
 import org.springframework.jdbc.core.RowMapper;
 import java.sql.ResultSet;
@@ -7,27 +8,37 @@ import java.sql.SQLException;
 
 public class ExpenseMapper implements RowMapper<Expense> {
 
+    // Fields
+    private final AppUserMapper appUserMapper;
+    private final GroupMapper groupMapper;
+
+    // Constructor
+    public ExpenseMapper(RoleFetcher roleFetcher) {
+        this.appUserMapper = new AppUserMapper(roleFetcher);
+        this.groupMapper = new GroupMapper(roleFetcher);
+    }
+
+    // Mapper entry point used by Spring JDBC
+    // Overload that delegates to main method
     @Override
     public Expense mapRow(ResultSet resultSet, int i) throws SQLException {
         return mapRow(resultSet, i, "", "", "", "");
     }
 
+    // Main method with prefix support
     public Expense mapRow(ResultSet resultSet, int i, String expensePrefix, String groupPrefix, String groupCreatedByPrefix, String createdByPrefix) throws SQLException {
         Expense expense = new Expense();
         expense.setExpenseId(resultSet.getInt(expensePrefix + "expense_id"));
         String name = resultSet.getString(expensePrefix + "expense_name");
         expense.setName(name != null ? name : resultSet.getString(expensePrefix + "name"));
         expense.setTotalCost(resultSet.getBigDecimal("total_cost"));
-        expense.setCategory(resultSet.getString("category"));
+        expense.setCategory(Category.valueOf(resultSet.getString("category")));
         String description = resultSet.getString(expensePrefix + "expense_description");
         expense.setDescription(description != null ? description : resultSet.getString(groupPrefix + "description"));
         expense.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
 
-        //GroupMapper groupMapper = new GroupMapper();
-        //expense.setGroup(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix));
-
-        //AppUserMapper appUserMapper = new AppUserMapper();
-        //expense.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix));
+        expense.setGroup(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix));
+        expense.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix));
 
         return expense;
     }

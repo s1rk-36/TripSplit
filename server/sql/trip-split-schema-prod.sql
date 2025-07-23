@@ -25,10 +25,12 @@ create table user_role (
         primary key (user_id, role_id),
     constraint fk_user_role_user_id
         foreign key (user_id)
-        references user(user_id),
+        references user(user_id)
+        on delete cascade,
     constraint fk_user_role_role_id
         foreign key (role_id)
         references `role`(role_id)
+        on delete cascade
 );
 
 create table `group` (
@@ -64,7 +66,7 @@ create table expense (
     total_cost decimal(10, 2) not null,
     category varchar(50) not null,
     `description` text null,
-    created_at date not null,
+    created_at datetime not null,
     group_id int not null,
     created_by int not null,
     constraint fk_expense_group_id
@@ -97,7 +99,7 @@ create table user_expense (
 create table receipt (
 	receipt_id int primary key not null,
     image_url varchar(2083) not null,
-    uploaded_at date not null,
+    uploaded_at datetime not null,
     expense_id int not null,
     constraint fk_receipt_expense_id
 		foreign key (expense_id)
@@ -173,16 +175,16 @@ insert into user_group (user_id, group_id, is_admin) values
 (4, 5, false);  -- David
 
 insert into expense (expense_id, `name`, total_cost, category, `description`, created_at, group_id, created_by) values
-(1, 'Flight Tickets', 1200.00, 'Travel', 'Round trip flights to Tokyo', '2025-03-10', 1, 1),
-(2, 'Hotel Accommodation', 800.50, 'Lodging', '5 nights stay at Tokyo hotel', '2025-03-11', 1, 2),
-(3, 'Conference Fee', 350.00, 'Registration', 'Tech conference registration', '2025-04-01', 2, 2),
-(4, 'Taxi Fare', 45.75, 'Transport', 'Taxi from airport to hotel', '2025-03-10', 1, 3),
-(5, 'Dinner at Local Eatery', 120.20, 'Food', 'Group dinner in downtown Tokyo', '2025-03-12', 1, 1),
-(6, 'Car Rental', 300.00, 'Transport', 'Rental car for Iceland road trip', '2025-06-15', 3, 3),
-(7, 'Camping Equipment', 150.00, 'Supplies', 'Camping gear rental', '2025-06-16', 3, 1),
-(8, 'Vegas Show Tickets', 200.00, 'Entertainment', 'Tickets for Vegas show', '2025-07-05', 4, 4),
-(9, 'Flight to Bangkok', 950.00, 'Travel', 'Flight tickets for Thailand trip', '2025-08-20', 5, 5),
-(10,'Island Tour', 180.00, 'Activity', 'Boat tour around islands', '2025-08-22', 5, 5);
+(1, 'Flight Tickets', 1200.00, 'TRAVEL_FEES', 'Round trip flights to Tokyo', '2025-03-10 00:00:00', 1, 1),
+(2, 'Hotel Accommodation', 800.50, 'LODGING', '5 nights stay at Tokyo hotel', '2025-03-11 00:00:00', 1, 2),
+(3, 'Conference Fee', 350.00, 'TRAVEL_FEES', 'Tech conference registration', '2025-04-01 00:00:00', 2, 2),
+(4, 'Taxi Fare', 45.75, 'TRANSPORTATION', 'Taxi from airport to hotel', '2025-03-10 00:00:00', 1, 3),
+(5, 'Dinner at Local Eatery', 120.20, 'FOOD', 'Group dinner in downtown Tokyo', '2025-03-12 00:00:00', 1, 1),
+(6, 'Car Rental', 300.00, 'TRANSPORTATION', 'Rental car for Iceland road trip', '2025-06-15 00:00:00', 3, 3),
+(7, 'Camping Equipment', 150.00, 'SHOPPING', 'Camping gear rental', '2025-06-16 00:00:00', 3, 1),
+(8, 'Vegas Show Tickets', 200.00, 'ACTIVITIES', 'Tickets for Vegas show', '2025-07-05 00:00:00', 4, 4),
+(9, 'Flight to Bangkok', 950.00, 'TRAVEL_FEES', 'Flight tickets for Thailand trip', '2025-08-20 00:00:00', 5, 5),
+(10, 'Island Tour', 180.00, 'ACTIVITIES', 'Boat tour around islands', '2025-08-22 00:00:00', 5, 5);
 
 insert into user_expense (user_id, expense_id, amount_owned, amount_paid) values
 -- Expense 1: Flight Tickets ($1200) shared by users 1, 2, 3
@@ -230,11 +232,11 @@ insert into user_expense (user_id, expense_id, amount_owned, amount_paid) values
 (5, 10, 180.00, 180.00); -- Eve paid full
 
 insert into receipt (receipt_id, image_url, uploaded_at, expense_id) values
-(1, 'https://example.com/receipts/flight-ticket.jpg', '2025-07-01', 1),
-(2, 'https://example.com/receipts/hotel-booking.png', '2025-07-02', 2),
-(3, 'https://example.com/receipts/conference-fee.pdf', '2025-07-03', 3),
-(4, 'https://example.com/receipts/taxi-fare.jpeg', '2025-07-03', 4),
-(5, 'https://example.com/receipts/dinner-bill.jpg', '2025-07-04', 5);
+(1, 'https://example.com/receipts/flight-ticket.jpg', '2025-07-01 00:00:00', 1),
+(2, 'https://example.com/receipts/hotel-booking.png', '2025-07-02 00:00:00', 2),
+(3, 'https://example.com/receipts/conference-fee.pdf', '2025-07-03 00:00:00', 3),
+(4, 'https://example.com/receipts/taxi-fare.jpeg', '2025-07-03 00:00:00', 4),
+(5, 'https://example.com/receipts/dinner-bill.jpg', '2025-07-04 00:00:00', 5);
 
 insert into `comment` (comment_id, `timestamp`, content, expense_id, created_by) values
 (1, '2025-07-01 10:23:45', 'I’ve uploaded the flight ticket receipt. Please confirm.', 1, 1),
