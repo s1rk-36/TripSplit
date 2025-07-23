@@ -1,7 +1,7 @@
 package learn.tripsplit.controllers;
 
 import learn.tripsplit.domain.Result;
-import learn.tripsplit.domain.UserService;
+import learn.tripsplit.security.AppUserService;
 import learn.tripsplit.models.AppUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +13,9 @@ import java.util.List;
 @RequestMapping("/api/user")
 @CrossOrigin
 public class UserController {
-    private final UserService service;
+    private final AppUserService service;
 
-    public UserController(UserService service) {
+    public UserController(AppUserService service) {
         this.service = service;
     }
 

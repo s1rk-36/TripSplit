@@ -1,17 +1,37 @@
-package learn.tripsplit.domain;
+package learn.tripsplit.security;
 
 import learn.tripsplit.data.AppUserRepository;
+import learn.tripsplit.domain.Result;
+import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.AppUser;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.validation.ValidationException;
 import java.util.List;
 
 @Service
-public class UserService {
+public class AppUserService implements UserDetailsService {
     private final AppUserRepository repository;
+    private final PasswordEncoder encoder;
 
-    public UserService(AppUserRepository repository) {
+    public AppUserService(AppUserRepository repository, PasswordEncoder encoder) {
         this.repository = repository;
+        this.encoder = encoder;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        AppUser appUser = repository.findByUsername(username);
+
+        if (appUser == null || !appUser.isEnabled()) {
+            throw new UsernameNotFoundException(username + " not found");
+        }
+
+        return appUser;
     }
 
     public List<AppUser> findAll() {
@@ -83,19 +103,44 @@ public class UserService {
             return result;
         }
 
-        if (appUser.getUsername() == null || appUser.getUsername().isBlank()) {
+        result = validateUsername(result, appUser.getUsername());
+        result = validatePassword(result, appUser.getPassword());
+
+        return result;
+    }
+
+    private Result<AppUser> validateUsername(Result<AppUser> result, String username) {
+        if (username == null || username.isBlank()) {
             result.addMessage("username is required", ResultType.INVALID);
-        } else if (repository.findByUsername(appUser.getUsername()) != null) {
-            result.addMessage("username cannot be duplicated", ResultType.INVALID);
+        } else if (username.length() > 50) {
+            result.addMessage("username must be less than 50 characters", ResultType.INVALID);
+        }
+
+        return result;
+    }
+
+    private Result<AppUser> validatePassword(Result<AppUser> result, String password) {
+        if (password == null || password.length() < 8) {
+            result.addMessage("password must be at least 8 characters", ResultType.INVALID);
             return result;
         }
 
-        if (appUser.getPasswordHash() == null || appUser.getPasswordHash().isBlank()) {
-            result.addMessage("passwordHash is required", ResultType.INVALID);
+        int digits = 0;
+        int letters = 0;
+        int others = 0;
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) {
+                digits++;
+            } else if (Character.isLetter(c)) {
+                letters++;
+            } else {
+                others++;
+            }
         }
 
-        if (appUser.getRoleId() <= 0) {
-            result.addMessage("role id is required", ResultType.INVALID);
+        if (digits == 0 || letters == 0 || others == 0) {
+            result.addMessage("password must contain a digit, a letter, and a non-digit/non-letter", ResultType.INVALID);
+            return result;
         }
 
         return result;
