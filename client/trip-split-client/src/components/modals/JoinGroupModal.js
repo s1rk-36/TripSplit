@@ -38,7 +38,6 @@ function JoinGroupModal({ show, onHide, onSubmit }) {
   };
 
   const handleInputChange = (e) => {
-    // Convert to uppercase and remove spaces
     const value = e.target.value.toUpperCase().replace(/\s/g, '');
     setInviteCode(value);
   };
@@ -86,6 +85,7 @@ function JoinGroupModal({ show, onHide, onSubmit }) {
               required
               autoFocus
             />
+
           </div>
 
         </Modal.Body>

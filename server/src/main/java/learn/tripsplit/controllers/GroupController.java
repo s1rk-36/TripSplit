@@ -45,6 +45,51 @@ public class GroupController {
         return new ResponseEntity<>(group, HttpStatus.OK); // 200
     }
 
+    @PostMapping("/join")
+    public ResponseEntity<Object> joinGroup(@RequestBody Map<String, Object> requestBody, Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Get group ID from request
+            Object groupIdObj = requestBody.get("inviteCode");
+            if (groupIdObj == null) {
+                return new ResponseEntity<>("Group ID is required", HttpStatus.BAD_REQUEST);
+            }
+
+            int groupId;
+            try {
+                groupId = Integer.parseInt(groupIdObj.toString());
+            } catch (NumberFormatException e) {
+                return new ResponseEntity<>("Invalid group ID format", HttpStatus.BAD_REQUEST);
+            }
+
+            // Get current user
+            String username = authentication.getName();
+            AppUser currentUser = appUserService.findByUsername(username);
+            if (currentUser == null) {
+                currentUser = appUserService.findByEmail(username);
+            }
+
+            if (currentUser == null) {
+                return new ResponseEntity<>("User not found", HttpStatus.UNAUTHORIZED);
+            }
+
+            Result<Group> result = service.joinGroup(groupId, currentUser.getAppUserId());
+
+            if (result.isSuccess()) {
+                return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);
+            }
+
+            return ErrorResponse.build(result);
+
+        } catch (Exception e) {
+            System.out.println("Error joining group: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseEntity<>("Error joining group: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
     @PostMapping
     public ResponseEntity<Object> add(@RequestBody Map<String, Object> groupData, Authentication authentication) {
         try {

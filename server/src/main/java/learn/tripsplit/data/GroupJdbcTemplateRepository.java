@@ -39,7 +39,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
     @Override
     @Transactional
     public Group findById(int groupId) {
-        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.created_by, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "

@@ -211,6 +211,14 @@ async login(credentials) {
     });
   },
 
+    async joinGroup(data) {
+      console.log("the data is", data);
+    return makeAuthenticatedRequest('/groups/join', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
   async updateGroup(id, group) {
     return makeAuthenticatedRequest(`/groups/${id}`, {
       method: 'PUT',

@@ -99,6 +99,7 @@ function Groups() {
 
   const handleViewDetails = async (groupId) => {
     try {
+        console.log("the id is", groupId);
       const groupDetails = await apiService.getGroup(groupId);
       setSelectedGroup(groupDetails);
       setShowDetailsModal(true);
@@ -145,25 +146,11 @@ function Groups() {
           <h2>My Groups</h2>
           <p className="text-muted">Manage your expense groups and track shared costs</p>
         </div>
-        <div className="btn-group">
-          <button 
-            className="btn btn-outline-primary"
-            onClick={() => setShowJoinModal(true)}
-          >
-            <FaUserPlus className="me-1" /> Join Group
-          </button>
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <FaPlus className="me-1" /> Create Group
-          </button>
-        </div>
       </div>
 
       {error && <ErrorAlert error={error} onRetry={loadGroups} />}
 
-      {/* Search and Filters */}
+      {/* Search and Buttons */}
       <div className="row mb-4">
         <div className="col-md-8">
           <div className="input-group">
@@ -179,16 +166,19 @@ function Groups() {
             />
           </div>
         </div>
-        <div className="col-md-4">
-          <select
-            className="form-select"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+        <div className="btn-group col md-4">
+          <button 
+            className="btn btn-outline-primary"
+            onClick={() => setShowJoinModal(true)}
           >
-            <option value="all">All Groups</option>
-            <option value="active">Active Groups</option>
-            <option value="settled">Settled Groups</option>
-          </select>
+            <FaUserPlus className="me-1" /> Join Group
+          </button>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <FaPlus className="me-1" /> Create Group
+          </button>
         </div>
       </div>
 
@@ -287,7 +277,7 @@ function Groups() {
                         <li>
                           <button 
                             className="dropdown-item"
-                            onClick={() => handleViewDetails(group.id)}
+                            onClick={() => handleViewDetails(group.groupId)}
                           >
                             <FaEye className="me-2" /> View Details
                           </button>
@@ -351,30 +341,14 @@ function Groups() {
                         </span>
                       )}
                     </div>
-                    <div className="d-flex align-items-center">
-                      <FaCalendar className="text-muted me-2" size={16} />
-                      <span className="small">
-                        Created {new Date(group.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
                   </div>
-                  
-                  {/* Recent Activity */}
-                  {group.recentActivity && (
-                    <div className="mb-3">
-                      <small className="text-muted">Recent:</small>
-                      <div className="small text-truncate">
-                        {group.recentActivity}
-                      </div>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="card-footer bg-transparent">
                   <div className="d-grid gap-2">
                     <button 
                       className="btn btn-primary btn-sm"
-                      onClick={() => handleViewDetails(group.id)}
+                      onClick={() => handleViewDetails(group.groupId)}
                     >
                       View Details
                     </button>

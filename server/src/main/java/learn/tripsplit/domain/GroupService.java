@@ -83,6 +83,35 @@ public class GroupService {
         return repository.findGroupsByUserId(userId);
     }
 
+    public Result<Group> joinGroup(int groupId, int userId) {
+        Result<Group> result = new Result<>();
+
+        // check if group exists
+        Group group = repository.findById(groupId);
+        if (group == null) {
+            result.addMessage("Group not found", ResultType.NOT_FOUND);
+            return result;
+        }
+
+        // Check if user is already a member
+        if (repository.isUserMember(groupId, userId)) {
+            result.addMessage("User is already a member of this group", ResultType.INVALID);
+            return result;
+        }
+
+        // Add user to group as regular member
+        boolean success = repository.addUserToGroup(groupId, userId, false);
+        if (!success) {
+            result.addMessage("Failed to join group", ResultType.INVALID);
+            return result;
+        }
+
+        // Return the joined group
+        Group joinedGroup = repository.findById(groupId);
+        result.setPayload(joinedGroup);
+        return result;
+    }
+
     private Result<Group> validate(Group group) {
         Result<Group> result = new Result<>();
 
