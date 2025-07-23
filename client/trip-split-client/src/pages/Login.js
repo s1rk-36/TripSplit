@@ -24,10 +24,10 @@ function Login() {
 
     try {
       setError('');
-      
+      console.log(formData);
       // Call login API
       const response = await apiService.login({
-        username: formData.email,
+        email: formData.email,
         password: formData.password
       });
       
@@ -48,7 +48,7 @@ function Login() {
       auth.setCurrentUser(userData);
       
       // Redirect to dashboard
-      // navigate('/dashboard');
+      navigate('/dashboard');
       
     } catch (err) {
       console.error('Login error:', err);

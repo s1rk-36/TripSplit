@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,10 +42,16 @@ public class AuthController {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<HashMap<String, Object>> authenticate(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<Map<String, String>> authenticate(@RequestBody Map<String, String> credentials) {
+        //first get email of user
+        AppUser appUser = appUserService.findByEmail(credentials.get("email"));
+        if (appUser == null) {
+            System.out.println("User NOT found in database: " + credentials.get("email"));
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
 
         UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(credentials.get("username"), credentials.get("password"));
+                new UsernamePasswordAuthenticationToken(appUser.getUsername(), credentials.get("password"));
 
         try {
             Authentication authentication = authenticationManager.authenticate(authToken);
@@ -52,29 +60,8 @@ public class AuthController {
 
                 String jwtToken = converter.getTokenFromUser((User) authentication.getPrincipal());
 
-                String username = credentials.get("username");
-                AppUser appUser = appUserService.findByEmail(username);
-
-                if (appUser == null) {
-                    System.out.println("User NOT found in database: " + username);
-                } else {
-                    System.out.println("User found in database: " + appUser.getEmail());
-                    System.out.println("Stored password hash: " + appUser.getPasswordHash().substring(0, 10) + "...");
-                }
-
-
-                HashMap<String, Object> map = new HashMap<>();
+                HashMap<String, String> map = new HashMap<>();
                 map.put("jwt_token", jwtToken);
-
-                if (appUser != null) {
-                    Map<String, Object> user = new HashMap<>();
-                    user.put("id", appUser.getAppUserId());
-                    user.put("username", appUser.getUsername());
-                    user.put("email", appUser.getEmail());
-                    user.put("firstName", appUser.getFirstName());
-                    user.put("lastName", appUser.getLastName());
-                    map.put("user", user);
-                }
 
                 return new ResponseEntity<>(map, HttpStatus.OK);
             }
@@ -83,8 +70,9 @@ public class AuthController {
             System.out.println(ex);
         }
 
-        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<?> createAccount(@RequestBody Map<String, String> credentials) {

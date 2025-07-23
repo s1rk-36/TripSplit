@@ -37,6 +37,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // allows unauthenticated users to access /authenticate and /register.
                 .antMatchers("/api/auth/authenticate").permitAll()
                 .antMatchers("/api/auth/register").permitAll()
+                .antMatchers("/api/auth/test-login").permitAll()
                 // require authentication for any request...
                 .anyRequest().authenticated()
                 .and()

@@ -5,7 +5,7 @@ const handleResponse = async (response) => {
     if (response.status === 401) {
       // Token expired or invalid - redirect to login
       localStorage.removeItem('tripsplit_user');
-      window.location.href = '/login';
+      // window.location.href = '/login';
       throw new Error('Session expired. Please login again.');
     }
     
@@ -74,6 +74,8 @@ const makePublicRequest = async (url, options = {}) => {
     },
   };
 
+  console.log(defaultOptions);
+
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...defaultOptions,
     ...options,
@@ -83,53 +85,61 @@ const makePublicRequest = async (url, options = {}) => {
 };
 
 export const apiService = {
-  async login(credentials) {
-    try {
-      const authResponse = await makePublicRequest('/auth/authenticate', {
-        method: 'POST',
-        body: JSON.stringify({
-          username: credentials.email,
-          password: credentials.password
-        })
-      });
-      
-      const token = authResponse.jwt_token || authResponse.token;
-      
-      if (!token) {
-        throw new Error('Invalid response: missing token');
-      }
-      
-      // get user information using the token
-      const userResponse = await fetch(`${API_BASE_URL}/user`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!userResponse.ok) {
-        throw new Error(`Failed to get user info: ${userResponse.status}`);
-      }
-      
-      const userData = await userResponse.json();
-      
-      return {
-        token: token,
-        user: {
-          id: userData.appUserId || userData.id,
-          username: userData.username,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName
-        }
-      };
-      
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+// Update your apiService.js login method
+async login(credentials) {
+  try {
+    console.log('Login attempt with:', { email: credentials.email });
+    
+    // Step 1: Get JWT token from /authenticate
+    const authResponse = await makePublicRequest('/auth/authenticate', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: credentials.email,
+        password: credentials.password
+      })
+    });
+    
+    console.log('Auth response:', authResponse);
+    
+    // Your backend returns jwt_token, not token
+    const token = authResponse.jwt_token;
+    
+    if (!token) {
+      throw new Error('No token received from server');
     }
-  },
+    
+    console.log('Token received, getting user info...');
+    
+    const userResponse = await fetch(`${API_BASE_URL}/user/current`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!userResponse.ok) {
+      throw new Error(`Failed to get user info: ${userResponse.status}`);
+    }
+    
+    const userData = await userResponse.json();
+    console.log('User data received:', userData);
+    
+    return {
+      token: token,
+      user: {
+        id: userData.appUserId,
+        username: userData.username,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName
+      }
+    };
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+},
 
   async register(userData) {
     return makePublicRequest('/auth/register', {

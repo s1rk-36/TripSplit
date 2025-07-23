@@ -5,9 +5,12 @@ import learn.tripsplit.security.AppUserService;
 import learn.tripsplit.models.AppUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -24,6 +27,25 @@ public class UserController {
         return service.findAll();
     }
 
+    // Method to help log in current user
+    @GetMapping("/current")
+    public ResponseEntity<AppUser> getCurrentUser(Authentication authentication) {
+        if (authentication == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        String username = authentication.getName();
+        AppUser user = service.findByUsername(username);
+        if (user == null) {
+            user = service.findByEmail(username);
+        }
+
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
     @GetMapping("/{userId}")
     public AppUser findById(@PathVariable int userId) {
         return service.findById(userId);
