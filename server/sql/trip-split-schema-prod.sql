@@ -148,24 +148,29 @@ insert into `group` (`name`, `description`, created_by) values
 ('Thailand Escape', 'Group trip to explore Bangkok and the islands.', 5);
 
 insert into user_group (user_id, group_id, is_admin) values
-(1, 1, true),   -- Alice (admin) in her Japan trip
-(2, 1, false),
-(3, 1, false),
+-- Group 1: Japan Spring Trip
+(1, 1, true),   -- Alice (admin)
+(2, 1, false),  -- Bob
+(3, 1, false),  -- Carol
+	
+-- Group 2: NYC Business Conference
+(2, 2, true),   -- Bob (admin)
+(4, 2, false),  -- David
+(5, 2, false),  -- Eve
 
-(2, 2, true),   -- Bob (admin) on his business trip
-(4, 2, false),
-(5, 2, false),
-
-(3, 3, true),   -- Carol (admin) on Iceland adventure
-(1, 3, false),
-
-(4, 4, true),   -- David (admin) in Vegas trip
-(2, 4, false),
-(5, 4, false),
-
+-- Group 3: Iceland Road Adventure
+(3, 3, true),   -- Carol (admin)
+(1, 3, false),  -- Alice
+	
+-- Group 4: Vegas Bachelor Party
+(4, 4, true),   -- David (admin)
+(2, 4, false),  -- Bob
+(5, 4, false),  -- Eve
+	
+-- Group 5: Thailand Escape
 (5, 5, true),   -- Eve (admin) in Thailand trip
-(3, 5, false),
-(4, 5, false);
+(3, 5, false),  -- Carol
+(4, 5, false);  -- David
 
 insert into expense (expense_id, `name`, total_cost, category, `description`, created_at, group_id, created_by) values
 (1, 'Flight Tickets', 1200.00, 'Travel', 'Round trip flights to Tokyo', '2025-03-10', 1, 1),
