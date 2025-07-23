@@ -21,10 +21,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         this.converter = converter;
     }
 
-//    @Bean(name = "mvcHandlerMappingIntrospector")
-//    public HandlerMappingIntrospector mvcHandlerMappingIntrospector(ApplicationContext context) {
-//        return new HandlerMappingIntrospector(context);
-//    }
+    @Bean(name = "mvcHandlerMappingIntrospector")
+    public HandlerMappingIntrospector mvcHandlerMappingIntrospector(ApplicationContext context) {
+        return new HandlerMappingIntrospector(context);
+    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {

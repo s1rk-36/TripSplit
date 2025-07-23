@@ -90,14 +90,12 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
 
         final String sql = "update `group` set "
                 + "`name` = ?, "
-                + "`description` = ?, "
-                + "created_by = ? "
+                + "`description` = ? "
                 + "where group_id = ?;";
 
         return jdbcTemplate.update(sql,
                 group.getName(),
                 group.getDescription(),
-                group.getCreatedBy().getAppUserId(),
                 group.getGroupId()) > 0;
     }
 

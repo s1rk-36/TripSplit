@@ -20,7 +20,6 @@ public class AppUser {
     private String username;
     private String passwordHash;
     private boolean disabled;
-    private List<UserExpense> expenses = new ArrayList<>();
 
     private List<UserGroup> groups = new ArrayList<>();
     private List<UserExpense> expenses = new ArrayList<>();

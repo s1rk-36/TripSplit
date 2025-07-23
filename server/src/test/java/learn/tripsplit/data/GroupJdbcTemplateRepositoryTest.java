@@ -53,12 +53,8 @@ public class GroupJdbcTemplateRepositoryTest {
 
     @Test
     void shouldAdd() throws DataAccessException {
-        Group group = new Group();
-        group.setName("Added Group Name");
-        group.setDescription("Added Description");
-
         AppUser appUser1 = getUser1();
-        group.setCreatedBy(appUser1);
+        Group group = new Group(1, "Added Group Name", "Added Description", appUser1);
 
         Group actual = repository.add(group);
 
@@ -83,9 +79,6 @@ public class GroupJdbcTemplateRepositoryTest {
         group.setName("Updated Group Name");
         group.setDescription("Updated Description");
 
-        AppUser appUser1 = getUser1();
-        group.setCreatedBy(appUser1);
-
         assertTrue(repository.update(group));
     }
 
@@ -99,14 +92,11 @@ public class GroupJdbcTemplateRepositoryTest {
         Group nonExistent = new Group();
         nonExistent.setGroupId(9999);
 
-        AppUser appUser1 = getUser1();
-        nonExistent.setCreatedBy(appUser1);
-
         assertFalse(repository.update(nonExistent));
     }
 
     @Test
-    void shouldDelete() throws DataAccessException {
+    void shouldDeleteById() throws DataAccessException {
         Group group = new Group();
         group.setName("Group To Be Deleted");
         group.setDescription("Description To Be Deleted");
