@@ -21,10 +21,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         this.converter = converter;
     }
 
-    @Bean(name = "mvcHandlerMappingIntrospector")
-    public HandlerMappingIntrospector mvcHandlerMappingIntrospector(ApplicationContext context) {
-        return new HandlerMappingIntrospector(context);
-    }
+//    @Bean(name = "mvcHandlerMappingIntrospector")
+//    public HandlerMappingIntrospector mvcHandlerMappingIntrospector(ApplicationContext context) {
+//        return new HandlerMappingIntrospector(context);
+//    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -35,8 +35,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests()
                 // TODO add antMatchers here to configure access to specific API endpoints
                 // allows unauthenticated users to access /authenticate and /register.
-                .antMatchers("/api/user/authenticate").permitAll()
-                .antMatchers("/api/user/register").permitAll()
+                .antMatchers("/api/auth/authenticate").permitAll()
+                .antMatchers("/api/auth/register").permitAll()
                 // require authentication for any request...
                 .anyRequest().authenticated()
                 .and()

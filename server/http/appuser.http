@@ -1,0 +1,16 @@
+@url = http://localhost:8080/api/user
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYm9iaiIsImF1dGhvcml0aWVzIjoiUk9MRV9VU0VSIiwiZXhwIjoxNzUzMjQ2MTA3fQ.QHjjXVklj78uFxWsXtQSkjHdZorgKCXW242mxUZ6wpA
+GET {{url}} HTTP/1.1
+Authorization: Bearer {{token}}
+
+###
+
+GET {{url}}/2 HTTP/1.1
+Authorization: Bearer {{token}}
+
+### UPDATE USER
+
+###
+
+DELETE {{url}}/6 HTTP/1.1
+Authorization: Bearer {{token}}

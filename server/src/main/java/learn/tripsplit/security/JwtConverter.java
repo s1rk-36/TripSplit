@@ -2,6 +2,7 @@ package learn.tripsplit.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import learn.tripsplit.models.AppUser;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -25,7 +26,7 @@ public class JwtConverter {
     public String getTokenFromUser(User user) {
 
         String authorities = user.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
+                .map(i -> i.getAuthority())
                 .collect(Collectors.joining(","));
 
         // 3. Use JJWT classes to build a token.
@@ -53,6 +54,7 @@ public class JwtConverter {
 
             String username = jws.getBody().getSubject();
             String authStr = (String) jws.getBody().get("authorities");
+
             List<GrantedAuthority> authorities = Arrays.stream(authStr.split(","))
                     .map(i -> new SimpleGrantedAuthority(i))
                     .collect(Collectors.toList());
