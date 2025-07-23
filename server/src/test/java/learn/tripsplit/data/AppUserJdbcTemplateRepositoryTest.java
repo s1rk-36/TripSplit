@@ -40,7 +40,7 @@ class AppUserJdbcTemplateRepositoryTest {
         assertEquals("Johnson", actual.getLastName());
         assertEquals("alice.johnson@example.com", actual.getEmail());
         assertEquals("alicej", actual.getUsername());
-        assertEquals("hash_1_example", actual.getPasswordHash());
+        assertEquals("hash_1_example", actual.getPassword());
     }
 
     @Test
@@ -59,15 +59,16 @@ class AppUserJdbcTemplateRepositoryTest {
 
     @Test
     void shouldUpdateUser() {
-        AppUser appUser = new AppUser();
-        appUser.setAppUserId(5);
-        appUser.setFirstName("Eve");
-        appUser.setLastName("Martinez");
-        appUser.setEmail("eve.martinez@example.com");
-        appUser.setUsername("evem");
-        appUser.setPasswordHash("hash_6_example");
-        appUser.setRoleId(2);
-
+        AppUser appUser = new AppUser(
+                5,
+                "Eve",
+                "Martinez",
+                "eve.martinez@example.com",
+                "evem",
+                "hash_6_example",
+                false, // not disabled
+                List.of("USER")
+        );
         assertTrue(repository.update(appUser));
     }
 
@@ -82,13 +83,15 @@ class AppUserJdbcTemplateRepositoryTest {
     }
 
     AppUser makeUser() {
-        AppUser appUser = new AppUser();
-        appUser.setFirstName("Grace");
-        appUser.setLastName("Wong");
-        appUser.setEmail("grace.wong@example.com");
-        appUser.setUsername("gracew");
-        appUser.setPasswordHash("hash_6_example");
-        appUser.setRoleId(2);
-        return appUser;
+        return new AppUser(
+                0,
+                "Grace",
+                "Wong",
+                "grace.wong@example.com",
+                "gracew",
+                "hash_6_example",
+                false, // not disabled
+                List.of("USER")
+        );
     }
 }
