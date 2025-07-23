@@ -1,15 +1,20 @@
 @url = http://localhost:8080/api/user
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYm9iaiIsImF1dGhvcml0aWVzIjoiUk9MRV9VU0VSIiwiZXhwIjoxNzUzMjg2MjU5fQ.vIcxnENOpzEAfuGNbagQJSCgsrP30wyUcS1wgrq40-k
+
+### Token (This is unique to everyone)
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYm9iaiIsImF1dGhvcml0aWVzIjoiUk9MRV9Vc2VyIiwiZXhwIjoxNzUzMjkyNTgwfQ.3f9KdXW5ySAM7jrR6OP6yDFpME9ab6cm0t9fpql5tkU
+
+### findAll()
 
 GET {{url}} HTTP/1.1
 Authorization: Bearer {{token}}
 
-###
+### findById()
 
 GET {{url}}/2 HTTP/1.1
 Authorization: Bearer {{token}}
 
-### UPDATE USER
+### update()
+
 PUT {{url}}/1 HTTP/1.1
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -23,6 +28,7 @@ Authorization: Bearer {{token}}
     "passwordHash": "hash_1_example"
 }
 
-###
+### deleteById()
+
 DELETE {{url}}/6 HTTP/1.1
 Authorization: Bearer {{token}}

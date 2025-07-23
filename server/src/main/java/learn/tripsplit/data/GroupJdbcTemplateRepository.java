@@ -30,6 +30,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "
+                + "order by group_id asc "
                 + "limit 1000;";
 
         return jdbcTemplate.query(sql, new GroupMapper(this));
