@@ -49,11 +49,10 @@ public class AppUserService implements UserDetailsService {
     public Result<AppUser> add(AppUser appUser) {
         Result<AppUser> result = validate(appUser);
 
-        appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
-
         if (!result.isSuccess()) {
             return result;
         }
+        appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
 
         if (appUser.getAppUserId() != 0) {
             result.addMessage("user id cannot be set for `add` operation", ResultType.INVALID);
@@ -121,6 +120,10 @@ public class AppUserService implements UserDetailsService {
             result.addMessage("username is required", ResultType.INVALID);
         } else if (username.length() > 50) {
             result.addMessage("username must be less than 50 characters", ResultType.INVALID);
+        }
+
+        if (repository.findByUsername(username) != null) {
+            result.addMessage("username cannot be duplicated", ResultType.INVALID);
         }
 
         return result;
