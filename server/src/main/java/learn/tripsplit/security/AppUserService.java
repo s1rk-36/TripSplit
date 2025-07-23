@@ -4,6 +4,9 @@ import learn.tripsplit.data.AppUserRepository;
 import learn.tripsplit.domain.Result;
 import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.AppUser;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import javax.validation.ValidationException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AppUserService implements UserDetailsService {
@@ -27,11 +31,11 @@ public class AppUserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         AppUser appUser = repository.findByUsername(username);
 
-        if (appUser == null || !appUser.isEnabled()) {
+        if (appUser == null || appUser.isDisabled()) {
             throw new UsernameNotFoundException(username + " not found");
         }
 
-        return appUser;
+        return AuthorityUtils.convertToUserDetails(appUser);
     }
 
     public List<AppUser> findAll() {
@@ -44,6 +48,9 @@ public class AppUserService implements UserDetailsService {
 
     public Result<AppUser> add(AppUser appUser) {
         Result<AppUser> result = validate(appUser);
+
+        appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
+
         if (!result.isSuccess()) {
             return result;
         }
@@ -104,7 +111,7 @@ public class AppUserService implements UserDetailsService {
         }
 
         result = validateUsername(result, appUser.getUsername());
-        result = validatePassword(result, appUser.getPassword());
+        result = validatePassword(result, appUser.getPasswordHash());
 
         return result;
     }

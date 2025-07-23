@@ -11,13 +11,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class AppUser extends User {
+public class AppUser {
     // Fields
-    private static final String AUTHORITY_PREFIX = "ROLE_";
     private int appUserId;
     private String firstName;
     private String lastName;
     private String email;
+    private String username;
+    private String passwordHash;
+    private boolean disabled;
+    private List<UserExpense> expenses = new ArrayList<>();
+
     private List<UserGroup> groups = new ArrayList<>();
     private List<UserExpense> expenses = new ArrayList<>();
     private List<String> roles = new ArrayList<>();
@@ -32,32 +36,14 @@ public class AppUser extends User {
                    String passwordHash,
                    boolean disabled,
                    List<String> roles) {
-        super(username, passwordHash, !disabled,
-                true, true, true,
-                convertRolesToAuthorities(roles));
         this.appUserId = appUserId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-    }
-
-    public static List<GrantedAuthority> convertRolesToAuthorities(List<String> roles) {
-        List<GrantedAuthority> authorities = new ArrayList<>(roles.size());
-        for (String role : roles) {
-            Assert.isTrue(!role.startsWith(AUTHORITY_PREFIX),
-                    () ->
-                            String.
-                                    format("%s cannot start with %s (it is automatically added)",
-                                            role, AUTHORITY_PREFIX));
-            authorities.add(new SimpleGrantedAuthority(AUTHORITY_PREFIX + role));
-        }
-        return authorities;
-    }
-
-    public static List<String> convertAuthoritiesToRoles(Collection<GrantedAuthority> authorities) {
-        return authorities.stream()
-                .map(a -> a.getAuthority().substring(AUTHORITY_PREFIX.length()))
-                .collect(Collectors.toList());
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.disabled = disabled;
+        this.roles = roles;
     }
 
     // Getters and Setters
@@ -93,12 +79,28 @@ public class AppUser extends User {
         this.email = email;
     }
 
-    public List<UserGroup> getGroups() {
-        return groups;
+    public String getUsername() {
+        return username;
     }
 
-    public void setGroups(List<UserGroup> groups) {
-        this.groups = groups;
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 
     public List<UserExpense> getExpenses() {
@@ -109,17 +111,34 @@ public class AppUser extends User {
         this.expenses = expenses;
     }
 
+
+    public List<UserGroup> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<UserGroup> groups) {
+        this.groups = groups;
+    }
+
+    public List<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
+
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
         AppUser appUser = (AppUser) o;
-        return appUserId == appUser.appUserId && Objects.equals(firstName, appUser.firstName) && Objects.equals(lastName, appUser.lastName) && Objects.equals(email, appUser.email);
+        return appUserId == appUser.appUserId && disabled == appUser.disabled && Objects.equals(firstName, appUser.firstName) && Objects.equals(lastName, appUser.lastName) && Objects.equals(email, appUser.email) && Objects.equals(username, appUser.username) && Objects.equals(passwordHash, appUser.passwordHash);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), appUserId, firstName, lastName, email);
+        return Objects.hash(appUserId, firstName, lastName, email, username, passwordHash, disabled);
     }
 }
