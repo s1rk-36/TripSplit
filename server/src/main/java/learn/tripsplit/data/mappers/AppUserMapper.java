@@ -8,17 +8,23 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class AppUserMapper implements RowMapper<AppUser> {
-    private final List<String> roles;
 
-    public AppUserMapper(List<String> roles) {
-        this.roles = roles;
+    // Fields
+    private final RoleFetcher roleFetcher;
+
+    // Constructor
+    public AppUserMapper(RoleFetcher roleFetcher) {
+        this.roleFetcher = roleFetcher;
     }
 
+    // Mapper entry point used by Spring JDBC
+    // Overload that delegates to main method
     @Override
     public AppUser mapRow(ResultSet resultSet, int i) throws SQLException {
         return mapRow(resultSet, i, "");
     }
 
+    // Main method with prefix support
     public AppUser mapRow(ResultSet resultSet, int i, String prefix) throws SQLException {
         int appUserId = resultSet.getInt(prefix + "user_id");
         String firstName = resultSet.getString(prefix + "first_name");
@@ -27,6 +33,8 @@ public class AppUserMapper implements RowMapper<AppUser> {
         String username = resultSet.getString(prefix + "username");
         String passwordHash = resultSet.getString(prefix + "password_hash");
         boolean disabled = resultSet.getBoolean(prefix + "disabled");
+
+        List<String> roles = roleFetcher.getRolesByAppUserId(appUserId);
 
         return new AppUser(
                 appUserId,
@@ -39,4 +47,5 @@ public class AppUserMapper implements RowMapper<AppUser> {
                 roles
         );
     }
+
 }

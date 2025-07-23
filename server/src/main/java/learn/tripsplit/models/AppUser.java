@@ -21,7 +21,9 @@ public class AppUser {
     private String passwordHash;
     private boolean disabled;
     private List<UserExpense> expenses = new ArrayList<>();
+
     private List<UserGroup> groups = new ArrayList<>();
+    private List<UserExpense> expenses = new ArrayList<>();
     private List<String> roles = new ArrayList<>();
 
 
@@ -109,6 +111,7 @@ public class AppUser {
         this.expenses = expenses;
     }
 
+
     public List<UserGroup> getGroups() {
         return groups;
     }
@@ -123,6 +126,7 @@ public class AppUser {
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+
     }
 
     @Override

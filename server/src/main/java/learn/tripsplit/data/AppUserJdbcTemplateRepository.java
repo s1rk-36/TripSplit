@@ -1,8 +1,11 @@
 package learn.tripsplit.data;
 
 import learn.tripsplit.data.mappers.AppUserMapper;
+import learn.tripsplit.data.mappers.RoleFetcher;
+import learn.tripsplit.data.mappers.UserGroupMapper;
 import learn.tripsplit.models.AppUser;
-import learn.tripsplit.security.AuthorityUtils;
+
+import learn.tripsplit.models.UserGroup;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -18,8 +21,10 @@ import java.util.Collection;
 import java.util.List;
 
 @Repository
-public class AppUserJdbcTemplateRepository implements AppUserRepository {
+public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFetcher {
+
     private JdbcTemplate jdbcTemplate;
+
     public AppUserJdbcTemplateRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -29,21 +34,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
         final String sql = "select user_id, first_name, last_name, email, username, password_hash, disabled "
                 + "from `user` limit 1000;";
 
-        return jdbcTemplate.query(sql, (rs, rowId) -> {
-            int userId = rs.getInt("user_id");
-            List<String> roles = getRolesByAppUserId(userId);
-
-            return new AppUser(
-                    userId,
-                    rs.getString("first_name"),
-                    rs.getString("last_name"),
-                    rs.getString("email"),
-                    rs.getString("username"),
-                    rs.getString("password_hash"),
-                    rs.getBoolean("disabled"),
-                    roles
-            );
-        });
+        return jdbcTemplate.query(sql, new AppUserMapper(this));
     }
 
     @Override
@@ -53,8 +44,16 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
                 + "from `user` "
                 + "where user_id = ?;";
 
-        return jdbcTemplate.query(sql, new AppUserMapper(roles), userId).stream()
-                .findFirst().orElse(null);
+        AppUser appUser = jdbcTemplate.query(sql, new AppUserMapper(this), userId)
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        if (appUser != null) {
+            addGroups(appUser);
+        }
+
+        return appUser;
     }
 
     @Override
@@ -64,7 +63,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
                 + "from `user` "
                 + "where username = ?;";
 
-        return jdbcTemplate.query(sql, new AppUserMapper(roles), username).stream()
+        return jdbcTemplate.query(sql, new AppUserMapper(this), username).stream()
                 .findFirst().orElse(null);
     }
 
@@ -75,7 +74,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
                 + "from `user` "
                 + "where lower(email) = lower(?);";
 
-        return jdbcTemplate.query(sql, new AppUserMapper(roles), email).stream()
+        return jdbcTemplate.query(sql, new AppUserMapper(this), email).stream()
                 .findFirst().orElse(null);
     }
 
@@ -152,7 +151,8 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
         }
     }
 
-    private List<String> getRolesByAppUserId(int userId) {
+    @Override
+    public List<String> getRolesByAppUserId(int userId) {
         final String sql = "select r.name "
                 + "from user_role ur "
                 + "inner join role r on ur.role_id = r.role_id "
@@ -178,4 +178,48 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
                 + "where u.email = ?";
         return jdbcTemplate.query(sql, (rs, rowId) -> rs.getString("name"), email);
     }
+
+    private void addGroups(AppUser user) {
+        final String sql = "select "
+                + "ug.user_id as ug_user_id, "
+                + "ug.group_id as ug_group_id, "
+                + "ug.is_admin as ug_is_admin, "
+
+                + "u.user_id as u_user_id, "
+                + "u.first_name as u_first_name, "
+                + "u.last_name as u_last_name, "
+                + "u.email as u_email, "
+                + "u.username as u_username, "
+                + "u.password_hash as u_password_hash, "
+                + "u.disabled as u_disabled, "
+
+                + "g.group_id, "
+                + "g.`name` as group_name, "
+                + "g.`description` as group_description, "
+
+                + "gcb.user_id as gcb_user_id, "
+                + "gcb.first_name as gcb_first_name, "
+                + "gcb.last_name as gcb_last_name, "
+                + "gcb.email as gcb_email, "
+                + "gcb.username as gcb_username, "
+                + "gcb.password_hash as gcb_password_hash, "
+                + "gcb.disabled as gcb_disabled "
+
+                + "from user_group ug "
+                + "inner join `user` u on ug.user_id = u.user_id "
+                + "inner join `group` g on ug.group_id = g.group_id "
+                + "inner join `user` gcb on g.created_by = gcb.user_id "
+                + "where ug.user_id = ?;";
+
+        UserGroupMapper userGroupMapper = new UserGroupMapper(this);
+
+        List<UserGroup> userGroups = jdbcTemplate.query(sql,
+                (rs, rowNum) -> userGroupMapper.mapRow(rs, rowNum, "ug_", "u_", "", "gcb_"),
+                user.getAppUserId()
+        );
+
+        user.setGroups(userGroups);
+    }
+
+
 }
