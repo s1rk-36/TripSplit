@@ -65,6 +65,10 @@ public class GroupService {
         return repository.deleteById(groupId);
     }
 
+    public List<Group> findGroupsByUserId(int userId) {
+        return repository.findGroupsByUserId(userId);
+    }
+
     private Result<Group> validate(Group group) {
         Result<Group> result = new Result<>();
 
@@ -77,12 +81,12 @@ public class GroupService {
             result.addMessage("group name is required", ResultType.INVALID);
         }
 
-        if (group.getCreatedBy() == null || group.getCreatedBy().getAppUserId() <= 0) {
+        if (group.getCreatedBy() <= 0) {
             result.addMessage("no user found for createdBy", ResultType.INVALID);
         }
 
-        if (group.getUsers() == null || group.getUsers().isEmpty()) {
-            result.addMessage("user list cannot be null or empty", ResultType.INVALID);
+        if (group.getUsers() == null) {
+            result.addMessage("user list cannot be null", ResultType.INVALID);
             return result;
         }
 

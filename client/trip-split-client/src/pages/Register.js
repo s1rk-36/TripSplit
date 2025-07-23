@@ -60,7 +60,7 @@ function Register() {
       };
       
       auth.setCurrentUser(userData);
-      navigate('/dashboard');
+      navigate('/groups');
       
     } catch (err) {
       console.error('Registration error:', err);

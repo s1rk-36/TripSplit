@@ -7,7 +7,7 @@ import Dashboard from './pages/Dashboard';
 // import Expenses from './pages/Expenses';
 // import ExpenseAdd from './pages/ExpenseAdd';
 // import ExpenseDetails from './pages/ExpenseDetails';
-// import Groups from './pages/Groups';
+import Groups from './pages/Groups';
 // import GroupAdd from './pages/GroupAdd';
 // import GroupExpenses from './pages/GroupExpenses';
 // import Profile from './pages/Profile';
@@ -26,10 +26,10 @@ function App() {
                     <Route path="/register" element={<Register />} />
         
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/groups" element={<Groups />} />
                     {/* <Route path="/expenses" element={<Expenses />} />
                     <Route path="/expenses/add" element={<ExpenseAdd />} />
                     <Route path="/expenses/:id" element={<ExpenseDetails />} />
-                    <Route path="/groups" element={<Groups />} />
                     <Route path="/groups/add" element={<GroupAdd />} />
                     <Route path="/groups/:groupId/expenses" element={<GroupExpenses />} />
                     <Route path="/profile" element={<Profile />} />*/}

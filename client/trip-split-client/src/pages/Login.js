@@ -48,7 +48,7 @@ function Login() {
       auth.setCurrentUser(userData);
       
       // Redirect to dashboard
-      navigate('/dashboard');
+      navigate('/groups');
       
     } catch (err) {
       console.error('Login error:', err);

@@ -17,4 +17,5 @@ public interface GroupRepository {
 
     boolean nameExists(Group group);
 
+    List<Group> findGroupsByUserId(int userId);
 }

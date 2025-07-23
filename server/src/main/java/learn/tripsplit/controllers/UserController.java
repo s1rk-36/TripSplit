@@ -1,6 +1,8 @@
 package learn.tripsplit.controllers;
 
+import learn.tripsplit.domain.GroupService;
 import learn.tripsplit.domain.Result;
+import learn.tripsplit.models.Group;
 import learn.tripsplit.security.AppUserService;
 import learn.tripsplit.models.AppUser;
 import org.springframework.http.HttpStatus;
@@ -18,8 +20,11 @@ import java.util.Map;
 public class UserController {
     private final AppUserService service;
 
-    public UserController(AppUserService service) {
-        this.service = service;
+    private final GroupService groupService;
+
+    public UserController(AppUserService appUserService, GroupService groupService) {
+        this.service = appUserService;
+        this.groupService = groupService;
     }
 
     @GetMapping
@@ -46,6 +51,29 @@ public class UserController {
 
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
+
+    @GetMapping("/groups")
+    public ResponseEntity<List<Group>> getCurrentUserGroups(Authentication authentication) {
+        if (authentication == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        String username = authentication.getName();
+        AppUser user = service.findByUsername(username);
+        if (user == null) {
+            user = service.findByEmail(username);
+        }
+
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        List<Group> userGroups = groupService.findGroupsByUserId(user.getAppUserId());
+
+        return new ResponseEntity<>(userGroups, HttpStatus.OK);
+    }
+
+
     @GetMapping("/{userId}")
     public AppUser findById(@PathVariable int userId) {
         return service.findById(userId);

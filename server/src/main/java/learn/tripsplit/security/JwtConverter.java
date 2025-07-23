@@ -61,7 +61,12 @@ public class JwtConverter {
 
             return new User(username, username, authorities);
 
-        } catch (JwtException e) {
+        }catch (SignatureException e) {
+            // Handle signature mismatch gracefully
+            System.out.println("JWT signature mismatch - app likely restarted. Token invalidated.");
+            return null;
+        }
+        catch (JwtException e) {
             // 5. JWT failures are modeled as exceptions.
             System.out.println(e);
         }

@@ -13,10 +13,10 @@ function Navbar() {
 
   // Get user initials for profile icon
   const getUserInitials = () => {
-    if (!currentUser) return 'U';
+    // if (!currentUser) return 'U';
     const firstInitial = currentUser.firstName ? currentUser.firstName.charAt(0).toUpperCase() : '';
     const lastInitial = currentUser.lastName ? currentUser.lastName.charAt(0).toUpperCase() : '';
-    return firstInitial + lastInitial || currentUser.email?.charAt(0).toUpperCase() || 'U';
+    return firstInitial + lastInitial || currentUser.email?.charAt(0).toUpperCase();
   };
 
   return (
@@ -47,23 +47,8 @@ function Navbar() {
           {/* Authenticated Navigation */}
           {isAuthenticated ? (
             <>
-              {/* Left side - App navigation */}
+              {/* Left side*/}
               <ul className="navbar-nav me-auto">
-                <li className="nav-item">
-                  <Link className="nav-link text-dark" to="/dashboard">
-                    <FaHome className="me-1" /> Dashboard
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link text-dark" to="/expenses">
-                    <FaReceipt className="me-1" /> Expenses
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link text-dark" to="/groups">
-                    <FaUsers className="me-1" /> Groups
-                  </Link>
-                </li>
               </ul>
               
               {/* Right side - User profile */}

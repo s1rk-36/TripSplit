@@ -5,7 +5,7 @@ const handleResponse = async (response) => {
     if (response.status === 401) {
       // Token expired or invalid - redirect to login
       localStorage.removeItem('tripsplit_user');
-      // window.location.href = '/login';
+      window.location.href = '/login';
       throw new Error('Session expired. Please login again.');
     }
     
@@ -85,12 +85,10 @@ const makePublicRequest = async (url, options = {}) => {
 };
 
 export const apiService = {
-// Update your apiService.js login method
 async login(credentials) {
   try {
     console.log('Login attempt with:', { email: credentials.email });
     
-    // Step 1: Get JWT token from /authenticate
     const authResponse = await makePublicRequest('/auth/authenticate', {
       method: 'POST',
       body: JSON.stringify({
@@ -101,7 +99,6 @@ async login(credentials) {
     
     console.log('Auth response:', authResponse);
     
-    // Your backend returns jwt_token, not token
     const token = authResponse.jwt_token;
     
     if (!token) {
@@ -148,7 +145,7 @@ async login(credentials) {
     });
   },
 
-  // User endpoints (require authentication)
+  // User endpoints 
   async getCurrentUser() {
     return makeAuthenticatedRequest('/user');
   },
@@ -160,7 +157,7 @@ async login(credentials) {
     });
   },
 
-  // Expenses endpoints (require authentication)
+  // Expenses endpoints 
   async getExpenses() {
     return makeAuthenticatedRequest('/expenses');
   },
@@ -193,8 +190,12 @@ async login(credentials) {
     });
   },
 
-  // Groups endpoints (require authentication)
+  // Groups endpoints
   async getGroups() {
+    return makeAuthenticatedRequest('/user/groups');
+  },
+// admin access
+  async getAllGroups() {
     return makeAuthenticatedRequest('/groups');
   },
 
@@ -203,6 +204,7 @@ async login(credentials) {
   },
 
   async createGroup(group) {
+    console.log(group);
     return makeAuthenticatedRequest('/groups', {
       method: 'POST',
       body: JSON.stringify(group)
@@ -222,7 +224,7 @@ async login(credentials) {
     });
   },
 
-  // User Expenses endpoints (require authentication)
+  // User Expenses endpoints 
   async getUserBalance(userId) {
     return makeAuthenticatedRequest(`/user-expenses/user/${userId}/balance`);
   },
@@ -235,7 +237,7 @@ async login(credentials) {
     return makeAuthenticatedRequest(`/user-expenses/expense/${expenseId}`);
   },
 
-  // Comments endpoints (require authentication)
+  // Comments endpoints 
   async getComments(expenseId) {
     return makeAuthenticatedRequest(`/comments/expense/${expenseId}`);
   },
@@ -247,7 +249,7 @@ async login(credentials) {
     });
   },
 
-  // Receipts endpoints (require authentication)
+  // Receipts endpoints
   async getReceipts(expenseId) {
     return makeAuthenticatedRequest(`/receipts/expense/${expenseId}`);
   },

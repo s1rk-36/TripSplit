@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:3000"})
-@RequestMapping("/api/group")
+@RequestMapping("/api/groups")
 public class GroupController {
 
     private final GroupService service;
@@ -40,7 +40,6 @@ public class GroupController {
     @PostMapping
     public ResponseEntity<Object> add (@RequestBody Group group) {
         Result<Group> result = service.add(group);
-
         if (result.isSuccess()) {
             return new ResponseEntity<>(result.getPayload(), HttpStatus.CREATED); // 201
         }
