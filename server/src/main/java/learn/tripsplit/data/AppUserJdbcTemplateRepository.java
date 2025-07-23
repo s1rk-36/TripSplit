@@ -130,7 +130,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
     @Override
     @Transactional
     public boolean deleteById(int userId) {
-        jdbcTemplate.update("delete from user_role where user_id = ?;");
+        jdbcTemplate.update("delete from user_role where user_id = ?;", userId);
         return jdbcTemplate.update("delete from `user` where user_id = ?;", userId) > 0;
     }
 
