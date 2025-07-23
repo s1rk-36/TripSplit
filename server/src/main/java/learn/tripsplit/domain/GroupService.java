@@ -73,12 +73,14 @@ public class GroupService {
             return result;
         }
 
-        if (isNullOrBlank(group.getName())) {
+        if (group.getName() == null || group.getName().isBlank()) {
             result.addMessage("group name is required", ResultType.INVALID);
-        }
+        } else if (group.getName().length() < 3 || group.getName().length() > 100) {
+        result.addMessage("group name must be between 3 and 100 characters", ResultType.INVALID);
+    }
 
         if (group.getCreatedBy() == null || group.getCreatedBy().getAppUserId() <= 0) {
-            result.addMessage("no user found for createdBy", ResultType.INVALID);
+            result.addMessage("valid group creator required", ResultType.INVALID);
         }
 
         if (group.getUsers() == null || group.getUsers().isEmpty()) {
@@ -105,10 +107,6 @@ public class GroupService {
         }
 
         return result;
-    }
-
-    private static boolean isNullOrBlank(String value) {
-        return value == null || value.isBlank();
     }
 
 }

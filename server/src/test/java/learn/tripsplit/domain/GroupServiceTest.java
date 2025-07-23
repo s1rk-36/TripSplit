@@ -138,7 +138,7 @@ public class GroupServiceTest {
     @Test
     void shouldNotUpdateNonExistent() {
         AppUser appUser = getUser1();
-        Group group = new Group(1, "Nonexistent Group", "", appUser);
+        Group group = new Group(9999, "Nonexistent Group", "", appUser);
 
         // Set Users for group for validation to pass
         UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
@@ -154,7 +154,7 @@ public class GroupServiceTest {
         Result<Group> result = service.update(group);
 
         assertEquals(ResultType.NOT_FOUND, result.getType());
-        assertTrue(result.getMessages().contains("groupId: 1, not found"));
+        assertTrue(result.getMessages().contains("groupId: 9999, not found"));
     }
 
     @Test
@@ -200,13 +200,40 @@ public class GroupServiceTest {
         userGroupBlankName.setGroup(blankName);
         blankName.setUsers(List.of(userGroupBlankName));
 
-        Result<Group> result1 = service.add(blankName);
+        Result<Group> result1 = service.add(nullName);
         Result<Group> result2 = service.add(blankName);
 
         assertEquals(ResultType.INVALID, result1.getType());
         assertTrue(result1.getMessages().contains("group name is required"));
         assertEquals(ResultType.INVALID, result2.getType());
         assertTrue(result2.getMessages().contains("group name is required"));
+    }
+
+    @Test
+    void shouldNotValidateNameLengthOutOfRange() {
+        AppUser appUser = getUser1();
+        Group belowMin = new Group(0, "1", "", appUser);
+        Group aboveMax = new Group(0, "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", "", appUser);
+
+        // Set Users for belowMin for validation to pass
+        UserGroup userGroupNullName = new UserGroup(appUser.getAppUserId(), belowMin.getGroupId(), false);
+        userGroupNullName.setUser(appUser);
+        userGroupNullName.setGroup(belowMin);
+        belowMin.setUsers(List.of(userGroupNullName));
+
+        // Set Users for aboveMax to simulate the returned group
+        UserGroup userGroupBlankName = new UserGroup(appUser.getAppUserId(), aboveMax.getGroupId(), false);
+        userGroupBlankName.setUser(appUser);
+        userGroupBlankName.setGroup(aboveMax);
+        aboveMax.setUsers(List.of(userGroupBlankName));
+
+        Result<Group> result1 = service.add(belowMin);
+        Result<Group> result2 = service.add(aboveMax);
+
+        assertEquals(ResultType.INVALID, result1.getType());
+        assertTrue(result1.getMessages().contains("group name must be between 3 and 100 characters"));
+        assertEquals(ResultType.INVALID, result2.getType());
+        assertTrue(result2.getMessages().contains("group name must be between 3 and 100 characters"));
     }
 
     @Test
@@ -223,7 +250,7 @@ public class GroupServiceTest {
         Result<Group> result = service.add(group);
 
         assertEquals(ResultType.INVALID, result.getType());
-        assertTrue(result.getMessages().contains("no user found for createdBy"));
+        assertTrue(result.getMessages().contains("valid group creator required"));
     }
 
     @Test
