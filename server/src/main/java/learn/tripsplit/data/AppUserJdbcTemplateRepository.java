@@ -111,7 +111,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
                 + "last_name = ?, "
                 + "email = ?, "
                 + "username = ?, "
-                + "disabled = ? "
+                + "password_hash = ? "
                 + "where user_id = ?;";
 
         updateRoles(appUser);
@@ -121,7 +121,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
                 appUser.getLastName(),
                 appUser.getEmail(),
                 appUser.getUsername(),
-                appUser.isDisabled(),
+                appUser.getPasswordHash(),
                 appUser.getAppUserId()) > 0;
     }
 
@@ -129,7 +129,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
     @Transactional
     public boolean deleteById(int userId) {
         jdbcTemplate.update("delete from user_role where user_id = ?;");
-        return jdbcTemplate.update("delete from `user` where user_id =?;", userId) > 0;
+        return jdbcTemplate.update("delete from `user` where user_id = ?;", userId) > 0;
     }
 
     private void updateRoles(AppUser appUser) {
