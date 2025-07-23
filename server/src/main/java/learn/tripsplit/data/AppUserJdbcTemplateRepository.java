@@ -2,10 +2,13 @@ package learn.tripsplit.data;
 
 import learn.tripsplit.data.mappers.AppUserMapper;
 import learn.tripsplit.models.AppUser;
+import learn.tripsplit.security.AuthorityUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,7 +71,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
     @Override
     public AppUser findByEmail(String email) {
         List<String> roles = getRolesByEmail(email);
-        final String sql = "select user_id, first_name, last_name, email, username, password_hash, role_id "
+        final String sql = "select user_id, first_name, last_name, email, username, password_hash, disabled "
                 + "from `user` "
                 + "where lower(email) = lower(?);";
 
@@ -90,7 +93,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
             ps.setString(2, appUser.getLastName());
             ps.setString(3, appUser.getEmail());
             ps.setString(4, appUser.getUsername());
-            ps.setString(5, appUser.getPassword());
+            ps.setString(5, appUser.getPasswordHash());
             return ps;
         }, keyHolder);
 
@@ -121,7 +124,7 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
                 appUser.getLastName(),
                 appUser.getEmail(),
                 appUser.getUsername(),
-                !appUser.isEnabled(),
+                appUser.isDisabled(),
                 appUser.getAppUserId()) > 0;
     }
 
@@ -136,13 +139,13 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository {
         // delete all roles, then re-add
         jdbcTemplate.update("delete from user_role where user_id = ?;", appUser.getAppUserId());
 
-        Collection<GrantedAuthority> authorities = appUser.getAuthorities();
+        List<String> roles = appUser.getRoles();
 
-        if (authorities == null) {
+        if (roles == null || roles.isEmpty()) {
             return;
         }
 
-        for (String role : AppUser.convertAuthoritiesToRoles(authorities)) {
+        for (String role : roles) {
             String sql = "insert into user_role (user_id, role_id) "
                     + "select ?, role_id from role where `name` = ?;";
             jdbcTemplate.update(sql, appUser.getAppUserId(), role);
