@@ -23,8 +23,8 @@ public class ExpenseMapper implements RowMapper<Expense> {
         expense.setDescription(description != null ? description : resultSet.getString(groupPrefix + "description"));
         expense.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
 
-        GroupMapper groupMapper = new GroupMapper();
-        expense.setGroup(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix));
+        //GroupMapper groupMapper = new GroupMapper();
+        //expense.setGroup(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix));
 
         //AppUserMapper appUserMapper = new AppUserMapper();
         //expense.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix));

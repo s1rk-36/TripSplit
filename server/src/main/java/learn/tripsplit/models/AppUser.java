@@ -18,8 +18,8 @@ public class AppUser extends User {
     private String firstName;
     private String lastName;
     private String email;
-    private List<UserExpense> expenses = new ArrayList<>();
     private List<UserGroup> groups = new ArrayList<>();
+    private List<UserExpense> expenses = new ArrayList<>();
     private List<String> roles = new ArrayList<>();
 
 
@@ -93,20 +93,20 @@ public class AppUser extends User {
         this.email = email;
     }
 
-    public List<UserExpense> getExpenses() {
-        return expenses;
-    }
-
-    public void setExpenses(List<UserExpense> expenses) {
-        this.expenses = expenses;
-    }
-
     public List<UserGroup> getGroups() {
         return groups;
     }
 
     public void setGroups(List<UserGroup> groups) {
         this.groups = groups;
+    }
+
+    public List<UserExpense> getExpenses() {
+        return expenses;
+    }
+
+    public void setExpenses(List<UserExpense> expenses) {
+        this.expenses = expenses;
     }
 
     @Override
