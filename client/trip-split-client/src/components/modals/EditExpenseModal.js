@@ -1,24 +1,23 @@
-
 import { useState, useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
-import { FaReceipt, FaCamera, FaEquals, FaPercentage, FaDollarSign, FaUsers, FaEdit } from 'react-icons/fa';
+import { FaReceipt, FaEquals, FaDollarSign, FaEdit } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
+import { apiService } from '../../services/apiService';
 
 function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories }) {
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
-    description: '',
-    amount: '',
+    name: '',
+    totalCost: '',
     groupId: '',
     category: '',
+    description: '',
     date: '',
-    paidBy: '',
-    splitType: 'equal',
-    notes: '',
     receipt: null
   });
+  
   const [groupMembers, setGroupMembers] = useState([]);
-  const [splits, setSplits] = useState([]);
+  const [userExpenses, setUserExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,25 +25,22 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
     if (expense && show) {
       // Populate form with expense data
       setFormData({
-        description: expense.description || '',
-        amount: expense.amount?.toString() || '',
+        name: expense.name || '',
+        totalCost: expense.totalCost?.toString() || '',
         groupId: expense.groupId?.toString() || '',
         category: expense.category || '',
-        date: expense.date || '',
-        paidBy: expense.paidBy?.toString() || '',
-        splitType: expense.splitType || 'equal',
-        notes: expense.notes || '',
-        receipt: null // Don't pre-populate file input
+        description: expense.description || '',
+        date: expense.createdAt ? expense.createdAt.split('T')[0] : '',
+        receipt: null
       });
 
-      // Set existing splits
-      if (expense.splits) {
-        setSplits(expense.splits.map(split => ({
-          userId: split.userId,
-          name: split.name || split.userName || 'Unknown User',
-          amount: split.amount || 0,
-          percentage: expense.amount > 0 ? ((split.amount / expense.amount) * 100) : 0,
-          shares: split.shares || 1,
+      // Set existing userExpenses
+      if (expense.userExpenses) {
+        setUserExpenses(expense.userExpenses.map(ue => ({
+          userId: ue.userId,
+          name: ue.userName || 'Unknown User',
+          amountOwed: ue.amountOwed || 0,
+          amountPaid: ue.amountPaid || 0,
           included: true
         })));
       }
@@ -57,66 +53,37 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
   }, [expense, show]);
 
   useEffect(() => {
-    if (groupMembers.length > 0 && formData.splitType && formData.amount) {
-      recalculateSplits();
+    if (groupMembers.length > 0 && formData.totalCost) {
+      updatePayerInUserExpenses();
     }
-  }, [groupMembers, formData.splitType, formData.amount]);
+  }, [groupMembers, formData.totalCost]);
 
   const loadGroupMembers = async (groupId) => {
     try {
-      const group = groups.find(g => (g.id || g.groupId).toString() === groupId.toString());
-      if (group && group.members) {
-        setGroupMembers(group.members);
-      } else if (group) {
-        // If no members array, create a basic member list
-        setGroupMembers([
-          { id: currentUser?.userId, name: `${currentUser?.firstName} ${currentUser?.lastName}` }
-        ]);
-      }
+      const userGroups = await apiService.getGroupMembers(groupId);
+      const members = userGroups.map(userGroup => ({
+        id: userGroup.user.appUserId,
+        name: `${userGroup.user.firstName} ${userGroup.user.lastName}`,
+        email: userGroup.user.email,
+        isAdmin: userGroup.admin
+      }));
+      
+      setGroupMembers(members);
     } catch (err) {
       console.error('Failed to load group members:', err);
     }
   };
 
-  const recalculateSplits = () => {
-    if (groupMembers.length === 0) return;
-
-    const amount = parseFloat(formData.amount) || 0;
+  const updatePayerInUserExpenses = () => {
+    const totalCost = parseFloat(formData.totalCost) || 0;
+    const currentPayer = userExpenses.find(ue => ue.amountPaid > 0);
     
-    // If we have existing splits, preserve them but recalculate if needed
-    if (splits.length > 0) {
-      if (formData.splitType === 'equal') {
-        const includedMembers = splits.filter(split => split.included);
-        const equalShare = includedMembers.length > 0 ? amount / includedMembers.length : 0;
-        
-        setSplits(splits.map(split => ({
-          ...split,
-          amount: split.included ? equalShare : 0,
-          percentage: split.included ? (100 / includedMembers.length) : 0
-        })));
-      }
-    } else {
-      // Initialize splits if none exist
-      initializeSplits();
+    if (currentPayer) {
+      setUserExpenses(userExpenses.map(ue => ({
+        ...ue,
+        amountPaid: ue.userId === currentPayer.userId ? totalCost : 0
+      })));
     }
-  };
-
-  const initializeSplits = () => {
-    if (groupMembers.length === 0) return;
-
-    const amount = parseFloat(formData.amount) || 0;
-    const equalShare = amount / groupMembers.length;
-
-    const newSplits = groupMembers.map(member => ({
-      userId: member.id,
-      name: member.name,
-      amount: formData.splitType === 'equal' ? equalShare : 0,
-      percentage: formData.splitType === 'equal' ? (100 / groupMembers.length) : 0,
-      shares: formData.splitType === 'equal' ? 1 : 0,
-      included: true
-    }));
-
-    setSplits(newSplits);
   };
 
   const handleChange = (e) => {
@@ -129,95 +96,81 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
     setFormData(prev => ({ ...prev, receipt: file }));
   };
 
-  const handleSplitChange = (userId, field, value) => {
-    const updatedSplits = splits.map(split => {
-      if (split.userId === userId) {
-        return { ...split, [field]: value };
+  const handleAmountOwedChange = (userId, value) => {
+    const updatedUserExpenses = userExpenses.map(ue => {
+      if (ue.userId === userId) {
+        return { ...ue, amountOwed: parseFloat(value) || 0 };
       }
-      return split;
+      return ue;
     });
-
-    // Recalculate based on split type
-    if (formData.splitType === 'percentage') {
-      const totalPercentage = updatedSplits.reduce((sum, split) => sum + (split.percentage || 0), 0);
-      if (totalPercentage <= 100) {
-        const amount = parseFloat(formData.amount) || 0;
-        updatedSplits.forEach(split => {
-          split.amount = (amount * (split.percentage || 0)) / 100;
-        });
-      }
-    } else if (formData.splitType === 'shares') {
-      const totalShares = updatedSplits.reduce((sum, split) => sum + (split.shares || 0), 0);
-      if (totalShares > 0) {
-        const amount = parseFloat(formData.amount) || 0;
-        updatedSplits.forEach(split => {
-          split.amount = (amount * (split.shares || 0)) / totalShares;
-          split.percentage = ((split.shares || 0) / totalShares) * 100;
-        });
-      }
-    }
-
-    setSplits(updatedSplits);
+    setUserExpenses(updatedUserExpenses);
   };
 
-  const handleSplitTypeChange = (newSplitType) => {
-    setFormData(prev => ({ ...prev, splitType: newSplitType }));
-    
-    // Recalculate splits based on new type
-    if (newSplitType === 'equal') {
-      recalculateSplits();
-    }
+  const handlePayerChange = (newPayerId) => {
+    const totalCost = parseFloat(formData.totalCost) || 0;
+    const updatedUserExpenses = userExpenses.map(ue => ({
+      ...ue,
+      amountPaid: ue.userId === parseInt(newPayerId) ? totalCost : 0
+    }));
+    setUserExpenses(updatedUserExpenses);
   };
 
   const toggleMemberInclusion = (userId) => {
-    const updatedSplits = splits.map(split => {
-      if (split.userId === userId) {
-        return { ...split, included: !split.included };
+    const updatedUserExpenses = userExpenses.map(ue => {
+      if (ue.userId === userId) {
+        return { 
+          ...ue, 
+          included: !ue.included,
+          amountOwed: !ue.included ? ue.amountOwed : 0
+        };
       }
-      return split;
+      return ue;
     });
-    setSplits(updatedSplits);
+    setUserExpenses(updatedUserExpenses);
     
-    // Recalculate splits for included members only
-    const includedMembers = updatedSplits.filter(split => split.included);
-    if (includedMembers.length > 0 && formData.splitType === 'equal') {
-      const amount = parseFloat(formData.amount) || 0;
-      const equalShare = amount / includedMembers.length;
+    const includedMembers = updatedUserExpenses.filter(ue => ue.included);
+    if (includedMembers.length > 0) {
+      const totalCost = parseFloat(formData.totalCost) || 0;
+      const equalShare = totalCost / includedMembers.length;
       
-      setSplits(updatedSplits.map(split => ({
-        ...split,
-        amount: split.included ? equalShare : 0,
-        percentage: split.included ? (100 / includedMembers.length) : 0
+      setUserExpenses(updatedUserExpenses.map(ue => ({
+        ...ue,
+        amountOwed: ue.included ? equalShare : 0
       })));
     }
   };
 
-  const validateSplits = () => {
-    const includedSplits = splits.filter(split => split.included);
-    const totalSplitAmount = includedSplits.reduce((sum, split) => sum + (split.amount || 0), 0);
-    const expenseAmount = parseFloat(formData.amount) || 0;
+  const validateUserExpenses = () => {
+    const includedUserExpenses = userExpenses.filter(ue => ue.included);
+    const totalOwed = includedUserExpenses.reduce((sum, ue) => sum + (ue.amountOwed || 0), 0);
+    const totalPaid = userExpenses.reduce((sum, ue) => sum + (ue.amountPaid || 0), 0);
+    const expenseAmount = parseFloat(formData.totalCost) || 0;
     
-    return Math.abs(totalSplitAmount - expenseAmount) < 0.01;
+    return Math.abs(totalOwed - expenseAmount) < 0.01 && Math.abs(totalPaid - expenseAmount) < 0.01;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate form
-    if (!formData.description.trim()) {
-      setError('Description is required');
+    if (!formData.name.trim()) {
+      setError('Name is required');
       return;
     }
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      setError('Amount must be greater than 0');
+    if (!formData.totalCost || parseFloat(formData.totalCost) <= 0) {
+      setError('Total cost must be greater than 0');
       return;
     }
     if (!formData.groupId) {
       setError('Please select a group');
       return;
     }
-    if (!validateSplits()) {
-      setError('Split amounts do not match the total expense amount');
+    if (!formData.category) {
+      setError('Please select a category');
+      return;
+    }
+    if (!validateUserExpenses()) {
+      setError('Split amounts do not match the total expense amount or payment amount is incorrect');
       return;
     }
 
@@ -226,14 +179,25 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
       setError('');
       
       const expenseData = {
-        ...formData,
-        amount: parseFloat(formData.amount),
+        expenseId: expense.expenseId,
+        name: formData.name.trim(),
+        totalCost: parseFloat(formData.totalCost),
         groupId: parseInt(formData.groupId),
-        paidBy: parseInt(formData.paidBy),
-        splits: splits.filter(split => split.included && split.amount > 0)
+        category: formData.category,
+        description: formData.description.trim() || null,
+        createdBy: expense.createdBy,
+        createdAt: formData.date,
+        // Send userExpenses for the user_expense table
+        userExpenses: userExpenses
+          .filter(ue => ue.included)
+          .map(ue => ({
+            userId: ue.userId,
+            amountOwed: ue.amountOwed,
+            amountPaid: ue.amountPaid
+          }))
       };
       
-      await onSubmit(expense.id, expenseData);
+      await onSubmit(expense.expenseId, expenseData);
       
     } catch (err) {
       setError(err.message || 'Failed to update expense');
@@ -244,25 +208,25 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
 
   const handleClose = () => {
     setFormData({
-      description: '',
-      amount: '',
+      name: '',
+      totalCost: '',
       groupId: '',
       category: '',
+      description: '',
       date: '',
-      paidBy: '',
-      splitType: 'equal',
-      notes: '',
       receipt: null
     });
-    setSplits([]);
+    setUserExpenses([]);
     setError('');
     onHide();
   };
 
   if (!expense) return null;
 
-  const totalSplitAmount = splits.reduce((sum, split) => sum + (split.included ? split.amount || 0 : 0), 0);
-  const expenseAmount = parseFloat(formData.amount) || 0;
+  const totalOwed = userExpenses.reduce((sum, ue) => sum + (ue.included ? ue.amountOwed || 0 : 0), 0);
+  const totalPaid = userExpenses.reduce((sum, ue) => sum + (ue.amountPaid || 0), 0);
+  const expenseAmount = parseFloat(formData.totalCost) || 0;
+  const currentPayer = userExpenses.find(ue => ue.amountPaid > 0);
 
   return (
     <Modal show={show} onHide={handleClose} size="xl">
@@ -283,12 +247,12 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
             <div className="col-md-6">
               {/* Basic Info */}
               <div className="mb-3">
-                <label className="form-label">Description *</label>
+                <label className="form-label">Name *</label>
                 <input
                   type="text"
                   className="form-control"
-                  name="description"
-                  value={formData.description}
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
                   placeholder="e.g. Dinner at Tokyo Restaurant"
                   required
@@ -298,14 +262,14 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
               <div className="row">
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Amount *</label>
+                    <label className="form-label">Total Cost *</label>
                     <div className="input-group">
                       <span className="input-group-text">$</span>
                       <input
                         type="number"
                         className="form-control"
-                        name="amount"
-                        value={formData.amount}
+                        name="totalCost"
+                        value={formData.totalCost}
                         onChange={handleChange}
                         placeholder="0.00"
                         step="0.01"
@@ -330,55 +294,74 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
                 </div>
               </div>
 
-              <div className="mb-3">
-                <label className="form-label">Group *</label>
-                <select
-                  className="form-select"
-                  name="groupId"
-                  value={formData.groupId}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select a group</option>
-                  {groups.map(group => (
-                    <option key={group.id || group.groupId} value={group.id || group.groupId}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Group *</label>
+                    <select
+                      className="form-select"
+                      name="groupId"
+                      value={formData.groupId}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select a group</option>
+                      {groups.map(group => (
+                        <option key={group.id || group.groupId} value={group.id || group.groupId}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Category *</label>
+                    <select
+                      className="form-select"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map(category => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Category</label>
+                <label className="form-label">Who Paid?</label>
                 <select
                   className="form-select"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
+                  value={currentPayer?.userId || ''}
+                  onChange={(e) => handlePayerChange(e.target.value)}
                 >
-                  <option value="">Select a category</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Paid By</label>
-                <select
-                  className="form-select"
-                  name="paidBy"
-                  value={formData.paidBy}
-                  onChange={handleChange}
-                >
+                  <option value="">Select who paid</option>
                   {groupMembers.map(member => (
                     <option key={member.id} value={member.id}>
                       {member.name} {member.id === currentUser?.userId ? '(You)' : ''}
                     </option>
                   ))}
                 </select>
+                <small className="text-muted">This person will have the full amount as "paid"</small>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-control"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows="3"
+                  placeholder="Additional details about the expense (optional)"
+                />
               </div>
 
               <div className="mb-3">
@@ -391,141 +374,75 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
                 />
                 <small className="text-muted">Upload a new receipt image (optional)</small>
               </div>
-
-              <div className="mb-3">
-                <label className="form-label">Notes</label>
-                <textarea
-                  className="form-control"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  rows="2"
-                  placeholder="Additional notes (optional)"
-                />
-              </div>
             </div>
 
             <div className="col-md-6">
               {/* Split Configuration */}
               <div className="mb-3">
-                <label className="form-label">Split Method</label>
-                <div className="btn-group w-100" role="group">
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-equal"
-                    checked={formData.splitType === 'equal'}
-                    onChange={() => handleSplitTypeChange('equal')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-equal">
-                    <FaEquals className="me-1" /> Equal
-                  </label>
-
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-percentage"
-                    checked={formData.splitType === 'percentage'}
-                    onChange={() => handleSplitTypeChange('percentage')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-percentage">
-                    <FaPercentage className="me-1" /> %
-                  </label>
-
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-amount"
-                    checked={formData.splitType === 'amount'}
-                    onChange={() => handleSplitTypeChange('amount')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-amount">
-                    <FaDollarSign className="me-1" /> Amount
-                  </label>
-
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-shares"
-                    checked={formData.splitType === 'shares'}
-                    onChange={() => handleSplitTypeChange('shares')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-shares">
-                    <FaUsers className="me-1" /> Shares
-                  </label>
-                </div>
+                <label className="form-label">Split Among Members</label>
+                <small className="text-muted d-block">Choose who owes what amount</small>
               </div>
 
-              {/* Split Details */}
-              {splits.length > 0 && (
+              {/* User Expenses Details */}
+              {userExpenses.length > 0 && (
                 <div className="mb-3">
-                  <label className="form-label">Split Details</label>
+                  <label className="form-label">Who Owes What</label>
                   <div className="border rounded p-3">
-                    {splits.map(split => (
-                      <div key={split.userId} className="row align-items-center mb-2">
+                    <div className="row mb-2 fw-bold">
+                      <div className="col-1"></div>
+                      <div className="col-4">Member</div>
+                      <div className="col-3">Amount Owed</div>
+                      <div className="col-2">Paid</div>
+                      <div className="col-2">%</div>
+                    </div>
+                    <hr className="my-2" />
+                    
+                    {userExpenses.map(userExpense => (
+                      <div key={userExpense.userId} className="row align-items-center mb-2">
                         <div className="col-1">
                           <input
                             type="checkbox"
                             className="form-check-input"
-                            checked={split.included}
-                            onChange={() => toggleMemberInclusion(split.userId)}
+                            checked={userExpense.included}
+                            onChange={() => toggleMemberInclusion(userExpense.userId)}
                           />
                         </div>
                         <div className="col-4">
-                          <span className={split.included ? '' : 'text-muted'}>
-                            {split.name}
+                          <span className={userExpense.included ? '' : 'text-muted'}>
+                            {userExpense.name}
+                            {userExpense.userId === currentUser?.userId && ' (You)'}
                           </span>
                         </div>
                         <div className="col-3">
-                          {formData.splitType === 'percentage' ? (
-                            <div className="input-group input-group-sm">
-                              <input
-                                type="number"
-                                className="form-control"
-                                value={split.percentage || ''}
-                                onChange={(e) => handleSplitChange(split.userId, 'percentage', parseFloat(e.target.value) || 0)}
-                                disabled={!split.included}
-                                min="0"
-                                max="100"
-                              />
-                              <span className="input-group-text">%</span>
-                            </div>
-                          ) : formData.splitType === 'shares' ? (
+                          <div className="input-group input-group-sm">
+                            <span className="input-group-text">$</span>
                             <input
                               type="number"
-                              className="form-control form-control-sm"
-                              value={split.shares || ''}
-                              onChange={(e) => handleSplitChange(split.userId, 'shares', parseInt(e.target.value) || 0)}
-                              disabled={!split.included}
+                              className="form-control"
+                              value={userExpense.amountOwed || ''}
+                              onChange={(e) => handleAmountOwedChange(userExpense.userId, e.target.value)}
+                              disabled={!userExpense.included}
                               min="0"
-                              placeholder="Shares"
+                              step="0.01"
+                              placeholder="0.00"
                             />
-                          ) : formData.splitType === 'amount' ? (
-                            <div className="input-group input-group-sm">
-                              <span className="input-group-text">$</span>
-                              <input
-                                type="number"
-                                className="form-control"
-                                value={split.amount || ''}
-                                onChange={(e) => handleSplitChange(split.userId, 'amount', parseFloat(e.target.value) || 0)}
-                                disabled={!split.included}
-                                min="0"
-                                step="0.01"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-muted">
-                              ${(split.amount || 0).toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="col-2 text-center">
+                          {userExpense.amountPaid > 0 ? (
+                            <span className="badge bg-success">
+                              ${userExpense.amountPaid.toFixed(2)}
                             </span>
+                          ) : (
+                            <span className="text-muted">$0.00</span>
                           )}
                         </div>
-                        <div className="col-4 text-end">
+                        <div className="col-2 text-end">
                           <small className="text-muted">
-                            ${(split.amount || 0).toFixed(2)}
+                            {userExpense.included && expenseAmount > 0 
+                              ? `${((userExpense.amountOwed / expenseAmount) * 100).toFixed(1)}%`
+                              : '0%'
+                            }
                           </small>
                         </div>
                       </div>
@@ -533,32 +450,68 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
                     
                     <hr />
                     <div className="row">
-                      <div className="col-8">
-                        <strong>Total:</strong>
+                      <div className="col-5">
+                        <strong>Total Owed:</strong>
                       </div>
-                      <div className="col-4 text-end">
-                        <strong className={Math.abs(totalSplitAmount - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
-                          ${totalSplitAmount.toFixed(2)}
+                      <div className="col-3 text-end">
+                        <strong className={Math.abs(totalOwed - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
+                          ${totalOwed.toFixed(2)}
                         </strong>
                       </div>
+                      <div className="col-2 text-end">
+                        <strong className={Math.abs(totalPaid - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
+                          ${totalPaid.toFixed(2)}
+                        </strong>
+                      </div>
+                      <div className="col-2"></div>
                     </div>
                     <div className="row">
-                      <div className="col-8">
-                        <small className="text-muted">Expense Amount:</small>
+                      <div className="col-5">
+                        <small className="text-muted">Expense Total:</small>
                       </div>
-                      <div className="col-4 text-end">
+                      <div className="col-3 text-end">
                         <small className="text-muted">${expenseAmount.toFixed(2)}</small>
                       </div>
+                      <div className="col-2 text-end">
+                        <small className="text-muted">${expenseAmount.toFixed(2)}</small>
+                      </div>
+                      <div className="col-2"></div>
                     </div>
-                    {Math.abs(totalSplitAmount - expenseAmount) >= 0.01 && (
-                      <div className="row">
+                    
+                    {(Math.abs(totalOwed - expenseAmount) >= 0.01 || Math.abs(totalPaid - expenseAmount) >= 0.01) && (
+                      <div className="row mt-2">
                         <div className="col-12">
                           <small className="text-danger">
-                            Difference: ${Math.abs(totalSplitAmount - expenseAmount).toFixed(2)}
+                            {Math.abs(totalOwed - expenseAmount) >= 0.01 && 
+                              `Owed difference: ${Math.abs(totalOwed - expenseAmount).toFixed(2)}`
+                            }
+                            {Math.abs(totalOwed - expenseAmount) >= 0.01 && Math.abs(totalPaid - expenseAmount) >= 0.01 && ' | '}
+                            {Math.abs(totalPaid - expenseAmount) >= 0.01 && 
+                              `Paid difference: ${Math.abs(totalPaid - expenseAmount).toFixed(2)}`
+                            }
                           </small>
                         </div>
                       </div>
                     )}
+                    
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => {
+                          const includedMembers = userExpenses.filter(ue => ue.included);
+                          if (includedMembers.length > 0) {
+                            const equalShare = expenseAmount / includedMembers.length;
+                            setUserExpenses(userExpenses.map(ue => ({
+                              ...ue,
+                              amountOwed: ue.included ? equalShare : 0
+                            })));
+                          }
+                        }}
+                      >
+                        <FaEquals className="me-1" /> Split Equally
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -573,7 +526,7 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
           <Button 
             variant="primary" 
             type="submit"
-            disabled={loading || !validateSplits()}
+            disabled={loading || !validateUserExpenses()}
           >
             {loading ? (
               <>

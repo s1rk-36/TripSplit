@@ -25,4 +25,8 @@ public interface GroupRepository {
     boolean isUserMember(int groupId, int userId);
 
     List<UserGroup> getGroupMembers(int groupId);
+
+    boolean removeUserFromGroup(int groupId, int userId);
+
+    boolean isUserAdmin(int groupId, int userId);
 }

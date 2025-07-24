@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
-import {FaEdit } from 'react-icons/fa';
+import { FaUsers, FaPlus, FaTimes, FaEdit } from 'react-icons/fa';
 
 function EditGroupModal({ show, onHide, group, onSubmit }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    isActive: true
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,21 +16,21 @@ function EditGroupModal({ show, onHide, group, onSubmit }) {
       setFormData({
         name: group.name || '',
         description: group.description || '',
+        isActive: group.isActive !== undefined ? group.isActive : true
       });
     }
   }, [group]);
 
   const handleChange = (e) => {
-    const { name, value} = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({ 
       ...prev, 
-      [name]: value 
+      [name]: type === 'checkbox' ? checked : value 
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("changing to ", formData);
     
     // Validate form
     if (!formData.name.trim()) {
@@ -41,7 +42,8 @@ function EditGroupModal({ show, onHide, group, onSubmit }) {
       setLoading(true);
       setError('');
       
-      await onSubmit(group.id, {
+      await onSubmit(group.groupId, {
+        ...group,
         name: formData.name.trim(),
         description: formData.description.trim(),
       });

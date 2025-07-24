@@ -169,6 +169,31 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
     }
 
     @Override
+    public boolean removeUserFromGroup(int groupId, int userId) {
+        final String sql = "DELETE FROM user_group WHERE group_id = ? AND user_id = ?;";
+
+        try {
+            int rowsAffected = jdbcTemplate.update(sql, groupId, userId);
+            return rowsAffected > 0;
+        } catch (Exception e) {
+            System.out.println("Error removing user from group: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isUserAdmin(int groupId, int userId) {
+        final String sql = "SELECT is_admin FROM user_group WHERE group_id = ? AND user_id = ?;";
+
+        try {
+            Boolean isAdmin = jdbcTemplate.queryForObject(sql, Boolean.class, groupId, userId);
+            return isAdmin != null && isAdmin;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
     public List<UserGroup> getGroupMembers(int groupId) {
         final String sql = "select "
                 + "ug.user_id as ug_user_id, "

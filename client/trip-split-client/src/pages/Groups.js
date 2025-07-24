@@ -7,7 +7,7 @@ import CreateGroupModal from '../components/modals/CreateGroupModal';
 import EditGroupModal from '../components/modals/EditGroupModal';
 import GroupDetailsModal from '../components/modals/GroupDetailsModal';
 import JoinGroupModal from '../components/modals/JoinGroupModal';
-import { FaPlus, FaUsers, FaDollarSign, FaEdit, FaTrash, FaEye, FaCopy, FaShare, FaSearch, FaUserPlus, FaReceipt } from 'react-icons/fa';
+import { FaPlus, FaUsers, FaCrown, FaEdit, FaTrash, FaEye, FaCopy, FaShare, FaSearch, FaUserPlus, FaReceipt } from 'react-icons/fa';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
 import { formatCurrency } from '../utils/helpers';
@@ -38,7 +38,7 @@ function Groups() {
 
       const groupsData = await apiService.getGroups();
       setGroups(groupsData || []);
-
+      console.log(groupsData);
     } catch (err) {
       console.error('Failed to load groups:', err);
       setError(err.message || 'Failed to load groups');
@@ -60,7 +60,7 @@ function Groups() {
 
   const handleJoinGroup = async (groupId) => {
     try {
-      const joinedGroup = await apiService.joinGroup({groupId});
+      const joinedGroup = await apiService.joinGroup({ groupId });
       setGroups([...groups, joinedGroup]);
       setShowJoinModal(false);
     } catch (err) {
@@ -72,9 +72,7 @@ function Groups() {
   const handleEditGroup = async (groupId, groupData) => {
     try {
       const updatedGroup = await apiService.updateGroup(groupId, groupData);
-      setGroups(groups.map(group => 
-        group.groupId === groupId ? updatedGroup : group
-      ));
+      await loadGroups();
       setShowEditModal(false);
       setSelectedGroup(null);
     } catch (err) {
@@ -124,14 +122,15 @@ function Groups() {
   };
 
   const handleCopyInviteCode = (groupId) => {
+    console.log("copying", groupId);
     navigator.clipboard.writeText(groupId.toString());
     alert('Group ID copied to clipboard!');
   };
 
   // Filter groups based on search and status
   const filteredGroups = groups.filter(group => {
-    const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = group.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+      group.description?.toLowerCase().includes(searchTerm?.toLowerCase());
 
     if (filterStatus === 'all') return matchesSearch;
     if (filterStatus === 'active') return matchesSearch && group.isActive;
@@ -177,9 +176,9 @@ function Groups() {
             />
           </div>
         </div>
-        
+
         <div className="btn-group col-md-4">
-          <button 
+          <button
             className="btn btn-outline-primary"
             onClick={() => setShowJoinModal(true)}
           >
@@ -233,6 +232,20 @@ function Groups() {
                 <div className="card-body">
                   <div className="d-flex justify-content-between align-items-start mb-3">
                     <h5 className="card-title">{group.name}</h5>
+                    <div className="d-flex gap-1">
+                      {/* Admin indicator */}
+                      {(() => {
+                        const currentUserMembership = group.users?.find(userGroup =>
+                          userGroup.user.appUserId === currentUser?.userId
+                        );
+                        return currentUserMembership?.isGroupAdmin && (
+                          <span className="badge bg-warning text-dark" title="You are an admin">
+                            <FaCrown size={10} className="me-1" />
+                          </span>
+                        );
+                      })()}
+
+                    </div>
                     <div className="dropdown">
                       <button
                         className="btn btn-sm btn-outline-secondary"
@@ -243,14 +256,6 @@ function Groups() {
                         ⋮
                       </button>
                       <ul className="dropdown-menu">
-                        <li>
-                          <Link
-                            className="dropdown-item"
-                            to={`/expenses?group=${group.groupId}`}
-                          >
-                            <FaReceipt className="me-2" /> View Expenses
-                          </Link>
-                        </li>
                         <li>
                           <button
                             className="dropdown-item"
@@ -273,7 +278,7 @@ function Groups() {
                         <li>
                           <button
                             className="dropdown-item"
-                            onClick={() => handleCopyInviteCode(group.inviteCode)}
+                            onClick={() => handleCopyInviteCode(group.groupId)}
                           >
                             <FaCopy className="me-2" /> Copy Invite Code
                           </button>
@@ -295,38 +300,8 @@ function Groups() {
                     {group.description}
                   </p>
 
-                  {/* Group Stats */}
-                  <div className="mb-3">
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <div className="d-flex align-items-center">
-                        <FaUsers className="text-muted me-2" size={16} />
-                        <span className="small">{group.memberCount || 0} members</span>
-                      </div>
-                    </div>
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <div className="d-flex align-items-center">
-                        <FaDollarSign className="text-muted me-2" size={16} />
-                        <span className="small">{formatCurrency(group.totalExpenses || 0)} total</span>
-                      </div>
-                      {group.userBalance !== undefined && (
-                        <span className={`small ${group.userBalance >= 0 ? 'text-success' : 'text-danger'}`}>
-                          {group.userBalance >= 0 ? 'Owed: ' : 'Owes: '}
-                          {formatCurrency(Math.abs(group.userBalance))}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Recent Activity */}
-                  {group.recentActivity && (
-                    <div className="mb-3">
-                      <small className="text-muted">Recent:</small>
-                      <div className="small text-truncate">
-                        {group.recentActivity}
-                      </div>
-                    </div>
-                  )}
                 </div>
+
 
                 <div className="card-footer bg-transparent">
                   <div className="d-grid gap-2">

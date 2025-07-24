@@ -198,6 +198,13 @@ async login(credentials) {
   async getGroupMembers(groupId) {
   return makeAuthenticatedRequest(`/groups/${groupId}/members`);
 },
+
+async removeGroupMember(groupId, userId) {
+  return makeAuthenticatedRequest(`/groups/${groupId}/members/${userId}`, {
+    method: 'DELETE'
+  });
+},
+
 // admin access
   async getAllGroups() {
     return makeAuthenticatedRequest('/groups');

@@ -94,7 +94,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }
       <Modal.Header closeButton>
         <Modal.Title>
           <FaReceipt className="me-2" />
-          {expense.description}
+          {expense.name}
         </Modal.Title>
       </Modal.Header>
       
@@ -108,7 +108,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }
           <div className="col-md-8">
             <div className="d-flex gap-4 mb-3">
               <div>
-                <h4 className="text-primary mb-0">{formatCurrency(expense.amount)}</h4>
+                <h4 className="text-primary mb-0">{formatCurrency(expense.totalCost)}</h4>
                 <small className="text-muted">Total Amount</small>
               </div>
               <div>
@@ -130,7 +130,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }
               </span>
               <span className="d-flex align-items-center text-muted">
                 <FaCalendar className="me-1" />
-                {new Date(expense.date).toLocaleDateString()}
+                {new Date(expense.createdAt).toLocaleDateString()}
               </span>
               {expense.category && (
                 <span className="d-flex align-items-center text-muted">
@@ -144,23 +144,16 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }
               </span>
             </div>
 
-            {expense.notes && (
+            {expense.description && (
               <div className="mb-3">
                 <strong>Notes:</strong>
-                <p className="text-muted mb-0 mt-1">{expense.notes}</p>
+                <p className="text-muted mb-0 mt-1">{expense.description}</p>
               </div>
             )}
           </div>
           
           <div className="col-md-4 text-end">
             <div className="btn-group mb-3">
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={handleCopyExpenseId}
-                title="Copy Expense ID"
-              >
-                <FaCopy className="me-1" /> Copy ID
-              </button>
               {isPaidByUser && (
                 <>
                   <button
@@ -194,15 +187,6 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }
                   {receipts.length} Receipt{receipts.length > 1 ? 's' : ''}
                 </span>
               )}
-              {comments.length > 0 && (
-                <span className="badge bg-secondary">
-                  <FaComment className="me-1" />
-                  {comments.length} Comment{comments.length > 1 ? 's' : ''}
-                </span>
-              )}
-              <span className="badge bg-primary">
-                {expense.splitType || 'Equal'} Split
-              </span>
             </div>
           </div>
         </div>
@@ -264,52 +248,6 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }
                       </tr>
                     </tfoot>
                   </table>
-                </div>
-              </div>
-              
-              <div className="col-md-4">
-                <h6>Summary</h6>
-                <div className="card">
-                  <div className="card-body">
-                    <div className="mb-2">
-                      <small className="text-muted">Expense ID</small>
-                      <div className="font-monospace">{expense.id}</div>
-                    </div>
-                    <div className="mb-2">
-                      <small className="text-muted">Created</small>
-                      <div>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : 'Unknown'}</div>
-                    </div>
-                    <div className="mb-2">
-                      <small className="text-muted">Split Method</small>
-                      <div>
-                        <span className="badge bg-primary">
-                          {expense.splitType === 'equal' && 'Equal Split'}
-                          {expense.splitType === 'percentage' && 'Percentage Split'}
-                          {expense.splitType === 'amount' && 'Custom Amounts'}
-                          {expense.splitType === 'shares' && 'Share-based'}
-                          {!expense.splitType && 'Equal Split'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-2">
-                      <small className="text-muted">People Involved</small>
-                      <div>{expense.splits?.length || 0} members</div>
-                    </div>
-                    {userSplit && (
-                      <div className="mt-3 p-2 bg-light rounded">
-                        <small className="text-muted">Your Balance</small>
-                        <div className={`fw-bold ${isPaidByUser ? 'text-success' : 'text-danger'}`}>
-                          {isPaidByUser 
-                            ? `+${formatCurrency(expense.amount - userSplit.amount)}` 
-                            : `-${formatCurrency(userSplit.amount)}`
-                          }
-                        </div>
-                        <small className="text-muted">
-                          {isPaidByUser ? 'You are owed' : 'You owe'}
-                        </small>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>

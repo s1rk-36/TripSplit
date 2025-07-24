@@ -2,6 +2,7 @@ package learn.tripsplit.controllers;
 
 import learn.tripsplit.domain.GroupService;
 import learn.tripsplit.domain.Result;
+import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.Group;
 import learn.tripsplit.models.UserGroup;
@@ -193,6 +194,8 @@ public class GroupController {
     }
     @PutMapping("/{groupId}")
     public ResponseEntity<Object> update(@PathVariable int groupId, @RequestBody Group group) {
+        System.out.println(groupId);
+        System.out.println(group.getGroupId());
         if (groupId != group.getGroupId()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // 400
         }
@@ -203,6 +206,40 @@ public class GroupController {
         }
 
         return ErrorResponse.build(result);
+    }
+
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ResponseEntity<?> removeUserFromGroup(@PathVariable int groupId, @PathVariable int userId, Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            }
+
+            // Get current user
+            String username = authentication.getName();
+            AppUser currentUser = appUserService.findByUsername(username);
+            if (currentUser == null) {
+                currentUser = appUserService.findByEmail(username);
+            }
+
+            if (currentUser == null) {
+                return new ResponseEntity<>("User not found", HttpStatus.UNAUTHORIZED);
+            }
+
+            Result<Void> result = service.removeUserFromGroup(groupId, userId);
+
+            if (!result.isSuccess()) {
+                if (result.getType() == ResultType.NOT_FOUND) {
+                    return new ResponseEntity<>(result.getMessages(), HttpStatus.NOT_FOUND);
+                }
+                return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
+            }
+
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PreAuthorize("hasRole('ADMIN')")
