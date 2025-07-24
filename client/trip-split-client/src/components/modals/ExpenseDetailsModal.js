@@ -89,6 +89,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
         amountOwed: currentUserExpense.amountOwed,
         amountPaid: (currentUserExpense.amountPaid || 0) + amount
       };
+
       
       await apiService.updateUserExpense(updatedUserExpense);
       
@@ -299,28 +300,6 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                 </div>
               </div>
             )}
-
-            {/* Actions */}
-            {isCreatedByUser && (
-              <div className="card">
-                <div className="card-header">
-                  <h6 className="mb-0">Actions</h6>
-                </div>
-                <div className="card-body">
-                  <div className="d-grid gap-2">
-                    <Button variant="primary" onClick={handleEdit}>
-                      <FaEdit className="me-1" /> Edit Expense
-                    </Button>
-                    <Button variant="outline-danger" onClick={handleDelete}>
-                      <FaTrash className="me-1" /> Delete Expense
-                    </Button>
-                  </div>
-                  <small className="text-muted d-block mt-2">
-                    Only you can edit or delete this expense since you created it.
-                  </small>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -396,49 +375,6 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                               {sharePercentage.toFixed(1)}%
                             </span>
                             
-                            {/* Payment Actions - Only show for current user */}
-                            {userExpense.userId === currentUser?.userId && balance < 0 && (
-                              <div className="mt-1">
-                                <div className="input-group input-group-sm">
-                                  <span className="input-group-text">$</span>
-                                  <input
-                                    type="number"
-                                    className="form-control"
-                                    placeholder="0.00"
-                                    value={paymentAmounts[userExpense.userId] || ''}
-                                    onChange={(e) => setPaymentAmounts(prev => ({
-                                      ...prev,
-                                      [userExpense.userId]: e.target.value
-                                    }))}
-                                    min="0"
-                                    max={Math.abs(balance)}
-                                    step="0.01"
-                                    style={{maxWidth: '80px'}}
-                                  />
-                                  <button
-                                    className="btn btn-success btn-sm"
-                                    onClick={() => {
-                                      const amount = parseFloat(paymentAmounts[userExpense.userId]) || 0;
-                                      if (amount > 0) {
-                                        handlePayExpense(amount);
-                                      }
-                                    }}
-                                    disabled={!paymentAmounts[userExpense.userId] || paymentLoading}
-                                    title="Pay this amount"
-                                  >
-                                    <FaCreditCard size={10} />
-                                  </button>
-                                </div>
-                                <button
-                                  className="btn btn-outline-success btn-sm mt-1"
-                                  onClick={() => handlePayExpense(Math.abs(balance))}
-                                  disabled={paymentLoading}
-                                  style={{fontSize: '10px'}}
-                                >
-                                  Pay Full
-                                </button>
-                              </div>
-                            )}
                             
                             {/* Paid Status */}
                             {userExpense.userId === currentUser?.userId && balance >= 0 && (

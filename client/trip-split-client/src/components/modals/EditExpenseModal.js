@@ -340,23 +340,6 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Who Paid?</label>
-                <select
-                  className="form-select"
-                  value={currentPayer?.userId || ''}
-                  onChange={(e) => handlePayerChange(e.target.value)}
-                >
-                  <option value="">Select who paid</option>
-                  {groupMembers.map(member => (
-                    <option key={member.id} value={member.id}>
-                      {member.name} {member.id === currentUser?.userId ? '(You)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <small className="text-muted">This person will have the full amount as "paid"</small>
-              </div>
-
-              <div className="mb-3">
                 <label className="form-label">Description</label>
                 <textarea
                   className="form-control"

@@ -7,7 +7,7 @@ Content-Type: application/json
 
 {
     "email": "test@example.com",
-    "password": "P@ssw0rd!"
+    "password": "password1."
 }
 
 ### Register

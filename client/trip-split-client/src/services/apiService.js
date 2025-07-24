@@ -191,13 +191,9 @@ async login(credentials) {
     });
   },
 
-// Add this to apiService.js
 async updateUserExpense(userExpenseData) {
   return makeAuthenticatedRequest(`/user_expenses/${userExpenseData.userId}/${userExpenseData.expenseId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(userExpenseData),
   });
 },
