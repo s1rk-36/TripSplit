@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { FaReceipt, FaCamera, FaEquals, FaPercentage, FaDollarSign, FaUsers } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
-import { apiService } from '../../services/apiService';
-
 
 function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSelectedGroup }) {
   const { currentUser } = useAuth();
@@ -13,12 +11,11 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
     groupId: preSelectedGroup || '',
     category: '',
     date: new Date().toISOString().split('T')[0],
-    paidBy: currentUser?.username || '',
+    paidBy: currentUser?.userId || '',
     splitType: 'equal', // equal, percentage, amount, shares
     notes: '',
     receipt: null
   });
-  console.log(formData);
   const [groupMembers, setGroupMembers] = useState([]);
   const [splits, setSplits] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -44,16 +41,18 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
 
   const loadGroupMembers = async (groupId) => {
     try {
-      const userGroups = await apiService.getGroupMembers(groupId);
-    const members = userGroups.map(userGroup => ({
-      id: userGroup.user.appUserId,
-      name: `${userGroup.user.firstName} ${userGroup.user.lastName}`,
-      email: userGroup.user.email,
-      isAdmin: userGroup.admin
-    }));
-    
-    setGroupMembers(members);
-
+      // This would typically call an API to get group members
+      // For now, we'll use mock data or extract from the group
+      const group = groups.find(g => (g.id || g.groupId).toString() === groupId.toString());
+      if (group && group.members) {
+        setGroupMembers(group.members);
+      } else if (group) {
+        // If no members array, create a basic member list
+        // You might need to call an API here: await apiService.getGroupMembers(groupId)
+        setGroupMembers([
+          { id: currentUser?.userId, name: `${currentUser?.firstName} ${currentUser?.lastName}` }
+        ]);
+      }
     } catch (err) {
       console.error('Failed to load group members:', err);
     }

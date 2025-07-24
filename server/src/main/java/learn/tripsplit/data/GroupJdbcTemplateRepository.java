@@ -39,7 +39,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
     @Override
     @Transactional
     public Group findById(int groupId) {
-        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.created_by, "
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "
@@ -71,7 +71,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, group.getName());
             ps.setString(2, group.getDescription());
-            ps.setInt(3, group.getCreatedBy());
+            ps.setInt(3, group.getCreatedBy().getAppUserId());
             return ps;
         }, keyHolder);
 
@@ -80,7 +80,6 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
         }
 
         group.setGroupId(keyHolder.getKey().intValue());
-
         return group;
     }
 
@@ -166,81 +165,6 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
         );
 
         group.setUsers(userGroups);
-    }
-
-    @Override
-    public List<UserGroup> getGroupMembers(int groupId) {
-        final String sql = "select "
-                + "ug.user_id as ug_user_id, "
-                + "ug.group_id as ug_group_id, "
-                + "ug.is_admin as ug_is_admin, "
-
-                + "u.user_id as u_user_id, "
-                + "u.first_name as u_first_name, "
-                + "u.last_name as u_last_name, "
-                + "u.email as u_email, "
-                + "u.username as u_username, "
-                + "u.password_hash as u_password_hash, "
-                + "u.disabled as u_disabled "
-
-                + "from user_group ug "
-                + "inner join `user` u on ug.user_id = u.user_id "
-                + "where ug.group_id = ? "
-                + "order by u.first_name, u.last_name;";
-
-        UserGroupMapper userGroupMapper = new UserGroupMapper(this);
-
-        return jdbcTemplate.query(sql,
-                (rs, rowNum) -> userGroupMapper.mapRow(rs, rowNum, "ug_", "u_", "", ""),
-                groupId
-        );
-    }
-
-    @Override
-    public boolean addUserToGroup(int groupId, int userId, boolean isAdmin) {
-        final String sql = "INSERT INTO user_group (group_id, user_id, is_admin) VALUES (?, ?, ?);";
-
-        try {
-            int result = jdbcTemplate.update(sql, groupId, userId, isAdmin);
-            System.out.println("Added user " + userId + " to group " + groupId + " as " + (isAdmin ? "admin" : "member"));
-            return result > 0;
-        } catch (Exception e) {
-            System.out.println("Error adding user to group: " + e.getMessage());
-            return false;
-        }
-    }
-
-    @Override
-    public boolean isUserMember(int groupId, int userId) {
-        final String sql = "SELECT COUNT(*) FROM user_group WHERE group_id = ? AND user_id = ?;";
-
-        try {
-            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, groupId, userId);
-            return count > 0;
-        } catch (Exception e) {
-            System.out.println("Error checking group membership: " + e.getMessage());
-            return false;
-        }
-    }
-
-    @Override
-    public List<Group> findGroupsByUserId(int userId) {
-        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
-                + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
-                + "from `group` as g "
-                + "inner join user as u on g.created_by = u.user_id "
-                + "inner join user_group ug on g.group_id = ug.group_id "
-                + "where ug.user_id = ? "
-                + "order by g.group_id asc;";
-
-        List<Group> groups = jdbcTemplate.query(sql, new GroupMapper(this), userId);
-
-        // Add users to each group
-        for (Group group : groups) {
-            addUsers(group);
-        }
-
-        return groups;
     }
 
 }

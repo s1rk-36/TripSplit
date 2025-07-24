@@ -26,14 +26,6 @@ public class GroupService {
         return repository.findById(groupId);
     }
 
-    public List<UserGroup> getGroupMembers(int groupId) {
-        return repository.getGroupMembers(groupId);
-    }
-
-    public boolean isUserMember(int groupId, int userId) {
-        return repository.isUserMember(groupId, userId);
-    }
-
     public Result<Group> add(Group group) {
         Result<Group> result = validate(group);
         if (!result.isSuccess()) {
