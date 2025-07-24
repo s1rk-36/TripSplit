@@ -238,6 +238,10 @@ async login(credentials) {
   },
 
   // User Expenses endpoints 
+   async getUser(userId) {
+    return makeAuthenticatedRequest(`/user/${userId}`);
+  },
+
   async getUserBalance(userId) {
     return makeAuthenticatedRequest(`/user-expenses/user/${userId}/balance`);
   },

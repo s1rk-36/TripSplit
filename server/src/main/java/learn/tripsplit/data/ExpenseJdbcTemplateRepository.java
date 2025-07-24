@@ -89,6 +89,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
             return expense;
         }, groupId);
     }
+
     @Override
     @Transactional
     public Expense findById(int expenseId) {

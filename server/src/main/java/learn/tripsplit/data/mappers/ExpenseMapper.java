@@ -34,7 +34,10 @@ public class ExpenseMapper implements RowMapper<Expense> {
         expense.setTotalCost(resultSet.getBigDecimal(expensePrefix + "total_cost"));
         expense.setCategory(Category.valueOf(resultSet.getString(expensePrefix + "category")));
         String description = resultSet.getString(expensePrefix + "expense_description");
-        expense.setDescription(description != null ? description : resultSet.getString(groupPrefix + "description"));
+        if (description == null) {
+            description = resultSet.getString(groupPrefix + "group_description");
+        }
+        expense.setDescription(description);
         expense.setCreatedAt(resultSet.getTimestamp(expensePrefix + "created_at").toLocalDateTime());
 
         expense.setGroupId(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix).getGroupId());

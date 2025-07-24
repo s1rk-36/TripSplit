@@ -10,4 +10,5 @@ public interface ExpenseRepository {
     Expense add(Expense expense);
     boolean update(Expense expense);
     boolean deleteById(int expenseId);
+
 }

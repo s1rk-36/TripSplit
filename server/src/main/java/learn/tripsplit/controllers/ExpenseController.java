@@ -39,11 +39,12 @@ public class ExpenseController {
 
     @GetMapping("/group/{groupId}")
     public List<Expense> findByGroupId(@PathVariable int groupId) {
-        return expenseService.findByGroupId(groupId);
+        return expenseService.findByGroupIdWithUserExpenses(groupId);
     }
 
     @GetMapping("/{expenseId}")
     public ResponseEntity<Expense> findById(@PathVariable int expenseId) {
+        System.out.println(expenseId);
         Expense expense = expenseService.findById(expenseId);
         if (expense == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

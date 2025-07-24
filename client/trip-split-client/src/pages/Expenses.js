@@ -137,6 +137,11 @@ function Expenses() {
     return group ? group.name : 'Unknown Group';
   };
 
+  const getNameOfUser = async (userId) => {
+    const userData = await apiService.getUser(userId);
+    console.log("Im looking for user", userData);
+  }
+
   // Filter and sort expenses
   const filteredExpenses = expenses.filter(expense => {
     const matchesSearch = expense.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -252,7 +257,7 @@ function Expenses() {
               >
                 <option value="all">All Groups</option>
                 {groups.map(group => (
-                  <option key={group.id || group.groupId} value={group.id || group.groupId}>
+                  <option key={group.groupId} value={group.groupId}>
                     {group.name}
                   </option>
                 ))}
@@ -320,44 +325,6 @@ function Expenses() {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      {filteredExpenses.length > 0 && (
-        <div className="row mb-4">
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-primary">{filteredExpenses.length}</h4>
-                <p className="card-text small">Total Expenses</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-success">{formatCurrency(totalExpenses)}</h4>
-                <p className="card-text small">Total Amount</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-info">{formatCurrency(userPaidTotal)}</h4>
-                <p className="card-text small">You Paid</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-warning">{formatCurrency(userShareTotal)}</h4>
-                <p className="card-text small">Your Share</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Expenses List */}
       {filteredExpenses.length === 0 ? (
         <div className="text-center py-5">
@@ -402,8 +369,9 @@ function Expenses() {
                 </thead>
                 <tbody>
                   {filteredExpenses.map(expense => {
-                    const userSplit = expense.splits?.find(split => split.userId === currentUser?.userId);
-                    const isPaidByUser = expense.paidBy === currentUser?.userId;
+                    const userSplit = expense.userExpenses?.find(userExpense => userExpense.userId === currentUser?.userId);
+                    // const currUser = getNameOfUser(expense.createdBy);
+                    const isPaidByUser = expense.createdBy === currentUser?.userId;
                     
                     return (
                       <tr key={expense.id} className="align-middle">
@@ -465,7 +433,7 @@ function Expenses() {
                               <li>
                                 <button 
                                   className="dropdown-item"
-                                  onClick={() => handleViewDetails(expense.id)}
+                                  onClick={() => handleViewDetails(expense.expenseId)}
                                 >
                                   <FaEye className="me-2" /> View Details
                                 </button>

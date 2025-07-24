@@ -1,7 +1,9 @@
 package learn.tripsplit.domain;
 
 import learn.tripsplit.data.ExpenseRepository;
+import learn.tripsplit.data.UserExpenseRepository;
 import learn.tripsplit.models.Expense;
+import learn.tripsplit.models.UserExpense;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,9 @@ public class ExpenseService {
 
     @Autowired
     private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private UserExpenseRepository userExpenseRepository;
 
     public List<Expense> findAll() {
         return expenseRepository.findAll();
@@ -68,6 +73,15 @@ public class ExpenseService {
         }
 
         return result;
+    }
+
+    public List<Expense> findByGroupIdWithUserExpenses(int groupId) {
+        List<Expense> expenses = expenseRepository.findByGroupId(groupId);
+        for (Expense expense : expenses) {
+            List<UserExpense> userExpenses = userExpenseRepository.findByExpenseId(expense.getExpenseId());
+            expense.setUserExpenses(userExpenses);
+        }
+        return expenses;
     }
 
     @Transactional
