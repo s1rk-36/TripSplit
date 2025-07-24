@@ -203,8 +203,6 @@ function Groups() {
                 <option value="name-desc">Name (Z-A)</option>
                 <option value="members-desc">Most Members</option>
                 <option value="members-asc">Fewest Members</option>
-                <option value="date-desc">Newest First</option>
-                <option value="date-asc">Oldest First</option>
               </select>
             </div>
             <div className="col-md-3">
@@ -284,10 +282,6 @@ function Groups() {
                       <p className="card-text text-muted small mb-3">{group.description}</p>
                     )}
                     
-                    <div className="d-flex align-items-center text-muted small">
-                      <FaCalendar className="me-1" />
-                      <span>Created {new Date(group.createdAt || Date.now()).toLocaleDateString()}</span>
-                    </div>
                   </div>
                   
                   <div className="card-footer d-flex justify-content-between align-items-center">
