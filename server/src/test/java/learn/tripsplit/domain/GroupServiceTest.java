@@ -25,13 +25,13 @@ public class GroupServiceTest {
 
     @Test
     void shouldFindAll() {
-        AppUser appUser = getUser1();
-        Group group = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser);
+        int appUserId = getUser1().getAppUserId();
+        Group group = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUserId);
 
         List<Group> mockList = List.of(
-                new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser),
-                new Group(2, "NYC Business Conference", "Travel group for attending a tech conference in NYC.", appUser),
-                new Group(3, "Iceland Road Adventure", "Self-drive ring road trip around Iceland.", appUser)
+                new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUserId),
+                new Group(2, "NYC Business Conference", "Travel group for attending a tech conference in NYC.", appUserId),
+                new Group(3, "Iceland Road Adventure", "Self-drive ring road trip around Iceland.", appUserId)
         );
 
         when(repository.findAll()).thenReturn(mockList);
@@ -43,8 +43,8 @@ public class GroupServiceTest {
 
     @Test
     void shouldFindById() {
-        AppUser appUser = getUser1();
-        Group group = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser);
+        int appUserId = getUser1().getAppUserId();
+        Group group = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUserId);
 
         when(repository.findById(1)).thenReturn(group);
 
@@ -67,8 +67,8 @@ public class GroupServiceTest {
     void shouldAdd() {
         AppUser appUser = getUser1();
 
-        Group groupIn = new Group(0, "Added Group", "", appUser);
-        Group groupOut = new Group(1, "Added Group", "", appUser);
+        Group groupIn = new Group(0, "Added Group", "", appUser.getAppUserId());
+        Group groupOut = new Group(1, "Added Group", "", appUser.getAppUserId());
 
         // Set Users for groupIn for validation to pass
         UserGroup userGroupIn = new UserGroup(appUser.getAppUserId(), groupIn.getGroupId(), false);
@@ -98,7 +98,7 @@ public class GroupServiceTest {
     @Test
     void shouldNotAddIfGroupIdAlreadySet() {
         AppUser appUser = getUser1();
-        Group group = new Group(5, "Test Group", "", appUser);
+        Group group = new Group(5, "Test Group", "", appUser.getAppUserId());
 
         // Set Users for group for validation to pass
         UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
@@ -115,7 +115,7 @@ public class GroupServiceTest {
     @Test
     void shouldUpdate() {
         AppUser appUser = getUser1();
-        Group group = new Group(1, "Updated Group", "", appUser);
+        Group group = new Group(1, "Updated Group", "", appUser.getAppUserId());
 
         // Set Users for group for validation to pass
         UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
@@ -138,7 +138,7 @@ public class GroupServiceTest {
     @Test
     void shouldNotUpdateNonExistent() {
         AppUser appUser = getUser1();
-        Group group = new Group(9999, "Nonexistent Group", "", appUser);
+        Group group = new Group(9999, "Nonexistent Group", "", appUser.getAppUserId());
 
         // Set Users for group for validation to pass
         UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
@@ -160,7 +160,7 @@ public class GroupServiceTest {
     @Test
     void shouldNotUpdateIfGroupIdNotSet() {
         AppUser appUser = getUser1();
-        Group group = new Group(0, "Test Group", "", appUser);
+        Group group = new Group(0, "Test Group", "", appUser.getAppUserId());
 
         // Set Users for group for validation to pass
         UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
@@ -185,8 +185,8 @@ public class GroupServiceTest {
     @Test
     void shouldNotValidateNullOrBlankName() {
         AppUser appUser = getUser1();
-        Group nullName = new Group(0, null, "", appUser);
-        Group blankName = new Group(0, "   \t\n", "", appUser);
+        Group nullName = new Group(0, null, "", appUser.getAppUserId());
+        Group blankName = new Group(0, "   \t\n", "", appUser.getAppUserId());
 
         // Set Users for nullName for validation to pass
         UserGroup userGroupNullName = new UserGroup(appUser.getAppUserId(), nullName.getGroupId(), false);
@@ -212,8 +212,8 @@ public class GroupServiceTest {
     @Test
     void shouldNotValidateNameLengthOutOfRange() {
         AppUser appUser = getUser1();
-        Group belowMin = new Group(0, "1", "", appUser);
-        Group aboveMax = new Group(0, "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", "", appUser);
+        Group belowMin = new Group(0, "1", "", appUser.getAppUserId());
+        Group aboveMax = new Group(0, "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890", "", appUser.getAppUserId());
 
         // Set Users for belowMin for validation to pass
         UserGroup userGroupNullName = new UserGroup(appUser.getAppUserId(), belowMin.getGroupId(), false);
@@ -236,29 +236,29 @@ public class GroupServiceTest {
         assertTrue(result2.getMessages().contains("group name must be between 3 and 100 characters"));
     }
 
-    @Test
-    void shouldNotValidateNullCreatedBy() {
-        AppUser appUser = getUser1();
-        Group group = new Group(0, "Null createdBy", "", null);
-
-        // Set Users for group for validation to pass
-        UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
-        userGroup.setUser(appUser);
-        userGroup.setGroup(group);
-        group.setUsers(List.of(userGroup));
-
-        Result<Group> result = service.add(group);
-
-        assertEquals(ResultType.INVALID, result.getType());
-        assertTrue(result.getMessages().contains("valid group creator required"));
-    }
+//    @Test
+//    void shouldNotValidateNullCreatedBy() {
+//        AppUser appUser = getUser1();
+//        Group group = new Group(0, "Null createdBy", "", null);
+//
+//        // Set Users for group for validation to pass
+//        UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
+//        userGroup.setUser(appUser);
+//        userGroup.setGroup(group);
+//        group.setUsers(List.of(userGroup));
+//
+//        Result<Group> result = service.add(group);
+//
+//        assertEquals(ResultType.INVALID, result.getType());
+//        assertTrue(result.getMessages().contains("valid group creator required"));
+//    }
 
     @Test
     void shouldNotValidateNullOrEmptyUserList() {
-        Group nullList = new Group(0, "Null users List", "", getUser1());
+        Group nullList = new Group(0, "Null users List", "", getUser1().getAppUserId());
         nullList.setUsers(null); // empty user list
 
-        Group emptyList = new Group(0, "Empty users List", "", getUser1());
+        Group emptyList = new Group(0, "Empty users List", "", getUser1().getAppUserId());
         emptyList.setUsers(List.of()); // empty user list
 
         Result<Group> result1 = service.add(nullList);
@@ -273,7 +273,7 @@ public class GroupServiceTest {
     @Test
     void shouldNotValidateDuplicateName() {
         AppUser appUser = getUser1();
-        Group group = new Group(0, "Duplicate Name", "", appUser);
+        Group group = new Group(0, "Duplicate Name", "", appUser.getAppUserId());
 
         UserGroup userGroup = new UserGroup(appUser.getAppUserId(), 0, false);
         userGroup.setUser(appUser);
@@ -291,7 +291,7 @@ public class GroupServiceTest {
 
     @Test
     void shouldNotValidateWhenUserGroupHasInvalidUser() {
-        AppUser appUser = getUser1();
+        int appUserId = getUser1().getAppUserId();
         AppUser invalidAppUser = new AppUser(
                     0, // no appUserId
                     "Alice",
@@ -303,7 +303,7 @@ public class GroupServiceTest {
                     List.of("ADMIN")
         );
 
-        Group group = new Group(0, "Group", "", appUser);
+        Group group = new Group(0, "Group", "", appUserId);
 
         UserGroup userGroup = new UserGroup(0, 0, false);
         userGroup.setUser(invalidAppUser);
@@ -322,7 +322,7 @@ public class GroupServiceTest {
     @Test
     void shouldNotValidateWhenDuplicateUsersInGroup() {
         AppUser appUser = getUser1();
-        Group group = new Group(0, "Group With Duplicates", "", appUser);
+        Group group = new Group(0, "Group With Duplicates", "", appUser.getAppUserId());
 
         UserGroup ug1 = new UserGroup(appUser.getAppUserId(), 0, false);
         ug1.setUser(appUser);
@@ -344,7 +344,7 @@ public class GroupServiceTest {
 
     @Test
     void shouldDelete() {
-        Group group = new Group(1, "To Be Deleted", "", getUser1());
+        Group group = new Group(1, "To Be Deleted", "", getUser1().getAppUserId());
 
         when(repository.deleteById(group.getGroupId())).thenReturn(true);
 

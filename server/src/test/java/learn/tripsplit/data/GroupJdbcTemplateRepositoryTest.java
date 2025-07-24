@@ -35,8 +35,8 @@ public class GroupJdbcTemplateRepositoryTest {
 
     @Test
     void shouldFindById() throws DataAccessException {
-        AppUser appUser1 = getUser1();
-        Group expected = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser1);
+        int appUserId = getUser1().getAppUserId();
+        Group expected = new Group(1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUserId);
 
         Group actual = repository.findById(1);
 
@@ -53,8 +53,8 @@ public class GroupJdbcTemplateRepositoryTest {
 
     @Test
     void shouldAdd() throws DataAccessException {
-        AppUser appUser1 = getUser1();
-        Group group = new Group(1, "Added Group Name", "Added Description", appUser1);
+        int appUserId = getUser1().getAppUserId();
+        Group group = new Group(1, "Added Group Name", "Added Description", appUserId);
 
         Group actual = repository.add(group);
 
@@ -62,7 +62,7 @@ public class GroupJdbcTemplateRepositoryTest {
         assertTrue(actual.getGroupId() > 0);
         assertEquals("Added Group Name", actual.getName());
         assertEquals("Added Description", actual.getDescription());
-        assertEquals(1, actual.getCreatedBy().getAppUserId());
+        assertEquals(1, actual.getCreatedBy());
     }
 
     @Test
@@ -101,8 +101,8 @@ public class GroupJdbcTemplateRepositoryTest {
         group.setName("Group To Be Deleted");
         group.setDescription("Description To Be Deleted");
 
-        AppUser appUser1 = getUser1();
-        group.setCreatedBy(appUser1);
+        int appUserId = getUser1().getAppUserId();
+        group.setCreatedBy(appUserId);
 
         Group toBeDeleted = repository.add(group);
         assertNotNull(toBeDeleted);
