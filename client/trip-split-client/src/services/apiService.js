@@ -3,22 +3,35 @@ const API_BASE_URL = 'http://localhost:8080/api';
 const handleResponse = async (response) => {
   if (!response.ok) {
     if (response.status === 401) {
-      // Token expired or invalid - redirect to login
       localStorage.removeItem('tripsplit_user');
       window.location.href = '/login';
       throw new Error('Session expired. Please login again.');
     }
 
-    const errorText = await response.text();
-    throw new Error(`${errorText.message}`);
+    const responseText = await response.text();
+    console.log('Raw response text:', responseText);
+
+    let errorMessage;
+    try {
+      const errorArray = JSON.parse(responseText);
+      console.log('Parsed error array:', errorArray);
+      errorMessage = errorArray.join(', ');
+      console.log('Joined error message:', errorMessage);
+    } catch (parseError) {
+      console.log('JSON parse failed, using raw text:', parseError);
+      errorMessage = responseText || `HTTP ${response.status}: ${response.statusText}`;
+    }
+
+    throw new Error(errorMessage);
   }
 
-  // Handle empty responses (like DELETE operations)
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return response.json();
+  // Handle successful responses
+  try {
+    const responseText = await response.text();
+    return responseText ? JSON.parse(responseText) : {};
+  } catch (error) {
+    return {};
   }
-  return response.ok;
 };
 
 const getToken = () => {
@@ -290,15 +303,15 @@ export const apiService = {
 
   // Receipts endpoints
 
-async uploadExpenseReceipt(expenseId, receiptFile) {
-  const formData = new FormData();
-  formData.append('file', receiptFile);
-  
-  return makeAuthenticatedRequest(`/receipts/expense/${expenseId}/upload`, {
-    method: 'POST',
-    body: formData,
-  });
-},
+  async uploadExpenseReceipt(expenseId, receiptFile) {
+    const formData = new FormData();
+    formData.append('file', receiptFile);
+
+    return makeAuthenticatedRequest(`/receipts/expense/${expenseId}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
   // Get receipts for an expense
   async getExpenseReceipts(expenseId) {
     return makeAuthenticatedRequest(`/receipts/expense/${expenseId}`);
