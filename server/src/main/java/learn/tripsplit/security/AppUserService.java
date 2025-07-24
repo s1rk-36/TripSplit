@@ -1,21 +1,17 @@
 package learn.tripsplit.security;
 
+import learn.tripsplit.App;
 import learn.tripsplit.data.AppUserRepository;
 import learn.tripsplit.domain.Result;
 import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.AppUser;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.validation.ValidationException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AppUserService implements UserDetailsService {
@@ -94,6 +90,48 @@ public class AppUserService implements UserDetailsService {
 
     public boolean deleteById(int userId) {
         return repository.deleteById(userId);
+    }
+
+    public Result<AppUser> addRoleToUser(int userId, String role) {
+        Result<AppUser> result = new Result<>();
+        AppUser appUser = repository.findById(userId);
+        if (appUser == null) {
+            result.addMessage("user does not exist", ResultType.NOT_FOUND);
+        }
+
+        List<String> roles = appUser.getRoles();
+        if (!roles.contains(role.toUpperCase())) {
+            roles.add(role.toUpperCase());
+            appUser.setRoles(roles);
+        }
+
+        boolean isUpdated = repository.update(appUser);
+        if (isUpdated) {
+            result.setPayload(appUser);
+        }
+
+        return result;
+    }
+
+    public Result<AppUser> removeRoleFromUser(int userId, String role) {
+        Result<AppUser> result = new Result<>();
+        AppUser appUser = repository.findById(userId);
+        if (appUser == null) {
+            result.addMessage("user does not exist", ResultType.NOT_FOUND);
+        }
+
+        List<String> roles = appUser.getRoles();
+        if (roles.contains(role.toUpperCase())) {
+            roles.remove(role.toUpperCase());
+            appUser.setRoles(roles);
+        }
+
+        boolean isUpdated = repository.update(appUser);
+        if (isUpdated) {
+            result.setPayload(appUser);
+        }
+
+        return result;
     }
 
     private Result<AppUser> validate(AppUser appUser) {

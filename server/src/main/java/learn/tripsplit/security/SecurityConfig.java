@@ -1,6 +1,7 @@
 package learn.tripsplit.security;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -28,9 +29,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests()
                 // TODO add antMatchers here to configure access to specific API endpoints
                 // allows unauthenticated users to access /authenticate and /register.
-                .antMatchers("/api/auth/authenticate").permitAll()
-                .antMatchers("/api/auth/register").permitAll()
-                .antMatchers("/api/auth/test-login").permitAll()
+                .antMatchers("/api/auth/authenticate", "/api/auth/register").permitAll()
+                .antMatchers("/api/admin/**").hasRole("ADMIN")
+                .antMatchers(HttpMethod.DELETE, "/api/user/**", "/api/group/**").hasRole("ADMIN")
                 // require authentication for any request...
                 .anyRequest().authenticated()
                 .and()

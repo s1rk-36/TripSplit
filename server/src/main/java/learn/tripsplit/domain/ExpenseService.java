@@ -31,8 +31,12 @@ public class ExpenseService {
     @Transactional
     public Result<Expense> add(Expense expense) {
         Result<Expense> result = validate(expense);
-
         if (!result.isSuccess()) {
+            return result;
+        }
+
+        if (expense.getExpenseId() != 0) {
+            result.addMessage("expenseId should not be set for `add` operation", ResultType.INVALID);
             return result;
         }
 
@@ -49,8 +53,12 @@ public class ExpenseService {
     @Transactional
     public Result<Expense> update(Expense expense) {
         Result<Expense> result = validate(expense);
-
         if (!result.isSuccess()) {
+            return result;
+        }
+
+        if (expense.getExpenseId() <= 0) {
+            result.addMessage("expenseId must be set for `update` operation", ResultType.INVALID);
             return result;
         }
 
@@ -69,29 +77,36 @@ public class ExpenseService {
 
     private Result<Expense> validate(Expense expense) {
         Result<Expense> result = new Result<>();
+
         if (expense == null) {
             result.addMessage("expense cannot be null", ResultType.INVALID);
             return result;
         }
 
         if (expense.getName() == null || expense.getName().isBlank()) {
-            result.addMessage("name is required", ResultType.INVALID);
+            result.addMessage("expense name is required", ResultType.INVALID);
+        } else if (expense.getName().length() < 3 || expense.getName().length() > 100) {
+            result.addMessage("expense name must be between 3 and 100 characters", ResultType.INVALID);
         }
 
-        if (expense.getName() != null && expense.getName().length() > 50) {
-            result.addMessage("name must be 50 characters or less", ResultType.INVALID);
+        if (expense.getTotalCost() == null || expense.getTotalCost().compareTo(BigDecimal.ZERO) <= 0) {
+            result.addMessage("total cost is required and must be greater than 0", ResultType.INVALID);
         }
 
-        if(expense.getCategory() == null){
-            result.addMessage("category can not be null", ResultType.INVALID);
+        if (expense.getCategory() == null){
+            result.addMessage("category cannot be null", ResultType.INVALID);
         }
 
-        if(expense.getTotalCost().compareTo(BigDecimal.ZERO) <= 0){
-            result.addMessage("totalCost can be less than or equal to 0", ResultType.INVALID);
+        if (expense.getCreatedAt() == null || !expense.getCreatedAt().isBefore(LocalDateTime.now())) {
+            result.addMessage("expense createdAt is required and must be in the past", ResultType.INVALID);
         }
 
-        if(expense.getCreatedBy() == null || expense.getCreatedBy().getAppUserId() <= 0){
-            result.addMessage("valid creator required", ResultType.INVALID);
+        if (expense.getGroup() == null || expense.getGroup().getGroupId() <= 0) {
+            result.addMessage("valid group is required", ResultType.INVALID);
+        }
+
+        if (expense.getCreatedBy() == null || expense.getCreatedBy().getAppUserId() <= 0){
+            result.addMessage("valid expense creator required", ResultType.INVALID);
         }
 
         return result;

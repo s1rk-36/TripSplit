@@ -16,10 +16,10 @@ POST {{url}}/register HTTP/1.1
 Content-Type: application/json
 
 {
-    "firstName": "Bob",
-    "lastName": "Jones",
-    "email": "bob@jones.com",
-    "username": "bobj",
+    "firstName": "Alice",
+    "lastName": "Martinez",
+    "email": "alice.martinez@example.com",
+    "username": "alicem",
     "password": "P@ssw0rd!"
 }
 
