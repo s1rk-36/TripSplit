@@ -84,10 +84,11 @@ public class GroupServiceTest {
 
         // Stub nameExists to prevent validation failure
         when(repository.nameExists(groupIn)).thenReturn(false);
+        // Stub addUserToGroup
+        when(repository.addUserToGroup(groupOut.getGroupId(), appUser.getAppUserId(), false)).thenReturn(true);
         // Stub add method, returns groupOut when groupIn is added
         when(repository.add(groupIn)).thenReturn(groupOut);
 
-        // Act
         Result<Group> result = service.add(groupIn);
 
         assertNotNull(result);

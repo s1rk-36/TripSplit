@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -273,11 +274,19 @@ class AppUserServiceTest {
     @Test
     void shouldNotUpdateWhenUsernameIsDuplicate() {
         AppUser appUser = makeUser();
-        AppUser mockOut = makeUser();
+        appUser.setAppUserId(1); // Must be a real ID to pass update validation
 
-        when(repository.findByUsername(appUser.getUsername())).thenReturn(mockOut);
+        // Stub to simulate a duplicate username conflict
+        when(repository.usernameExists(appUser)).thenReturn(true);
+        // Stub to pass email validation
+        when(repository.findByEmail(appUser.getEmail())).thenReturn(null);
+        // Stub update()
+        when(repository.update(any())).thenReturn(true);
+
         Result<AppUser> actual = service.update(appUser);
+
         assertEquals(ResultType.INVALID, actual.getType());
+        assertTrue(actual.getMessages().contains("username cannot be duplicated"));
     }
 
     @Test

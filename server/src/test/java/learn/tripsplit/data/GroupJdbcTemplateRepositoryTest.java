@@ -74,12 +74,17 @@ public class GroupJdbcTemplateRepositoryTest {
 
     @Test
     void shouldUpdate() throws DataAccessException {
-        Group group = new Group();
-        group.setGroupId(1);
-        group.setName("Updated Group Name");
-        group.setDescription("Updated Description");
+        int appUserId = getUser1().getAppUserId();
+        Group group = new Group(1, "To Be Updated", "", appUserId);
 
-        assertTrue(repository.update(group));
+        Group toBeUpdated = repository.add(group);
+
+        Group updated = new Group();
+        updated.setGroupId(toBeUpdated.getGroupId());
+        updated.setName("Updated Group Name");
+        updated.setDescription("Updated Description");
+
+        assertTrue(repository.update(updated));
     }
 
     @Test

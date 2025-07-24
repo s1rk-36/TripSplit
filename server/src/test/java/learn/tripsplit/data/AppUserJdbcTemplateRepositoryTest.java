@@ -74,7 +74,11 @@ class AppUserJdbcTemplateRepositoryTest {
 
     @Test
     void shouldDeleteUser() {
-        assertTrue(repository.deleteById(5));
+        AppUser appUser = makeUser();
+        appUser.setUsername("toBeDeleted");
+        AppUser toBeDeleted = repository.add(appUser);
+
+        assertTrue(repository.deleteById(toBeDeleted.getAppUserId()));
     }
 
     @Test

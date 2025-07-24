@@ -53,7 +53,7 @@ public class GroupService {
                 boolean success = repository.addUserToGroup(
                         group.getGroupId(),
                         userGroup.getUser().getAppUserId(),
-                        userGroup.getIsAdmin()
+                        userGroup.getIsGroupAdmin()
                 );
                 if (!success) {
                     result.addMessage("Failed to add user " + userGroup.getUser().getEmail() + " to group", ResultType.INVALID);
@@ -64,6 +64,7 @@ public class GroupService {
         result.setPayload(group);
         return result;
     }
+
     public Result<Group> update(Group group) {
         Result<Group> result = validate(group);
         if (!result.isSuccess()) {
@@ -138,8 +139,8 @@ public class GroupService {
             result.addMessage("no user found for createdBy", ResultType.INVALID);
         }
 
-        if (group.getUsers() == null) {
-            result.addMessage("user list cannot be null", ResultType.INVALID);
+        if (group.getUsers() == null || group.getUsers().isEmpty()) {
+            result.addMessage("user list cannot be null or empty", ResultType.INVALID);
             return result;
         }
 
