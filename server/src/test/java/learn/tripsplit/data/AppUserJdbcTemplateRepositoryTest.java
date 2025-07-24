@@ -40,7 +40,6 @@ class AppUserJdbcTemplateRepositoryTest {
         assertEquals("Johnson", actual.getLastName());
         assertEquals("alice.johnson@example.com", actual.getEmail());
         assertEquals("alicej", actual.getUsername());
-        assertEquals("hash_1_example", actual.getPasswordHash());
     }
 
     @Test

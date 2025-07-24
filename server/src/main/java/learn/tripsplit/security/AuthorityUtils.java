@@ -21,7 +21,7 @@ public class AuthorityUtils {
             Assert.isTrue(!role.startsWith(AUTHORITY_PREFIX),
                     () -> String.format("%s cannot start with %s (it is automatically added)",
                             role, AUTHORITY_PREFIX));
-            authorities.add(new SimpleGrantedAuthority(AUTHORITY_PREFIX + role));
+            authorities.add(new SimpleGrantedAuthority(AUTHORITY_PREFIX + role.toUpperCase()));
         }
         return authorities;
     }
