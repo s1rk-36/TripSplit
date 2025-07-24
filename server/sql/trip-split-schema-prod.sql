@@ -125,15 +125,15 @@ create table `comment` (
 
 -- data
 insert into `role`(role_id, `name`) values
-(1, 'Admin'),
-(2, 'User');
+(1, 'ADMIN'),
+(2, 'USER');
 
 insert into `user` (first_name, last_name, email, username, password_hash) values
-('Alice', 'Johnson', 'alice.johnson@example.com', 'alicej', 'hash_1_example'),
-('Bob', 'Smith', 'bob.smith@example.com', 'bobsmith', 'hash_2_example'),
-('Carol', 'Davis', 'carol.davis@example.com', 'carold', 'hash_3_example'),
-('David', 'Lee', 'david.lee@example.com', 'davidl', 'hash_4_example'),
-('Eve', 'Martinez', 'eve.martinez@example.com', 'evem', 'hash_5_example');
+('Alice', 'Johnson', 'alice.johnson@example.com', 'alicej', '$2a$10$WrxcpXeA6NaQRJC5Z/3ukujReusfTUJcv/M6Ft.5hBDpQ1M3AJNjW'),
+('Bob', 'Smith', 'bob.smith@example.com', 'bobsmith', '$2a$10$xx6q8rBpcJK5nMYJSMF15ul8qx6aTVagr1XSk02ZJ.s6tdeUqL7oG'),
+('Carol', 'Davis', 'carol.davis@example.com', 'carold', '$2a$10$.WL/GjcCfr1ix0ZgA/.sk.VWs2b.Iqj1QpKfTkyxdArKrvrNFN5ni'),
+('David', 'Lee', 'david.lee@example.com', 'davidl', '$2a$10$UMjxPz2oj9fSBxXZ6rJhjeBh0Rbmn7s09kyNYt4gPe/aqEY2ZEkF2'),
+('Eve', 'Martinez', 'eve.martinez@example.com', 'evem', '$2a$10$k6hMrdfbaIUKYhujlptdVeD4zctQwD/WuOaxE0Elm6TpwsTFm91u2');
 
 insert into user_role (user_id, role_id)values 
 (1, 1),
