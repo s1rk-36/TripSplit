@@ -160,8 +160,8 @@ class ExpenseRepositoryTest {
     }
 
     private Group getGroup1() {
-        AppUser appUser1 = getUser1();
-        return new Group (1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser1);
+        int appUserId = getUser1().getAppUserId();
+        return new Group (1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUserId);
     }
 
 }

@@ -134,6 +134,16 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
         return jdbcTemplate.update("delete from `user` where user_id = ?;", userId) > 0;
     }
 
+    @Override
+    public boolean usernameExists(AppUser appUser) {
+        final String sql = "select count(*) "
+                + "from `user` "
+                + "where lower(username) = lower(?) and not user_id = ?;";
+
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, appUser.getUsername(), appUser.getAppUserId());
+        return count != null && count > 0;
+    }
+
     private void updateRoles(AppUser appUser) {
         // delete all roles, then re-add
         jdbcTemplate.update("delete from user_role where user_id = ?;", appUser.getAppUserId());

@@ -1,7 +1,7 @@
 @url = http://localhost:8080/api/groups
 
 ### Token (This is unique to everyone)
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWxpY2VtIiwiYXV0aG9yaXRpZXMiOiJST0xFX1VTRVIiLCJleHAiOjE3NTM0MDY5NDB9.kSk_lm6UJJDt8sPIpuNb82_9F6UMXQH8nCFlKkGmSKA
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoidGVzdEV4YW1wbGUiLCJhdXRob3JpdGllcyI6IlJPTEVfVVNFUiIsImV4cCI6MTc1MzQzMDE5Mn0.QG22k8QTxy99rRDwmyvxTLfVxwy7zK0OLlYk5XVOdgI
 
 ### findAll()
 
@@ -10,7 +10,7 @@ Authorization: Bearer {{token}}
 
 ### findById()
 
-GET {{url}}/9 HTTP/1.1
+GET {{url}}/2 HTTP/1.1
 Authorization: Bearer {{token}}
 
 ### add()
@@ -22,49 +22,37 @@ Authorization: Bearer {{token}}
 {
   "name": "Added Group",
   "description": "Added Group",
-  "createdBy": {
-    "appUserId": 2,
-    "firstName": "Bob",
-    "lastName": "Smith",
-    "email": "bob.smith@example.com",
-    "username": "bobsmith",
-    "passwordHash": "hash_2_example",
-    "disabled": false,
-    "groups": [],
-    "expenses": [],
-    "roles": ["User"]
-  },
-  "users": [
+  "members": [
     {
-      "groupId": 0,
-      "isAdmin": true,
-      "user": {
-        "appUserId": 2,
-        "firstName": "Bob",
-        "lastName": "Smith",
-        "email": "bob.smith@example.com",
-        "username": "bobsmith",
-        "passwordHash": "hash_2_example",
-        "disabled": false,
-        "groups": [],
-        "expenses": [],
-        "roles": ["User"]
-      }
+      "email": "alice.johnson@example.com"
+    },
+    {
+      "email": "bob.smith@example.com"
     }
   ]
 }
 
-### update()
+### update() - updates only group fields, not users List
 
-PUT {{url}}/9 HTTP/1.1
+PUT {{url}}/2 HTTP/1.1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "groupId": 9,
+  "groupId": 2,
   "name": "Updated Group",
-  ""
-
+  "description": "This group has been updated",
+  "createdBy": 6,
+  "users": [
+    {
+      "userId": 0,
+      "groupId": 0,
+      "isAdmin": true,
+      "user": {
+        "appUserId": 6
+      }
+    }
+  ]
 }
 
 ### deleteById()
