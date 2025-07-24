@@ -91,6 +91,7 @@ public class UserController {
 
     @PutMapping("/{userId}")
     public ResponseEntity<Object> update(@PathVariable int userId, @RequestBody AppUser appUser) {
+
         if (userId != appUser.getAppUserId()) {
             return new ResponseEntity<>("path id and user id must match", HttpStatus.CONFLICT);
         }

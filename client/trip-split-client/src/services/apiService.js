@@ -157,7 +157,7 @@ export const apiService = {
   },
 
   async updateUser(userId, userData) {
-    console.log(userId);
+    console.log('trying to update', userId);
     console.log(userData);
     return makeAuthenticatedRequest(`/user/${userId}`, {
       method: 'PUT',

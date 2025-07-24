@@ -70,6 +70,7 @@ public class AppUserService implements UserDetailsService {
 
     public Result<AppUser> update(AppUser appUser) {
         Result<AppUser> result = validate(appUser);
+
         if (!result.isSuccess()) {
             return result;
         }
@@ -83,6 +84,7 @@ public class AppUserService implements UserDetailsService {
             String msg = String.format("userId: %s, not found", appUser.getAppUserId());
             result.addMessage(msg, ResultType.NOT_FOUND);
         }
+
 
         return result;
     }
@@ -114,6 +116,7 @@ public class AppUserService implements UserDetailsService {
 
     public Result<AppUser> removeRoleFromUser(int userId, String role) {
         Result<AppUser> result = new Result<>();
+        System.out.println("here");
         AppUser appUser = repository.findById(userId);
         if (appUser == null) {
             result.addMessage("user does not exist", ResultType.NOT_FOUND);
@@ -150,13 +153,12 @@ public class AppUserService implements UserDetailsService {
 
         if (appUser.getEmail() == null || appUser.getEmail().isBlank()) {
             result.addMessage("email is required", ResultType.INVALID);
-        } else if (repository.findByEmail(appUser.getEmail()) != null) {
+        } else if (repository.findByEmail(appUser.getEmail()) != null && appUser.getAppUserId() < 1) {
             result.addMessage("email cannot be duplicated", ResultType.INVALID);
             return result;
         }
 
-        result = validateUsername(result, appUser);
-        result = validatePassword(result, appUser.getPasswordHash());
+        validateUsername(result, appUser);
 
         return result;
     }

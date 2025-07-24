@@ -112,18 +112,15 @@ public class AppUserJdbcTemplateRepository implements AppUserRepository, RoleFet
                 + "first_name = ?, "
                 + "last_name = ?, "
                 + "email = ?, "
-                + "username = ?, "
-                + "password_hash = ? "
+                + "username = ? "
                 + "where user_id = ?;";
 
-        updateRoles(appUser);
-
+//        updateRoles(appUser);
         return jdbcTemplate.update(sql,
                 appUser.getFirstName(),
                 appUser.getLastName(),
                 appUser.getEmail(),
                 appUser.getUsername(),
-                appUser.getPasswordHash(),
                 appUser.getAppUserId()) > 0;
     }
 

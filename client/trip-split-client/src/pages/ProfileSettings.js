@@ -4,9 +4,7 @@ import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
 import { apiService } from '../services/apiService';
-import { useAuth } from '../utils/auth';
-import { validatePassword } from '../utils/auth';
-import { useNavigate } from 'react-router-dom';
+import { useAuth, auth } from '../utils/auth'; 
 
 function ProfileSettings() {
   const { currentUser } = useAuth();
@@ -14,8 +12,8 @@ function ProfileSettings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
   
-  // Profile form state
   const [profileData, setProfileData] = useState({
     appUserId: 0,
     firstName: '',
@@ -24,22 +22,20 @@ function ProfileSettings() {
     username: ''
   });
   
-  
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
-    if (currentUser) {
-      // Initialize with current user data
+    const freshUser = auth.getCurrentUser();
+    if (freshUser) {
       setProfileData({
-        appUserId: currentUser.userId,
-        firstName: currentUser.firstName || '',
-        lastName: currentUser.lastName || '',
-        email: currentUser.email || '',
-        username: currentUser.username || ''
+        appUserId: freshUser.userId,
+        firstName: freshUser.firstName || '',
+        lastName: freshUser.lastName || '',
+        email: freshUser.email || '',
+        username: freshUser.username || ''
       });
     }
-  }, []);
-
+  }, [currentUser]);
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -53,9 +49,22 @@ function ProfileSettings() {
       setSaving(true);
       setError('');
       setSuccess('');
-      console.log(currentUser);
+      
+      console.log('Updating profile:', profileData);
+      
       await apiService.updateUser(currentUser.userId, profileData);
+      const currentStoredUser = JSON.parse(localStorage.getItem('tripsplit_user') || '{}');
+      const updatedUser = {
+        ...currentStoredUser,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        username: profileData.username,
+      };
+      localStorage.setItem('tripsplit_user', JSON.stringify(updatedUser));
+
       setSuccess('Profile updated successfully!');
+
+      window.location.reload();
       
     } catch (err) {
       console.error('Failed to update profile:', err);
@@ -65,6 +74,7 @@ function ProfileSettings() {
     }
   };
 
+  const displayUser = auth.getCurrentUser() || currentUser;
 
   if (loading) {
     return (
@@ -78,14 +88,16 @@ function ProfileSettings() {
     <Layout>
       <div className="row justify-content-center">
         <div className="col-lg-8">
-          {/* Header */}
+          {/* Header - Using fresh data */}
           <div className="d-flex align-items-center mb-4">
             <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '48px', height: '48px'}}>
               <FaUser size={24} />
             </div>
             <div>
               <h2 className="mb-0">Profile Settings</h2>
-              <p className="text-muted mb-0">Manage your account information and security</p>
+              <p className="text-muted mb-0">
+                Welcome, {displayUser?.firstName || 'User'} {displayUser?.lastName || ''}
+              </p>
             </div>
           </div>
 
@@ -102,25 +114,13 @@ function ProfileSettings() {
             </div>
           )}
 
-          {/* Tabs */}
-          <ul className="nav nav-tabs mb-4">
-            <li className="nav-item">
-              <div 
-                className={`nav-link ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => setActiveTab('profile')}
-              >
-                <FaUser className="me-1" /> Profile Information
-              </div>
-            </li>
-          </ul>
-
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className="card">
               <div className="card-header">
                 <h5 className="mb-0">
                   <FaEdit className="me-2" />
-                  Personal Information
+                  Profile Information
                 </h5>
               </div>
               <div className="card-body">
@@ -164,7 +164,6 @@ function ProfileSettings() {
                       onChange={handleProfileChange}
                       required
                     />
-
                   </div>
 
                   <div className="d-grid">
@@ -190,7 +189,6 @@ function ProfileSettings() {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </Layout>
