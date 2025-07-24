@@ -6,6 +6,7 @@ import ErrorAlert from '../components/common/ErrorAlert';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
 import { validatePassword } from '../utils/auth';
+import { useNavigate } from 'react-router-dom';
 
 function ProfileSettings() {
   const { currentUser } = useAuth();
@@ -16,60 +17,33 @@ function ProfileSettings() {
   
   // Profile form state
   const [profileData, setProfileData] = useState({
+    appUserId: 0,
     firstName: '',
     lastName: '',
     email: '',
     username: ''
   });
   
-  // Password form state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
   
-  // UI state
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
   const [activeTab, setActiveTab] = useState('profile');
-  const [passwordValidation, setPasswordValidation] = useState({
-    length: false,
-    number: false,
-    letter: false
-  });
 
   useEffect(() => {
     if (currentUser) {
       // Initialize with current user data
       setProfileData({
+        appUserId: currentUser.userId,
         firstName: currentUser.firstName || '',
         lastName: currentUser.lastName || '',
         email: currentUser.email || '',
         username: currentUser.username || ''
       });
     }
-  }, [currentUser]);
+  }, []);
 
-  useEffect(() => {
-    // Validate password as user types
-    if (passwordData.newPassword) {
-      setPasswordValidation(validatePassword(passwordData.newPassword));
-    }
-  }, [passwordData.newPassword]);
 
   const handleProfileChange = (e) => {
-    console.log(e.target);
     const { name, value } = e.target;
     setProfileData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleProfileSubmit = async (e) => {
@@ -79,8 +53,8 @@ function ProfileSettings() {
       setSaving(true);
       setError('');
       setSuccess('');
-      
-      await apiService.updateUserProfile(profileData);
+      console.log(currentUser);
+      await apiService.updateUser(currentUser.userId, profileData);
       setSuccess('Profile updated successfully!');
       
     } catch (err) {
@@ -91,50 +65,6 @@ function ProfileSettings() {
     }
   };
 
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate passwords
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
-      return;
-    }
-    
-    if (!passwordValidation.length || !passwordValidation.number || !passwordValidation.letter) {
-      setError('Password does not meet requirements');
-      return;
-    }
-    
-    try {
-      setSaving(true);
-      setError('');
-      setSuccess('');
-      
-      await apiService.updateUser({
-        newPassword: passwordData.newPassword
-      });
-      
-      setSuccess('Password updated successfully!');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-      
-    } catch (err) {
-      console.error('Failed to update password:', err);
-      setError(err.message || 'Failed to update password');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const togglePasswordVisibility = (field) => {
-    setShowPasswords(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
-  };
 
   if (loading) {
     return (
@@ -175,20 +105,12 @@ function ProfileSettings() {
           {/* Tabs */}
           <ul className="nav nav-tabs mb-4">
             <li className="nav-item">
-              <button 
+              <div 
                 className={`nav-link ${activeTab === 'profile' ? 'active' : ''}`}
                 onClick={() => setActiveTab('profile')}
               >
                 <FaUser className="me-1" /> Profile Information
-              </button>
-            </li>
-            <li className="nav-item nav-dark">
-              <button 
-                className={`nav-link ${activeTab === 'password' ? 'active' : ''}`}
-                onClick={() => setActiveTab('password')}
-              >
-                <FaLock className="me-1" /> Password & Security
-              </button>
+              </div>
             </li>
           </ul>
 
@@ -233,18 +155,6 @@ function ProfileSettings() {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Email Address *</label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      name="email"
-                      value={profileData.email}
-                      onChange={handleProfileChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-3">
                     <label className="form-label">Username *</label>
                     <input
                       type="text"
@@ -272,133 +182,6 @@ function ProfileSettings() {
                         <>
                           <FaSave className="me-1" />
                           Save Changes
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Password Tab */}
-          {activeTab === 'password' && (
-            <div className="card">
-              <div className="card-header">
-                <h5 className="mb-0">
-                  <FaLock className="me-2" />
-                  Change Password
-                </h5>
-              </div>
-              <div className="card-body">
-                <form onSubmit={handlePasswordSubmit}>
-                  <div className="mb-3">
-                    <label className="form-label">Current Password *</label>
-                    <div className="input-group">
-                      <input
-                        type={showPasswords.current ? "text" : "password"}
-                        className="form-control"
-                        name="currentPassword"
-                        value={passwordData.currentPassword}
-                        onChange={handlePasswordChange}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => togglePasswordVisibility('current')}
-                      >
-                        {showPasswords.current ? <FaEyeSlash /> : <FaEye />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">New Password *</label>
-                    <div className="input-group">
-                      <input
-                        type={showPasswords.new ? "text" : "password"}
-                        className="form-control"
-                        name="newPassword"
-                        value={passwordData.newPassword}
-                        onChange={handlePasswordChange}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => togglePasswordVisibility('new')}
-                      >
-                        {showPasswords.new ? <FaEyeSlash /> : <FaEye />}
-                      </button>
-                    </div>
-                    
-                    {/* Password Requirements */}
-                    {passwordData.newPassword && (
-                      <div className="mt-2">
-                        <small className="text-muted d-block mb-1">Password must contain:</small>
-                        <div className="d-flex flex-wrap gap-2">
-                          <span className={`badge ${passwordValidation.length ? 'bg-success' : 'bg-danger'}`}>
-                            {passwordValidation.length ? <FaCheck /> : <FaTimes />} 8+ characters
-                          </span>
-                          <span className={`badge ${passwordValidation.number ? 'bg-success' : 'bg-danger'}`}>
-                            {passwordValidation.number ? <FaCheck /> : <FaTimes />} Number
-                          </span>
-                          <span className={`badge ${passwordValidation.letter ? 'bg-success' : 'bg-danger'}`}>
-                            {passwordValidation.letter ? <FaCheck /> : <FaTimes />} Letter
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label">Confirm New Password *</label>
-                    <div className="input-group">
-                      <input
-                        type={showPasswords.confirm ? "text" : "password"}
-                        className={`form-control ${
-                          passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword 
-                            ? 'is-invalid' 
-                            : passwordData.confirmPassword && passwordData.newPassword === passwordData.confirmPassword
-                            ? 'is-valid'
-                            : ''
-                        }`}
-                        name="confirmPassword"
-                        value={passwordData.confirmPassword}
-                        onChange={handlePasswordChange}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => togglePasswordVisibility('confirm')}
-                      >
-                        {showPasswords.confirm ? <FaEyeSlash /> : <FaEye />}
-                      </button>
-                      {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
-                        <div className="invalid-feedback">
-                          Passwords do not match
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="d-grid">
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary"
-                      disabled={saving || !passwordValidation.length || !passwordValidation.number || !passwordValidation.letter}
-                    >
-                      {saving ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2"></span>
-                          Updating...
-                        </>
-                      ) : (
-                        <>
-                          <FaLock className="me-1" />
-                          Update Password
                         </>
                       )}
                     </button>

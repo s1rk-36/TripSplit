@@ -10,7 +10,7 @@ const handleResponse = async (response) => {
     }
 
     const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText}`);
+    throw new Error(`${errorText.message}`);
   }
 
   // Handle empty responses (like DELETE operations)
@@ -156,8 +156,10 @@ export const apiService = {
     return makeAuthenticatedRequest('/user');
   },
 
-  async updateUser(userData) {
-    return makeAuthenticatedRequest('/user', {
+  async updateUser(userId, userData) {
+    console.log(userId);
+    console.log(userData);
+    return makeAuthenticatedRequest(`/user/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(userData)
     });

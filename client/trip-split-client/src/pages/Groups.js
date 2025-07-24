@@ -343,6 +343,7 @@ function Groups() {
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}
         onSubmit={handleCreateGroup}
+        currentUser={currentUser}
       />
 
       <EditGroupModal
