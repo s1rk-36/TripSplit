@@ -85,7 +85,7 @@ function Groups() {
     if (!window.confirm('Are you sure you want to delete this group? This action cannot be undone and will remove all expenses and data associated with this group.')) {
       return;
     }
-
+    console.log(groupId);
     try {
       await apiService.deleteGroup(groupId);
       setGroups(groups.filter(group => group.groupId !== groupId));
@@ -287,7 +287,7 @@ function Groups() {
                         <li>
                           <button
                             className="dropdown-item text-danger"
-                            onClick={() => handleDeleteGroup(group.id)}
+                            onClick={() => handleDeleteGroup(group.groupId)}
                           >
                             <FaTrash className="me-2" /> Delete
                           </button>
