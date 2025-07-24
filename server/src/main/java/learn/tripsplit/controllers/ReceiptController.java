@@ -86,6 +86,8 @@ public class ReceiptController {
             return new ResponseEntity<>("Receipt not found", HttpStatus.NOT_FOUND);
         }
 
+        receiptService.deleteFile(receipt);
+
         Result<Receipt> result = receiptService.uploadFile(receipt, multipartFile);
 
         if (!result.isSuccess()) {
