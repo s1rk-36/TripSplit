@@ -222,6 +222,7 @@ async login(credentials) {
     });
   },
 
+  
   async updateGroup(id, group) {
     return makeAuthenticatedRequest(`/groups/${id}`, {
       method: 'PUT',
