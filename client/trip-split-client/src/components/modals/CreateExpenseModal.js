@@ -186,7 +186,7 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
           .map(ue => ({
             userId: ue.userId,
             amountOwed: ue.amountOwed,
-            amountPaid: ue.amountPaid
+            amountPaid: 0
           }))
       };
       
@@ -330,23 +330,6 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Who Paid?</label>
-                <select
-                  className="form-select"
-                  value={currentPayer?.userId || ''}
-                  onChange={(e) => handlePayerChange(e.target.value)}
-                >
-                  <option value="">Select who paid</option>
-                  {groupMembers.map(member => (
-                    <option key={member.id} value={member.id}>
-                      {member.name} {member.id === currentUser?.userId ? '(You)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <small className="text-muted">This person will have the full amount as "paid"</small>
               </div>
 
               <div className="mb-3">
