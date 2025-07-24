@@ -32,7 +32,7 @@ public class GroupMapper implements RowMapper<Group> {
         String description = resultSet.getString(groupPrefix + "group_description");
         group.setDescription(description != null ? description : resultSet.getString(groupPrefix + "description"));
 
-        group.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix));
+        group.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix).getAppUserId());
 
         return group;
     }
