@@ -225,7 +225,7 @@ const handleRemoveMember = async (userId) => {
                 onClick={() => {
                   if (window.confirm('Are you sure you want to delete this group? This will also delete all expenses in this group. This action cannot be undone.')) {
                     onHide();
-                    onDelete(group.groupId || group.id);
+                    onDelete(group.groupId);
                   }
                 }}
               >

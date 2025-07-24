@@ -9,6 +9,7 @@ import learn.tripsplit.domain.ResultType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,15 @@ public class ReceiptService {
 
     @Autowired
     private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private final AmazonClient amazonClient;
+
+    public ReceiptService(ReceiptRepository receiptRepository, ExpenseRepository expenseRepository, AmazonClient amazonClient) {
+        this.receiptRepository = receiptRepository;
+        this.expenseRepository = expenseRepository;
+        this.amazonClient = amazonClient;
+    }
 
     public List<Receipt> findAll() {
         return receiptRepository.findAll();
@@ -95,6 +105,19 @@ public class ReceiptService {
         return receiptRepository.deleteById(receiptId);
     }
 
+    @Transactional
+    public Result<Receipt> uploadFile(Receipt receipt, MultipartFile multipartFile) {
+        String imgUrl = amazonClient.uploadFile(multipartFile);
+        receipt.setImageUrl(imgUrl);
+        return update(receipt);
+    }
+
+    @Transactional
+    public Result<Receipt> deleteFile(Receipt receipt) {
+        amazonClient.deleteFileFromS3Bucket(receipt.getImageUrl());
+        receipt.setImageUrl("N/A");
+        return update(receipt);
+    }
 }
 
 

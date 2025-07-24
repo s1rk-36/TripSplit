@@ -8,11 +8,11 @@ const handleResponse = async (response) => {
       window.location.href = '/login';
       throw new Error('Session expired. Please login again.');
     }
-    
+
     const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText}`);
+    throw new Error(`${errorText.message}`);
   }
-  
+
   // Handle empty responses (like DELETE operations)
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
@@ -28,7 +28,7 @@ const getToken = () => {
 
 const isTokenExpired = (token) => {
   if (!token) return true;
-  
+
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const now = Math.floor(Date.now() / 1000);
@@ -38,23 +38,29 @@ const isTokenExpired = (token) => {
   }
 };
 
-// Helper function for making authenticated requests
+
 const makeAuthenticatedRequest = async (url, options = {}) => {
   const token = getToken();
-  
+
   // Check if token is expired before making request
   if (isTokenExpired(token)) {
     localStorage.removeItem('tripsplit_user');
     window.location.href = '/login';
     throw new Error('Session expired. Please login again.');
   }
-  
+
+  const defaultHeaders = {
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...options.headers,
+  };
+
+  // for non receipts
+  if (!(options.body instanceof FormData)) {
+    defaultHeaders['Content-Type'] = 'application/json';
+  }
+
   const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
-    },
+    headers: defaultHeaders,
   };
 
   const response = await fetch(`${API_BASE_URL}${url}`, {
@@ -85,58 +91,58 @@ const makePublicRequest = async (url, options = {}) => {
 };
 
 export const apiService = {
-async login(credentials) {
-  try {
-    console.log('Login attempt with:', { email: credentials.email });
-    
-    const authResponse = await makePublicRequest('/auth/authenticate', {
-      method: 'POST',
-      body: JSON.stringify({
-        email: credentials.email,
-        password: credentials.password
-      })
-    });
-    
-    console.log('Auth response:', authResponse);
-    
-    const token = authResponse.jwt_token;
-    
-    if (!token) {
-      throw new Error('No token received from server');
-    }
-    
-    console.log('Token received, getting user info...');
-    
-    const userResponse = await fetch(`${API_BASE_URL}/user/current`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
+  async login(credentials) {
+    try {
+      console.log('Login attempt with:', { email: credentials.email });
+
+      const authResponse = await makePublicRequest('/auth/authenticate', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password
+        })
+      });
+
+      console.log('Auth response:', authResponse);
+
+      const token = authResponse.jwt_token;
+
+      if (!token) {
+        throw new Error('No token received from server');
       }
-    });
-    
-    if (!userResponse.ok) {
-      throw new Error(`Failed to get user info: ${userResponse.status}`);
-    }
-    
-    const userData = await userResponse.json();
-    console.log('User data received:', userData);
-    
-    return {
-      token: token,
-      user: {
-        id: userData.appUserId,
-        username: userData.username,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName
+
+      console.log('Token received, getting user info...');
+
+      const userResponse = await fetch(`${API_BASE_URL}/user/current`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error(`Failed to get user info: ${userResponse.status}`);
       }
-    };
-    
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
-},
+
+      const userData = await userResponse.json();
+      console.log('User data received:', userData);
+
+      return {
+        token: token,
+        user: {
+          id: userData.appUserId,
+          username: userData.username,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName
+        }
+      };
+
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  },
 
   async register(userData) {
     return makePublicRequest('/auth/register', {
@@ -150,8 +156,10 @@ async login(credentials) {
     return makeAuthenticatedRequest('/user');
   },
 
-  async updateUser(userData) {
-    return makeAuthenticatedRequest('/user', {
+  async updateUser(userId, userData) {
+    console.log('trying to update', userId);
+    console.log(userData);
+    return makeAuthenticatedRequest(`/user/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(userData)
     });
@@ -163,7 +171,7 @@ async login(credentials) {
   },
 
   async getGroupExpenses(groupId) {
-  return makeAuthenticatedRequest(`/expenses/group/${groupId}`);
+    return makeAuthenticatedRequest(`/expenses/group/${groupId}`);
   },
 
   async getExpense(id) {
@@ -191,28 +199,28 @@ async login(credentials) {
     });
   },
 
-async updateUserExpense(userExpenseData) {
-  return makeAuthenticatedRequest(`/user_expenses/${userExpenseData.userId}/${userExpenseData.expenseId}`, {
-    method: 'PUT',
-    body: JSON.stringify(userExpenseData),
-  });
-},
+  async updateUserExpense(userExpenseData) {
+    return makeAuthenticatedRequest(`/user_expenses/${userExpenseData.userId}/${userExpenseData.expenseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userExpenseData),
+    });
+  },
 
   // Groups endpoints
   async getGroups() {
     return makeAuthenticatedRequest('/user/groups');
   },
   async getGroupMembers(groupId) {
-  return makeAuthenticatedRequest(`/groups/${groupId}/members`);
-},
+    return makeAuthenticatedRequest(`/groups/${groupId}/members`);
+  },
 
-async removeGroupMember(groupId, userId) {
-  return makeAuthenticatedRequest(`/groups/${groupId}/members/${userId}`, {
-    method: 'DELETE'
-  });
-},
+  async removeGroupMember(groupId, userId) {
+    return makeAuthenticatedRequest(`/groups/${groupId}/members/${userId}`, {
+      method: 'DELETE'
+    });
+  },
 
-// admin access
+  // admin access
   async getAllGroups() {
     return makeAuthenticatedRequest('/groups');
   },
@@ -229,15 +237,15 @@ async removeGroupMember(groupId, userId) {
     });
   },
 
-    async joinGroup(data) {
-      console.log("the data is", data);
+  async joinGroup(data) {
+    console.log("the data is", data);
     return makeAuthenticatedRequest('/groups/join', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
 
-  
+
   async updateGroup(id, group) {
     return makeAuthenticatedRequest(`/groups/${id}`, {
       method: 'PUT',
@@ -252,7 +260,7 @@ async removeGroupMember(groupId, userId) {
   },
 
   // User Expenses endpoints 
-   async getUser(userId) {
+  async getUser(userId) {
     return makeAuthenticatedRequest(`/user/${userId}`);
   },
 
@@ -281,15 +289,42 @@ async removeGroupMember(groupId, userId) {
   },
 
   // Receipts endpoints
-  async getReceipts(expenseId) {
+
+async uploadExpenseReceipt(expenseId, receiptFile) {
+  const formData = new FormData();
+  formData.append('file', receiptFile);
+  
+  return makeAuthenticatedRequest(`/receipts/expense/${expenseId}/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+},
+  // Get receipts for an expense
+  async getExpenseReceipts(expenseId) {
     return makeAuthenticatedRequest(`/receipts/expense/${expenseId}`);
   },
 
-  async uploadReceipt(receipt) {
-    return makeAuthenticatedRequest('/receipts', {
-      method: 'POST',
-      body: JSON.stringify(receipt)
-    });
+  // Get receipt by ID
+  async getReceipt(receiptId) {
+    return makeAuthenticatedRequest(`/receipts/${receiptId}`);
+  },
+
+  // Delete receipt file and record
+  async deleteExpenseReceipt(receiptId) {
+    try {
+      // Delete the file first
+      await makeAuthenticatedRequest(`/receipts/${receiptId}/deleteFile`, {
+        method: 'DELETE'
+      });
+
+      // Then delete the receipt record
+      await makeAuthenticatedRequest(`/receipts/${receiptId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.error('Failed to delete receipt:', error);
+      throw error;
+    }
   },
 
   // Utility methods

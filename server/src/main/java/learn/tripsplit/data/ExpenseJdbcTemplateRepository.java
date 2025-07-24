@@ -204,7 +204,8 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
                 + "`name` = ?, "
                 + "total_cost = ?, "
                 + "category = ?, "
-                + "`description` = ? "
+                + "`description` = ?, "
+                + "created_at = ? "
                 + "where expense_id = ?;";
 
         return jdbcTemplate.update(sql,
@@ -212,6 +213,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
                 expense.getTotalCost(),
                 expense.getCategory().toString(),
                 expense.getDescription(),
+                expense.getCreatedAt(),
                 expense.getExpenseId()) > 0;
     }
 
