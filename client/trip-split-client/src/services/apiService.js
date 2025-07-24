@@ -215,10 +215,10 @@ async login(credentials) {
   },
 
     async joinGroup(data) {
-      console.log("the data is", data.groupId);
+      console.log("the data is", data);
     return makeAuthenticatedRequest('/groups/join', {
       method: 'POST',
-      body: JSON.stringify(data.groupId)
+      body: JSON.stringify(data)
     });
   },
 
