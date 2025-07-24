@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPlus, FaUsers, FaDollarSign, FaCalendar, FaEdit, FaTrash, FaEye, FaCopy, FaShare, FaSearch, FaUserPlus } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
@@ -8,6 +7,7 @@ import CreateGroupModal from '../components/modals/CreateGroupModal';
 import EditGroupModal from '../components/modals/EditGroupModal';
 import GroupDetailsModal from '../components/modals/GroupDetailsModal';
 import JoinGroupModal from '../components/modals/JoinGroupModal';
+import { FaPlus, FaUsers, FaDollarSign, FaEdit, FaTrash, FaEye, FaCopy, FaShare, FaSearch, FaUserPlus, FaReceipt } from 'react-icons/fa';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
 import { formatCurrency } from '../utils/helpers';
@@ -19,7 +19,7 @@ function Groups() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  
+
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -35,10 +35,10 @@ function Groups() {
     try {
       setLoading(true);
       setError('');
-      
+
       const groupsData = await apiService.getGroups();
       setGroups(groupsData || []);
-      
+
     } catch (err) {
       console.error('Failed to load groups:', err);
       setError(err.message || 'Failed to load groups');
@@ -72,7 +72,7 @@ function Groups() {
   const handleEditGroup = async (groupId, groupData) => {
     try {
       const updatedGroup = await apiService.updateGroup(groupId, groupData);
-      setGroups(groups.map(group => 
+      setGroups(groups.map(group =>
         group.id === groupId ? updatedGroup : group
       ));
       setShowEditModal(false);
@@ -99,7 +99,7 @@ function Groups() {
 
   const handleViewDetails = async (groupId) => {
     try {
-        console.log("the id is", groupId);
+      console.log("the id is", groupId);
       const groupDetails = await apiService.getGroup(groupId);
       setSelectedGroup(groupDetails);
       setShowDetailsModal(true);
@@ -118,12 +118,12 @@ function Groups() {
   // Filter groups based on search and status
   const filteredGroups = groups.filter(group => {
     const matchesSearch = group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         group.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      group.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
     if (filterStatus === 'all') return matchesSearch;
     if (filterStatus === 'active') return matchesSearch && group.isActive;
     if (filterStatus === 'settled') return matchesSearch && !group.isActive;
-    
+
     return matchesSearch;
   });
 
@@ -167,13 +167,13 @@ function Groups() {
           </div>
         </div>
         <div className="btn-group col md-4">
-          <button 
+          <button
             className="btn btn-outline-primary"
             onClick={() => setShowJoinModal(true)}
           >
             <FaUserPlus className="me-1" /> Join Group
           </button>
-          <button 
+          <button
             className="btn btn-primary"
             onClick={() => setShowCreateModal(true)}
           >
@@ -234,20 +234,20 @@ function Groups() {
             {searchTerm || filterStatus !== 'all' ? 'No groups found' : 'No Groups Yet'}
           </h4>
           <p className="text-muted mb-4">
-            {searchTerm || filterStatus !== 'all' 
+            {searchTerm || filterStatus !== 'all'
               ? 'Try adjusting your search or filters'
               : 'Create your first group or join an existing one to start splitting expenses'
             }
           </p>
           {(!searchTerm && filterStatus === 'all') && (
             <div className="d-flex gap-2 justify-content-center">
-              <button 
+              <button
                 className="btn btn-outline-primary btn-lg"
                 onClick={() => setShowJoinModal(true)}
               >
                 <FaUserPlus className="me-2" /> Join a Group
               </button>
-              <button 
+              <button
                 className="btn btn-primary btn-lg"
                 onClick={() => setShowCreateModal(true)}
               >
@@ -265,9 +265,9 @@ function Groups() {
                   <div className="d-flex justify-content-between align-items-start mb-3">
                     <h5 className="card-title">{group.name}</h5>
                     <div className="dropdown">
-                      <button 
-                        className="btn btn-sm btn-outline-secondary" 
-                        type="button" 
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        type="button"
                         data-bs-toggle="dropdown"
                         aria-expanded="false"
                       >
@@ -275,7 +275,15 @@ function Groups() {
                       </button>
                       <ul className="dropdown-menu">
                         <li>
-                          <button 
+                          <Link
+                            className="dropdown-item"
+                            to={`/expenses?group=${group.groupId}`}
+                          >
+                            <FaReceipt className="me-2" /> View Expenses
+                          </Link>
+                        </li>
+                        <li>
+                          <button
                             className="dropdown-item"
                             onClick={() => handleViewDetails(group.groupId)}
                           >
@@ -283,7 +291,7 @@ function Groups() {
                           </button>
                         </li>
                         <li>
-                          <button 
+                          <button
                             className="dropdown-item"
                             onClick={() => {
                               setSelectedGroup(group);
@@ -294,7 +302,7 @@ function Groups() {
                           </button>
                         </li>
                         <li>
-                          <button 
+                          <button
                             className="dropdown-item"
                             onClick={() => handleCopyInviteCode(group.inviteCode)}
                           >
@@ -303,7 +311,7 @@ function Groups() {
                         </li>
                         <li><hr className="dropdown-divider" /></li>
                         <li>
-                          <button 
+                          <button
                             className="dropdown-item text-danger"
                             onClick={() => handleDeleteGroup(group.id)}
                           >
@@ -313,11 +321,11 @@ function Groups() {
                       </ul>
                     </div>
                   </div>
-                  
+
                   <p className="card-text text-muted small mb-3">
                     {group.description}
                   </p>
-                  
+
                   {/* Group Stats */}
                   <div className="mb-3">
                     <div className="d-flex align-items-center justify-content-between mb-2">
@@ -343,15 +351,15 @@ function Groups() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="card-footer bg-transparent">
                   <div className="d-grid gap-2">
-                    <button 
+                    <Link
+                      to={`/expenses?group=${group.groupId}`}
                       className="btn btn-primary btn-sm"
-                      onClick={() => handleViewDetails(group.groupId)}
                     >
-                      View Details
-                    </button>
+                      View Expenses
+                    </Link>
                   </div>
                 </div>
               </div>

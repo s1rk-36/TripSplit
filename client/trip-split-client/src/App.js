@@ -4,7 +4,7 @@ import Navbar from './components/layout/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-// import Expenses from './pages/Expenses';
+import Expenses from './pages/Expenses';
 // import ExpenseAdd from './pages/ExpenseAdd';
 // import ExpenseDetails from './pages/ExpenseDetails';
 import Groups from './pages/Groups';
@@ -27,10 +27,9 @@ function App() {
         
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/groups" element={<Groups />} />
-                    {/* <Route path="/expenses" element={<Expenses />} />
-                    <Route path="/expenses/add" element={<ExpenseAdd />} />
+                    <Route path="/expenses" element={<Expenses />} />
+                    {/* <Route path="/expenses/add" element={<ExpenseAdd />} />
                     <Route path="/expenses/:id" element={<ExpenseDetails />} />
-                    <Route path="/groups/add" element={<GroupAdd />} />
                     <Route path="/groups/:groupId/expenses" element={<GroupExpenses />} />
                     <Route path="/profile" element={<Profile />} />*/}
                     <Route path="*" element={<NotFound />} />
