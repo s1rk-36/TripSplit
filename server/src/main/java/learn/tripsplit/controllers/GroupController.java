@@ -156,7 +156,7 @@ public class GroupController {
             // Add creator as admin
             UserGroup creatorUserGroup = new UserGroup();
             creatorUserGroup.setUser(currentUser);
-            creatorUserGroup.setIsAdmin(true);
+            creatorUserGroup.setIsGroupAdmin(true);
             userGroups.add(creatorUserGroup);
 
             // Handle additional members from modal
@@ -169,7 +169,7 @@ public class GroupController {
                         if (existingUser != null && existingUser.getAppUserId() != currentUser.getAppUserId()) {
                             UserGroup memberUserGroup = new UserGroup();
                             memberUserGroup.setUser(existingUser);
-                            memberUserGroup.setIsAdmin(false);
+                            memberUserGroup.setIsGroupAdmin(false);
                             userGroups.add(memberUserGroup);
                         }
                     }
