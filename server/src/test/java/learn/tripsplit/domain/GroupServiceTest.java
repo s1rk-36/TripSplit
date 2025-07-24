@@ -237,22 +237,22 @@ public class GroupServiceTest {
         assertTrue(result2.getMessages().contains("group name must be between 3 and 100 characters"));
     }
 
-//    @Test
-//    void shouldNotValidateNullCreatedBy() {
-//        AppUser appUser = getUser1();
-//        Group group = new Group(0, "Null createdBy", "", null);
-//
-//        // Set Users for group for validation to pass
-//        UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
-//        userGroup.setUser(appUser);
-//        userGroup.setGroup(group);
-//        group.setUsers(List.of(userGroup));
-//
-//        Result<Group> result = service.add(group);
-//
-//        assertEquals(ResultType.INVALID, result.getType());
-//        assertTrue(result.getMessages().contains("valid group creator required"));
-//    }
+    @Test
+    void shouldNotValidateInvalidCreatedBy() {
+        AppUser appUser = getUser1();
+        Group group = new Group(0, "Invalid createdBy", "", 0);
+
+        // Set Users for group for validation to pass
+        UserGroup userGroup = new UserGroup(appUser.getAppUserId(), group.getGroupId(), false);
+        userGroup.setUser(appUser);
+        userGroup.setGroup(group);
+        group.setUsers(List.of(userGroup));
+
+        Result<Group> result = service.add(group);
+
+        assertEquals(ResultType.INVALID, result.getType());
+        assertTrue(result.getMessages().contains("valid group creator required"));
+    }
 
     @Test
     void shouldNotValidateNullOrEmptyUserList() {

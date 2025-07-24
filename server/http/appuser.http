@@ -1,7 +1,7 @@
 @url = http://localhost:8080/api/user
 
 ### Token (This is unique to everyone)
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWxpY2VtIiwiYXV0aG9yaXRpZXMiOiJST0xFX1VTRVIiLCJleHAiOjE3NTM0MjQ1NjJ9.U2270OAgQj8DPtZA46MUNZYjJr0oXhG7rj0mRZsNeKQ
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoidGVzdEV4YW1wbGUiLCJhdXRob3JpdGllcyI6IlJPTEVfVVNFUiIsImV4cCI6MTc1MzQ1NzA4Nn0.lCLsNTg4lvnKghjmUBB5a4PcJb1QykSXcbJ2rkVa1Fk
 
 ### findAll()
 
