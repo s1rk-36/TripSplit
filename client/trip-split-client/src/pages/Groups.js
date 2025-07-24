@@ -60,7 +60,7 @@ function Groups() {
 
   const handleJoinGroup = async (groupId) => {
     try {
-      const joinedGroup = await apiService.joinGroup({ groupId: parseInt(groupId) });
+      const joinedGroup = await apiService.joinGroup({groupId});
       setGroups([...groups, joinedGroup]);
       setShowJoinModal(false);
     } catch (err) {
@@ -140,8 +140,6 @@ function Groups() {
     return matchesSearch;
   });
 
-  const totalExpenses = groups.reduce((sum, group) => sum + (group.totalExpenses || 0), 0);
-  const totalBalance = groups.reduce((sum, group) => sum + (group.userBalance || 0), 0);
 
   if (loading) {
     return (

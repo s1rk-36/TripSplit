@@ -80,13 +80,14 @@ public class GroupController {
 
     @PostMapping("/join")
     public ResponseEntity<Object> joinGroup(@RequestBody Map<String, Object> requestBody, Authentication authentication) {
+
         try {
             if (authentication == null) {
                 return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
             }
 
             // Get group ID from request
-            Object groupIdObj = requestBody.get("inviteCode");
+            Object groupIdObj = requestBody.get("groupId");
             if (groupIdObj == null) {
                 return new ResponseEntity<>("Group ID is required", HttpStatus.BAD_REQUEST);
             }
