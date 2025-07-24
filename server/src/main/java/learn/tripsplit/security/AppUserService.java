@@ -42,13 +42,22 @@ public class AppUserService implements UserDetailsService {
         return repository.findById(userId);
     }
 
+    public AppUser findByUsername(String username) {
+        return repository.findByUsername(username);
+    }
+
+    public AppUser findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
+
     public Result<AppUser> add(AppUser appUser) {
         Result<AppUser> result = validate(appUser);
+
+        appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
 
         if (!result.isSuccess()) {
             return result;
         }
-        appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
 
         if (appUser.getAppUserId() != 0) {
             result.addMessage("user id cannot be set for `add` operation", ResultType.INVALID);
@@ -144,10 +153,11 @@ public class AppUserService implements UserDetailsService {
             result.addMessage("email is required", ResultType.INVALID);
         } else if (repository.findByEmail(appUser.getEmail()) != null) {
             result.addMessage("email cannot be duplicated", ResultType.INVALID);
+            return result;
         }
 
-        validateUsername(result, appUser.getUsername());
-        validatePassword(result, appUser.getPasswordHash());
+        result = validateUsername(result, appUser.getUsername());
+        result = validatePassword(result, appUser.getPasswordHash());
 
         return result;
     }
@@ -157,10 +167,6 @@ public class AppUserService implements UserDetailsService {
             result.addMessage("username is required", ResultType.INVALID);
         } else if (username.length() > 50) {
             result.addMessage("username must be less than 50 characters", ResultType.INVALID);
-        }
-
-        if (repository.findByUsername(username) != null) {
-            result.addMessage("username cannot be duplicated", ResultType.INVALID);
         }
 
         return result;
