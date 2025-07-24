@@ -73,20 +73,24 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
     }
   };
 
-  const handlePayExpense = async (payeeUserId, amount) => {
+  const handlePayExpense = async (amount) => {
     try {
       setPaymentLoading(true);
       
-      // Create payment data
-      const paymentData = {
-        payerUserId: currentUser.userId,
-        payeeUserId: payeeUserId,
-        amount: amount,
+      const currentUserExpense = userExpenseDetails.find(ue => ue.userId === currentUser?.userId);
+      if (!currentUserExpense) {
+        throw new Error('User expense record not found');
+      }
+      
+      // Update the user_expense record with new amountPaid
+      const updatedUserExpense = {
+        userId: currentUser.userId,
         expenseId: expense.expenseId,
-        description: `Payment for: ${expense.name}`
+        amountOwed: currentUserExpense.amountOwed,
+        amountPaid: (currentUserExpense.amountPaid || 0) + amount
       };
       
-      await apiService.createPayment(paymentData);
+      await apiService.updateUserExpense(updatedUserExpense);
       
       // Update local state to reflect payment
       setUserExpenseDetails(prevDetails => 
@@ -100,11 +104,11 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
       
       // Call parent callback if provided
       if (onPayExpense) {
-        onPayExpense(expense, paymentData);
+        onPayExpense(expense, updatedUserExpense);
       }
       
-      // Clear payment amount
-      setPaymentAmounts(prev => ({ ...prev, [payeeUserId]: '' }));
+      // Clear payment amounts
+      setPaymentAmounts({});
       
     } catch (err) {
       console.error('Failed to process payment:', err);
@@ -118,14 +122,10 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
     const currentUserExpense = userExpenseDetails.find(ue => ue.userId === currentUser?.userId);
     if (!currentUserExpense || currentUserExpense.amountOwed <= 0) return;
     
-    // Find who paid for this expense
-    const payer = userExpenseDetails.find(ue => ue.amountPaid > 0);
-    if (!payer) {
-      alert('Cannot determine who to pay');
-      return;
-    }
+    const remainingBalance = currentUserExpense.amountOwed - (currentUserExpense.amountPaid || 0);
+    if (remainingBalance <= 0) return;
     
-    await handlePayExpense(payer.userId, currentUserExpense.amountOwed);
+    await handlePayExpense(remainingBalance);
   };
 
   if (!expense) return null;
@@ -174,6 +174,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                     <div>
                       <div className="fw-medium">
                         {new Date(expense.createdAt).toLocaleDateString('en-US', {
+                          weekday: 'long',
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
@@ -276,7 +277,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                         ) : (
                           <>
                             <FaCreditCard className="me-2" />
-                            Pay {formatCurrency(currentUserExpense.amountOwed - currentUserExpense.amountPaid)}
+                            Pay {formatCurrency(currentUserExpense.amountOwed - (currentUserExpense.amountPaid || 0))}
                           </>
                         )}
                       </button>
@@ -295,6 +296,28 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            {isCreatedByUser && (
+              <div className="card">
+                <div className="card-header">
+                  <h6 className="mb-0">Actions</h6>
+                </div>
+                <div className="card-body">
+                  <div className="d-grid gap-2">
+                    <Button variant="primary" onClick={handleEdit}>
+                      <FaEdit className="me-1" /> Edit Expense
+                    </Button>
+                    <Button variant="outline-danger" onClick={handleDelete}>
+                      <FaTrash className="me-1" /> Delete Expense
+                    </Button>
+                  </div>
+                  <small className="text-muted d-block mt-2">
+                    Only you can edit or delete this expense since you created it.
+                  </small>
                 </div>
               </div>
             )}
@@ -373,8 +396,8 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                               {sharePercentage.toFixed(1)}%
                             </span>
                             
-                            {/* Payment Actions */}
-                            {userExpense.userId !== currentUser?.userId && balance < 0 && (
+                            {/* Payment Actions - Only show for current user */}
+                            {userExpense.userId === currentUser?.userId && balance < 0 && (
                               <div className="mt-1">
                                 <div className="input-group input-group-sm">
                                   <span className="input-group-text">$</span>
@@ -397,7 +420,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                                     onClick={() => {
                                       const amount = parseFloat(paymentAmounts[userExpense.userId]) || 0;
                                       if (amount > 0) {
-                                        handlePayExpense(userExpense.userId, amount);
+                                        handlePayExpense(amount);
                                       }
                                     }}
                                     disabled={!paymentAmounts[userExpense.userId] || paymentLoading}
@@ -408,7 +431,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                                 </div>
                                 <button
                                   className="btn btn-outline-success btn-sm mt-1"
-                                  onClick={() => handlePayExpense(userExpense.userId, Math.abs(balance))}
+                                  onClick={() => handlePayExpense(Math.abs(balance))}
                                   disabled={paymentLoading}
                                   style={{fontSize: '10px'}}
                                 >
@@ -418,7 +441,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                             )}
                             
                             {/* Paid Status */}
-                            {userExpense.userId !== currentUser?.userId && balance >= 0 && (
+                            {userExpense.userId === currentUser?.userId && balance >= 0 && (
                               <div className="mt-1">
                                 <small className="badge bg-success">Settled</small>
                               </div>
