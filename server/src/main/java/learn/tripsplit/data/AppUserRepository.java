@@ -1,6 +1,7 @@
 package learn.tripsplit.data;
 
 import learn.tripsplit.models.AppUser;
+import learn.tripsplit.models.Group;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -25,6 +26,8 @@ public interface AppUserRepository {
 
     @Transactional
     boolean deleteById(int userId);
+
+    boolean usernameExists(AppUser appUser);
 
     List<String> getRolesByAppUserId(int userId);
 
