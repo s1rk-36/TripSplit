@@ -39,7 +39,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
     @Override
     @Transactional
     public Group findById(int groupId) {
-        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.created_by, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "
@@ -71,7 +71,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, group.getName());
             ps.setString(2, group.getDescription());
-            ps.setInt(3, group.getCreatedBy().getAppUserId());
+            ps.setInt(3, group.getCreatedBy());
             return ps;
         }, keyHolder);
 
@@ -80,6 +80,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
         }
 
         group.setGroupId(keyHolder.getKey().intValue());
+
         return group;
     }
 
@@ -165,6 +166,53 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
         );
 
         group.setUsers(userGroups);
+    }
+
+    @Override
+    public boolean addUserToGroup(int groupId, int userId, boolean isAdmin) {
+        final String sql = "INSERT INTO user_group (group_id, user_id, is_admin) VALUES (?, ?, ?);";
+
+        try {
+            int result = jdbcTemplate.update(sql, groupId, userId, isAdmin);
+            System.out.println("Added user " + userId + " to group " + groupId + " as " + (isAdmin ? "admin" : "member"));
+            return result > 0;
+        } catch (Exception e) {
+            System.out.println("Error adding user to group: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isUserMember(int groupId, int userId) {
+        final String sql = "SELECT COUNT(*) FROM user_group WHERE group_id = ? AND user_id = ?;";
+
+        try {
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, groupId, userId);
+            return count > 0;
+        } catch (Exception e) {
+            System.out.println("Error checking group membership: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public List<Group> findGroupsByUserId(int userId) {
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
+                + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
+                + "from `group` as g "
+                + "inner join user as u on g.created_by = u.user_id "
+                + "inner join user_group ug on g.group_id = ug.group_id "
+                + "where ug.user_id = ? "
+                + "order by g.group_id asc;";
+
+        List<Group> groups = jdbcTemplate.query(sql, new GroupMapper(this), userId);
+
+        // Add users to each group
+        for (Group group : groups) {
+            addUsers(group);
+        }
+
+        return groups;
     }
 
 }
