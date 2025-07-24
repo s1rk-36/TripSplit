@@ -20,7 +20,7 @@ public class JwtConverter {
     private Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     // 2. "Configurable" constants
     private final String ISSUER = "trip-split";
-    private final int EXPIRATION_MINUTES = 1440; // 24 hours
+    private final int EXPIRATION_MINUTES = 15;
     private final int EXPIRATION_MILLIS = EXPIRATION_MINUTES * 60 * 1000;
 
     public String getTokenFromUser(User user) {
@@ -61,12 +61,7 @@ public class JwtConverter {
 
             return new User(username, username, authorities);
 
-        }catch (SignatureException e) {
-            // Handle signature mismatch gracefully
-            System.out.println("JWT signature mismatch - app likely restarted. Token invalidated.");
-            return null;
-        }
-        catch (JwtException e) {
+        } catch (JwtException e) {
             // 5. JWT failures are modeled as exceptions.
             System.out.println(e);
         }

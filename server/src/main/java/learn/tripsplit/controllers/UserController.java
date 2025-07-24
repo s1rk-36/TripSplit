@@ -1,19 +1,14 @@
 package learn.tripsplit.controllers;
 
-import learn.tripsplit.domain.GroupService;
 import learn.tripsplit.domain.Result;
-import learn.tripsplit.models.Group;
 import learn.tripsplit.security.AppUserService;
 import learn.tripsplit.models.AppUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -21,59 +16,14 @@ import java.util.Map;
 public class UserController {
     private final AppUserService service;
 
-    private final GroupService groupService;
-
-    public UserController(AppUserService appUserService, GroupService groupService) {
-        this.service = appUserService;
-        this.groupService = groupService;
+    public UserController(AppUserService service) {
+        this.service = service;
     }
 
     @GetMapping
     public List<AppUser> findAll() {
         return service.findAll();
     }
-
-    // Method to help log in current user
-    @GetMapping("/current")
-    public ResponseEntity<AppUser> getCurrentUser(Authentication authentication) {
-        if (authentication == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-
-        String username = authentication.getName();
-        AppUser user = service.findByUsername(username);
-        if (user == null) {
-            user = service.findByEmail(username);
-        }
-
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
-        return new ResponseEntity<>(user, HttpStatus.OK);
-    }
-
-    @GetMapping("/groups")
-    public ResponseEntity<List<Group>> getCurrentUserGroups(Authentication authentication) {
-        if (authentication == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-
-        String username = authentication.getName();
-        AppUser user = service.findByUsername(username);
-        if (user == null) {
-            user = service.findByEmail(username);
-        }
-
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
-        List<Group> userGroups = groupService.findGroupsByUserId(user.getAppUserId());
-
-        return new ResponseEntity<>(userGroups, HttpStatus.OK);
-    }
-
 
     @GetMapping("/{userId}")
     public AppUser findById(@PathVariable int userId) {
@@ -103,7 +53,7 @@ public class UserController {
         return ErrorResponse.build(result);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteById(@PathVariable int userId) {
         if (service.deleteById(userId)) {

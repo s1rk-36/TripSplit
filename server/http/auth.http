@@ -1,17 +1,24 @@
 @url = http://localhost:8080/api/auth
 
 ### Authenticate
-
 POST {{url}}/authenticate HTTP/1.1
 Content-Type: application/json
 
 {
-    "email": "bob@jones.com",
+    "username": "alicem",
+    "password": "P@ssw0rd!"
+}
+
+### Authenticate
+POST {{url}}/authenticate HTTP/1.1
+Content-Type: application/json
+
+{
+    "username": "mod01",
     "password": "P@ssw0rd!"
 }
 
 ### Register
-
 POST {{url}}/register HTTP/1.1
 Content-Type: application/json
 
