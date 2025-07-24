@@ -53,7 +53,7 @@ public class UserController {
         return ErrorResponse.build(result);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteById(@PathVariable int userId) {
         if (service.deleteById(userId)) {

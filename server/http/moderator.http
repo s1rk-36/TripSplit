@@ -1,0 +1,29 @@
+@url = http://localhost:8080/api/moderator
+
+### Add A ROLE TO USER 
+PUT {{url}}/user/2/roles HTTP/1.1
+Content-Type: application/json
+
+{
+    "role": "admin"
+}
+
+### REMOVE A ROLE FROM USER
+DELETE {{url}}/user/2/roles HTTP/1.1
+Content-Type: application/json
+
+{
+    "role": "admin"
+}
+
+### CREATE A USER MODERATOR
+POST {{url}}/register HTTP/1.1
+Content-Type: application/json
+
+{
+    "firstName": "MODERATOR",
+    "lastName": "01",
+    "email": "moderator@example.com",
+    "username": "mod01",
+    "password": "P@ssw0rd!"
+}

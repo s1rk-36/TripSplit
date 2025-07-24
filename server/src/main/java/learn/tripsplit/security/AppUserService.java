@@ -50,6 +50,8 @@ public class AppUserService implements UserDetailsService {
         }
         appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
 
+        appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
+
         if (appUser.getAppUserId() != 0) {
             result.addMessage("user id cannot be set for `add` operation", ResultType.INVALID);
             return result;
