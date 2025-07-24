@@ -31,21 +31,10 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
         category: expense.category || '',
         description: expense.description || '',
         date: expense.createdAt ? expense.createdAt.split('T')[0] : '',
-        receipt: null
+        receipt: null // Don't pre-populate file input
       });
 
-      // Set existing userExpenses
-      if (expense.userExpenses) {
-        setUserExpenses(expense.userExpenses.map(ue => ({
-          userId: ue.userId,
-          name: ue.userName || 'Unknown User',
-          amountOwed: ue.amountOwed || 0,
-          amountPaid: ue.amountPaid || 0,
-          included: true
-        })));
-      }
-
-      // Load group members
+      // Load group members first, then set userExpenses
       if (expense.groupId) {
         loadGroupMembers(expense.groupId);
       }
@@ -69,6 +58,20 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
       }));
       
       setGroupMembers(members);
+
+      if (expense && expense.userExpenses) {
+        const userExpensesWithNames = expense.userExpenses.map(ue => {
+          const member = members.find(m => m.id === ue.userId);
+          return {
+            userId: ue.userId,
+            name: member ? member.name : 'Unknown User',
+            amountOwed: ue.amountOwed || 0,
+            amountPaid: ue.amountPaid || 0,
+            included: true
+          };
+        });
+        setUserExpenses(userExpensesWithNames);
+      }
     } catch (err) {
       console.error('Failed to load group members:', err);
     }
@@ -128,6 +131,7 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
     });
     setUserExpenses(updatedUserExpenses);
     
+    // Recalculate equal splits for included members
     const includedMembers = updatedUserExpenses.filter(ue => ue.included);
     if (includedMembers.length > 0) {
       const totalCost = parseFloat(formData.totalCost) || 0;
@@ -186,7 +190,7 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
         category: formData.category,
         description: formData.description.trim() || null,
         createdBy: expense.createdBy,
-        createdAt: formData.date,
+        createdAt: formData.date ? `${formData.date}T00:00:00` : expense.createdAt, // Convert to LocalDateTime format
         // Send userExpenses for the user_expense table
         userExpenses: userExpenses
           .filter(ue => ue.included)

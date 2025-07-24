@@ -101,9 +101,7 @@ function Expenses() {
   const handleEditExpense = async (expenseId, expenseData) => {
     try {
       const updatedExpense = await apiService.updateExpense(expenseId, expenseData);
-      setExpenses(expenses.map(expense => 
-        expense.expenseId === expenseId ? updatedExpense : expense
-      ));
+      loadExpenses();
       setShowEditModal(false);
       setSelectedExpense(null);
     } catch (err) {

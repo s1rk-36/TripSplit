@@ -1,373 +1,469 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button, Tab, Tabs } from 'react-bootstrap';
-import { FaReceipt, FaEdit, FaTrash, FaComment, FaFileImage, FaDownload, FaUsers, FaDollarSign, FaCalendar, FaTag, FaUser, FaCopy, FaPaperPlane } from 'react-icons/fa';
-import { apiService } from '../../services/apiService';
-import { useAuth } from '../../utils/auth';
+import { Modal, Button } from 'react-bootstrap';
+import { FaReceipt, FaCalendar, FaUsers, FaUser, FaDollarSign, FaEdit, FaTrash, FaFileImage, FaDownload, FaCreditCard, FaCheck } from 'react-icons/fa';
 import { formatCurrency } from '../../utils/helpers';
+import { useAuth } from '../../utils/auth';
+import { apiService } from '../../services/apiService';
 
-function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }) {
+function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, onPayExpense }) {
   const { currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('details');
-  const [comments, setComments] = useState([]);
-  const [receipts, setReceipts] = useState([]);
-  const [newComment, setNewComment] = useState('');
+  const [userExpenseDetails, setUserExpenseDetails] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentAmounts, setPaymentAmounts] = useState({});
 
   useEffect(() => {
-    if (show && expense) {
-      loadExpenseData();
-      setActiveTab('details'); // Reset to details tab when opening
+    if (expense && show) {
+      loadUserExpenseDetails();
     }
-  }, [show, expense]);
+  }, [expense, show]);
 
-  const loadExpenseData = async () => {
-    if (!expense) return;
+  const loadUserExpenseDetails = async () => {
+    if (!expense || !expense.userExpenses) return;
 
     try {
       setLoading(true);
-      setError('');
-      
-      // temp data
-      const commentsData = expense.comments || [];
-      const receiptsData = expense.receipts || (expense.hasReceipt ? [{ id: 1, filename: 'receipt.jpg', url: '#' }] : []);
-      
-      setComments(commentsData);
-      setReceipts(receiptsData);
-      
+      const detailsWithNames = [];
+
+      // Load user details for each userExpense
+      for (const userExpense of expense.userExpenses) {
+        try {
+          const userData = await apiService.getUser(userExpense.userId);
+          detailsWithNames.push({
+            ...userExpense,
+            userName: `${userData.firstName} ${userData.lastName}`,
+            userEmail: userData.email
+          });
+        } catch (err) {
+          console.error(`Failed to load user ${userExpense.userId}:`, err);
+          detailsWithNames.push({
+            ...userExpense,
+            userName: 'Unknown User',
+            userEmail: ''
+          });
+        }
+      }
+
+      setUserExpenseDetails(detailsWithNames);
     } catch (err) {
-      console.error('Failed to load expense data:', err);
-      setError(err.message || 'Failed to load expense details');
+      console.error('Failed to load user expense details:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+  const getGroupName = (groupId) => {
+    const group = groups?.find(g => (g.id || g.groupId) === groupId);
+    return group ? group.name : 'Unknown Group';
+  };
 
+  const formatCategory = (category) => {
+    return category ? category.replace('_', ' ') : 'Uncategorized';
+  };
+
+  const handleEdit = () => {
+    onHide();
+    onEdit(expense);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this expense? This action cannot be undone.')) {
+      onHide();
+      onDelete(expense.expenseId);
+    }
+  };
+
+  const handlePayExpense = async (payeeUserId, amount) => {
     try {
-      // This would be an API call: await apiService.addComment(expense.id, newComment)
-      const comment = {
-        id: Date.now(),
-        text: newComment.trim(),
-        author: `${currentUser?.firstName} ${currentUser?.lastName}`,
-        authorId: currentUser?.userId,
-        createdAt: new Date().toISOString()
+      setPaymentLoading(true);
+      
+      // Create payment data
+      const paymentData = {
+        payerUserId: currentUser.userId,
+        payeeUserId: payeeUserId,
+        amount: amount,
+        expenseId: expense.expenseId,
+        description: `Payment for: ${expense.name}`
       };
       
-      setComments([...comments, comment]);
-      setNewComment('');
+      await apiService.createPayment(paymentData);
+      
+      // Update local state to reflect payment
+      setUserExpenseDetails(prevDetails => 
+        prevDetails.map(ue => {
+          if (ue.userId === currentUser.userId) {
+            return { ...ue, amountPaid: (ue.amountPaid || 0) + amount };
+          }
+          return ue;
+        })
+      );
+      
+      // Call parent callback if provided
+      if (onPayExpense) {
+        onPayExpense(expense, paymentData);
+      }
+      
+      // Clear payment amount
+      setPaymentAmounts(prev => ({ ...prev, [payeeUserId]: '' }));
+      
     } catch (err) {
-      console.error('Failed to add comment:', err);
-      setError(err.message || 'Failed to add comment');
+      console.error('Failed to process payment:', err);
+      alert('Failed to process payment: ' + (err.message || 'Unknown error'));
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
-  const handleDownloadReceipt = async (receiptId, filename) => {
-    try {
-      // This would download the receipt file
-      // Implementation depends on your backend API
-      console.log('Downloading receipt:', receiptId, filename);
-      // await apiService.downloadReceipt(receiptId);
-    } catch (err) {
-      console.error('Failed to download receipt:', err);
-      setError(err.message || 'Failed to download receipt');
+  const handleQuickPay = async () => {
+    const currentUserExpense = userExpenseDetails.find(ue => ue.userId === currentUser?.userId);
+    if (!currentUserExpense || currentUserExpense.amountOwed <= 0) return;
+    
+    // Find who paid for this expense
+    const payer = userExpenseDetails.find(ue => ue.amountPaid > 0);
+    if (!payer) {
+      alert('Cannot determine who to pay');
+      return;
     }
-  };
-
-  const handleCopyExpenseId = () => {
-    navigator.clipboard.writeText(expense?.id?.toString() || '');
-    alert('Expense ID copied to clipboard!');
+    
+    await handlePayExpense(payer.userId, currentUserExpense.amountOwed);
   };
 
   if (!expense) return null;
 
-  const group = groups?.find(g => (g.id || g.groupId) === expense.groupId);
-  const userSplit = expense.splits?.find(split => split.userId === currentUser?.userId);
-  const isPaidByUser = expense.paidBy === currentUser?.userId;
-  const totalSplitAmount = expense.splits?.reduce((sum, split) => sum + (split.amount || 0), 0) || 0;
+  const isCreatedByUser = expense.createdBy === currentUser?.userId;
+  const currentUserExpense = userExpenseDetails.find(ue => ue.userId === currentUser?.userId);
+  const totalOwed = userExpenseDetails.reduce((sum, ue) => sum + (ue.amountOwed || 0), 0);
+  const totalPaid = userExpenseDetails.reduce((sum, ue) => sum + (ue.amountPaid || 0), 0);
+  const payer = userExpenseDetails.find(ue => ue.amountPaid > 0);
 
   return (
-    <Modal show={show} onHide={onHide} size="xl">
+    <Modal show={show} onHide={onHide} size="lg">
       <Modal.Header closeButton>
         <Modal.Title>
           <FaReceipt className="me-2" />
-          {expense.name}
+          Expense Details
         </Modal.Title>
       </Modal.Header>
       
       <Modal.Body>
-        {error && (
-          <div className="alert alert-danger">{error}</div>
-        )}
-
-        {/* Expense Header Info */}
-        <div className="row mb-4">
+        <div className="row">
           <div className="col-md-8">
-            <div className="d-flex gap-4 mb-3">
-              <div>
-                <h4 className="text-primary mb-0">{formatCurrency(expense.totalCost)}</h4>
-                <small className="text-muted">Total Amount</small>
-              </div>
-              <div>
-                <h5 className="mb-0">{formatCurrency(userSplit?.amount || 0)}</h5>
-                <small className="text-muted">Your Share</small>
-              </div>
-              <div>
-                <h5 className={`mb-0 ${isPaidByUser ? 'text-success' : 'text-muted'}`}>
-                  {isPaidByUser ? formatCurrency(expense.amount) : '$0.00'}
-                </h5>
-                <small className="text-muted">You Paid</small>
-              </div>
-            </div>
-            
-            <div className="d-flex gap-3 flex-wrap mb-3">
-              <span className="d-flex align-items-center text-muted">
-                <FaUsers className="me-1" />
-                {group?.name || 'Unknown Group'}
-              </span>
-              <span className="d-flex align-items-center text-muted">
-                <FaCalendar className="me-1" />
-                {new Date(expense.createdAt).toLocaleDateString()}
-              </span>
-              {expense.category && (
-                <span className="d-flex align-items-center text-muted">
-                  <FaTag className="me-1" />
-                  {expense.category}
-                </span>
+            {/* Basic Info */}
+            <div className="mb-4">
+              <h4 className="mb-2">{expense.name}</h4>
+              {expense.description && (
+                <p className="text-muted mb-3">{expense.description}</p>
               )}
-              <span className="d-flex align-items-center text-muted">
-                <FaUser className="me-1" />
-                Paid by {expense.paidByName || 'Unknown'}{isPaidByUser ? ' (You)' : ''}
-              </span>
+              
+              <div className="row g-3">
+                <div className="col-sm-6">
+                  <div className="d-flex align-items-center">
+                    <FaDollarSign className="text-success me-2" />
+                    <div>
+                      <div className="fw-bold fs-5 text-success">
+                        {formatCurrency(expense.totalCost)}
+                      </div>
+                      <small className="text-muted">Total Cost</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="col-sm-6">
+                  <div className="d-flex align-items-center">
+                    <FaCalendar className="text-primary me-2" />
+                    <div>
+                      <div className="fw-medium">
+                        {new Date(expense.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <small className="text-muted">Date</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="col-sm-6">
+                  <div className="d-flex align-items-center">
+                    <FaUsers className="text-info me-2" />
+                    <div>
+                      <div className="fw-medium">{getGroupName(expense.groupId)}</div>
+                      <small className="text-muted">Group</small>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="col-sm-6">
+                  <div className="d-flex align-items-center">
+                    <div className="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
+                         style={{width: '20px', height: '20px', fontSize: '10px'}}>
+                      #
+                    </div>
+                    <div>
+                      <div className="fw-medium">{formatCategory(expense.category)}</div>
+                      <small className="text-muted">Category</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {expense.description && (
-              <div className="mb-3">
-                <strong>Notes:</strong>
-                <p className="text-muted mb-0 mt-1">{expense.description}</p>
+            {/* Receipt */}
+            {expense.hasReceipt && (
+              <div className="mb-4">
+                <h6>Receipt</h6>
+                <div className="border rounded p-3 d-flex align-items-center justify-content-between">
+                  <div className="d-flex align-items-center">
+                    <FaFileImage className="text-info me-2" size={20} />
+                    <span>Receipt image available</span>
+                  </div>
+                  <Button variant="outline-primary" size="sm">
+                    <FaDownload className="me-1" /> Download
+                  </Button>
+                </div>
               </div>
             )}
           </div>
-          
-          <div className="col-md-4 text-end">
-            <div className="btn-group mb-3">
-              {isPaidByUser && (
-                <>
-                  <button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={() => {
-                      onHide();
-                      onEdit(expense);
-                    }}
-                  >
-                    <FaEdit className="me-1" /> Edit
-                  </button>
-                  <button
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this expense?')) {
-                        onHide();
-                        onDelete(expense.id);
-                      }
-                    }}
-                  >
-                    <FaTrash className="me-1" /> Delete
-                  </button>
-                </>
-              )}
-            </div>
-            
-            <div className="d-flex gap-2 justify-content-end flex-wrap">
-              {receipts.length > 0 && (
-                <span className="badge bg-info">
-                  <FaFileImage className="me-1" />
-                  {receipts.length} Receipt{receipts.length > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
+
+          <div className="col-md-4">
+            {/* Your Share Summary */}
+            {currentUserExpense && (
+              <div className="card mb-3">
+                <div className="card-header">
+                  <h6 className="mb-0">Your Share</h6>
+                </div>
+                <div className="card-body">
+                  <div className="d-flex justify-content-between mb-2">
+                    <span>You owe:</span>
+                    <span className="fw-bold text-warning">
+                      {formatCurrency(currentUserExpense.amountOwed || 0)}
+                    </span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span>You paid:</span>
+                    <span className="fw-bold text-success">
+                      {formatCurrency(currentUserExpense.amountPaid || 0)}
+                    </span>
+                  </div>
+                  <hr />
+                  <div className="d-flex justify-content-between mb-2">
+                    <span>Net balance:</span>
+                    <span className={`fw-bold ${(currentUserExpense.amountPaid - currentUserExpense.amountOwed) >= 0 ? 'text-success' : 'text-danger'}`}>
+                      {formatCurrency(Math.abs((currentUserExpense.amountPaid || 0) - (currentUserExpense.amountOwed || 0)))}
+                    </span>
+                  </div>
+                  <small className="text-muted">
+                    {(currentUserExpense.amountPaid - currentUserExpense.amountOwed) >= 0 
+                      ? 'You are owed money' 
+                      : 'You owe money'
+                    }
+                  </small>
+                  
+                  {/* Quick Pay Button */}
+                  {(currentUserExpense.amountOwed > currentUserExpense.amountPaid) && (
+                    <div className="mt-3">
+                      <button
+                        className="btn btn-success w-100"
+                        onClick={handleQuickPay}
+                        disabled={paymentLoading}
+                      >
+                        {paymentLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <FaCreditCard className="me-2" />
+                            Pay {formatCurrency(currentUserExpense.amountOwed - currentUserExpense.amountPaid)}
+                          </>
+                        )}
+                      </button>
+                      <small className="text-muted d-block mt-1">
+                        Pay your remaining balance
+                      </small>
+                    </div>
+                  )}
+                  
+                  {/* Fully Paid */}
+                  {(currentUserExpense.amountPaid >= currentUserExpense.amountOwed) && (
+                    <div className="mt-3 text-center">
+                      <div className="badge bg-success p-2">
+                        <FaCheck className="me-1" />
+                        Fully Paid
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs activeKey={activeTab} onSelect={(tab) => setActiveTab(tab)} className="mb-3">
-          {/* Split Details Tab */}
-          <Tab eventKey="details" title="Split Details">
-            <div className="row">
-              <div className="col-md-8">
-                <h6>How this expense was split:</h6>
-                <div className="table-responsive">
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Person</th>
-                        <th>Amount</th>
-                        <th>Percentage</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {expense.splits?.map(split => (
-                        <tr key={split.userId}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <FaUser className="text-muted me-2" size={12} />
-                              {split.name || split.userName || 'Unknown User'}
-                              {split.userId === currentUser?.userId && ' (You)'}
-                              {split.userId === expense.paidBy && ' 💳'}
-                            </div>
-                          </td>
-                          <td>
-                            <span className="fw-medium">{formatCurrency(split.amount)}</span>
-                          </td>
-                          <td>
-                            <span className="text-muted">
-                              {expense.amount > 0 ? ((split.amount / expense.amount) * 100).toFixed(1) : 0}%
-                            </span>
-                          </td>
-                          <td>
-                            {split.userId === expense.paidBy ? (
-                              <span className="badge bg-success">Paid</span>
-                            ) : split.settled ? (
-                              <span className="badge bg-info">Settled</span>
-                            ) : (
-                              <span className="badge bg-warning text-dark">Owes</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="table-light">
-                        <th>Total</th>
-                        <th>{formatCurrency(totalSplitAmount)}</th>
-                        <th>100.0%</th>
-                        <th></th>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
+        {/* Split Details */}
+        <div className="mt-4">
+          <h6>Split Details</h6>
+          {loading ? (
+            <div className="text-center py-3">
+              <div className="spinner-border spinner-border-sm me-2"></div>
+              Loading member details...
             </div>
-          </Tab>
-
-          {/* Receipts Tab */}
-          <Tab eventKey="receipts" title={`Receipts (${receipts.length})`}>
-            <h6>Receipt Images</h6>
-            {receipts.length === 0 ? (
-              <div className="text-center py-4">
-                <FaFileImage className="text-muted mb-3" size={48} />
-                <h5>No Receipts</h5>
-                <p className="text-muted">No receipt images were uploaded for this expense.</p>
-              </div>
-            ) : (
-              <div className="row">
-                {receipts.map(receipt => (
-                  <div key={receipt.id} className="col-md-4 mb-3">
-                    <div className="card">
-                      <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{height: '200px'}}>
-                        <FaFileImage size={48} className="text-muted" />
-                      </div>
-                      <div className="card-body">
-                        <h6 className="card-title">{receipt.filename}</h6>
-                        <p className="card-text">
-                          <small className="text-muted">
-                            Uploaded {receipt.uploadedAt ? new Date(receipt.uploadedAt).toLocaleDateString() : 'recently'}
-                          </small>
-                        </p>
-                        <button
-                          className="btn btn-outline-primary btn-sm"
-                          onClick={() => handleDownloadReceipt(receipt.id, receipt.filename)}
-                        >
-                          <FaDownload className="me-1" /> Download
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Tab>
-
-          {/* Comments Tab */}
-          <Tab eventKey="comments" title={`Comments (${comments.length})`}>
-            <div className="mb-4">
-              <h6>Discussion</h6>
-              
-              {/* Add Comment Form */}
-              <form onSubmit={handleAddComment} className="mb-4">
-                <div className="input-group">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Add a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <button 
-                    type="submit" 
-                    className="btn btn-outline-primary"
-                    disabled={!newComment.trim()}
-                  >
-                    <FaPaperPlane />
-                  </button>
-                </div>
-              </form>
-
-              {/* Comments List */}
-              {comments.length === 0 ? (
-                <div className="text-center py-4">
-                  <FaComment className="text-muted mb-3" size={48} />
-                  <h5>No Comments</h5>
-                  <p className="text-muted">Be the first to comment on this expense.</p>
-                </div>
-              ) : (
-                <div className="comments-list">
-                  {comments.map(comment => (
-                    <div key={comment.id} className="card mb-3">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-start mb-2">
+          ) : userExpenseDetails.length > 0 ? (
+            <div className="table-responsive">
+              <table className="table table-sm">
+                <thead className="table-light">
+                  <tr>
+                    <th>Member</th>
+                    <th className="text-end">Amount Owed</th>
+                    <th className="text-end">Amount Paid</th>
+                    <th className="text-end">Balance</th>
+                    <th className="text-end">Share % / Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userExpenseDetails.map(userExpense => {
+                    const balance = (userExpense.amountPaid || 0) - (userExpense.amountOwed || 0);
+                    const sharePercentage = expense.totalCost > 0 ? ((userExpense.amountOwed || 0) / expense.totalCost * 100) : 0;
+                    
+                    return (
+                      <tr key={userExpense.userId}>
+                        <td>
                           <div className="d-flex align-items-center">
-                            <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{width: '32px', height: '32px'}}>
-                              <FaUser size={14} />
+                            <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                 style={{width: '24px', height: '24px', fontSize: '10px'}}>
+                              <FaUser />
                             </div>
                             <div>
-                              <strong>{comment.author}</strong>
-                              {comment.authorId === currentUser?.userId && (
-                                <span className="badge bg-light text-dark ms-2">You</span>
+                              <div className="fw-medium">{userExpense.userName}</div>
+                              {userExpense.userId === currentUser?.userId && (
+                                <small className="text-muted">(You)</small>
                               )}
                             </div>
                           </div>
-                          <small className="text-muted">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </small>
-                        </div>
-                        <p className="mb-0">{comment.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                        </td>
+                        <td className="text-end">
+                          <span className="text-warning fw-medium">
+                            {formatCurrency(userExpense.amountOwed || 0)}
+                          </span>
+                        </td>
+                        <td className="text-end">
+                          <span className="text-success fw-medium">
+                            {formatCurrency(userExpense.amountPaid || 0)}
+                          </span>
+                          {userExpense.amountPaid > 0 && (
+                            <div>
+                              <small className="badge bg-success">Payer</small>
+                            </div>
+                          )}
+                        </td>
+                        <td className="text-end">
+                          <span className={`fw-medium ${balance >= 0 ? 'text-success' : 'text-danger'}`}>
+                            {formatCurrency(Math.abs(balance))}
+                          </span>
+                          <div>
+                            <small className="text-muted">
+                              {balance >= 0 ? 'owed' : 'owes'}
+                            </small>
+                          </div>
+                        </td>
+                        <td className="text-end">
+                          <div>
+                            <span className="text-muted">
+                              {sharePercentage.toFixed(1)}%
+                            </span>
+                            
+                            {/* Payment Actions */}
+                            {userExpense.userId !== currentUser?.userId && balance < 0 && (
+                              <div className="mt-1">
+                                <div className="input-group input-group-sm">
+                                  <span className="input-group-text">$</span>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    placeholder="0.00"
+                                    value={paymentAmounts[userExpense.userId] || ''}
+                                    onChange={(e) => setPaymentAmounts(prev => ({
+                                      ...prev,
+                                      [userExpense.userId]: e.target.value
+                                    }))}
+                                    min="0"
+                                    max={Math.abs(balance)}
+                                    step="0.01"
+                                    style={{maxWidth: '80px'}}
+                                  />
+                                  <button
+                                    className="btn btn-success btn-sm"
+                                    onClick={() => {
+                                      const amount = parseFloat(paymentAmounts[userExpense.userId]) || 0;
+                                      if (amount > 0) {
+                                        handlePayExpense(userExpense.userId, amount);
+                                      }
+                                    }}
+                                    disabled={!paymentAmounts[userExpense.userId] || paymentLoading}
+                                    title="Pay this amount"
+                                  >
+                                    <FaCreditCard size={10} />
+                                  </button>
+                                </div>
+                                <button
+                                  className="btn btn-outline-success btn-sm mt-1"
+                                  onClick={() => handlePayExpense(userExpense.userId, Math.abs(balance))}
+                                  disabled={paymentLoading}
+                                  style={{fontSize: '10px'}}
+                                >
+                                  Pay Full
+                                </button>
+                              </div>
+                            )}
+                            
+                            {/* Paid Status */}
+                            {userExpense.userId !== currentUser?.userId && balance >= 0 && (
+                              <div className="mt-1">
+                                <small className="badge bg-success">Settled</small>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot className="table-light">
+                  <tr>
+                    <th>Totals:</th>
+                    <th className="text-end text-warning">
+                      {formatCurrency(totalOwed)}
+                    </th>
+                    <th className="text-end text-success">
+                      {formatCurrency(totalPaid)}
+                    </th>
+                    <th className="text-end">
+                      <span className={Math.abs(totalPaid - totalOwed) < 0.01 ? 'text-success' : 'text-danger'}>
+                        {formatCurrency(Math.abs(totalPaid - totalOwed))}
+                      </span>
+                    </th>
+                    <th className="text-end">100.0%</th>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
-          </Tab>
-        </Tabs>
+          ) : (
+            <div className="text-center py-3 text-muted">
+              <FaUsers size={32} className="mb-2" />
+              <p>No split details available</p>
+            </div>
+          )}
+        </div>
       </Modal.Body>
       
       <Modal.Footer>
         <Button variant="secondary" onClick={onHide}>
           Close
         </Button>
-        {isPaidByUser && (
-          <Button 
-            variant="primary" 
-            onClick={() => {
-              onHide();
-              onEdit(expense);
-            }}
-          >
-            <FaEdit className="me-1" /> Edit Expense
+        {isCreatedByUser && (
+          <Button variant="primary" onClick={handleEdit}>
+            <FaEdit className="me-1" /> Edit
           </Button>
         )}
       </Modal.Footer>

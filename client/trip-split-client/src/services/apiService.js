@@ -191,6 +191,16 @@ async login(credentials) {
     });
   },
 
+  async createPayment(paymentData) {
+  return makeAuthenticatedRequest('/payments', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(paymentData),
+  });
+},
+
   // Groups endpoints
   async getGroups() {
     return makeAuthenticatedRequest('/user/groups');
