@@ -171,6 +171,7 @@ async login(credentials) {
   },
 
   async createExpense(expense) {
+    console.log("sending over", expense);
     return makeAuthenticatedRequest('/expenses', {
       method: 'POST',
       body: JSON.stringify(expense)
@@ -197,6 +198,13 @@ async login(credentials) {
   async getGroupMembers(groupId) {
   return makeAuthenticatedRequest(`/groups/${groupId}/members`);
 },
+
+async removeGroupMember(groupId, userId) {
+  return makeAuthenticatedRequest(`/groups/${groupId}/members/${userId}`, {
+    method: 'DELETE'
+  });
+},
+
 // admin access
   async getAllGroups() {
     return makeAuthenticatedRequest('/groups');
@@ -237,6 +245,10 @@ async login(credentials) {
   },
 
   // User Expenses endpoints 
+   async getUser(userId) {
+    return makeAuthenticatedRequest(`/user/${userId}`);
+  },
+
   async getUserBalance(userId) {
     return makeAuthenticatedRequest(`/user-expenses/user/${userId}/balance`);
   },

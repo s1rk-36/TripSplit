@@ -17,13 +17,14 @@ function Expenses() {
   const [expenses, setExpenses] = useState([]);
   const [groups, setGroups] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [userCache, setUserCache] = useState({}); // Cache for user data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterGroup, setFilterGroup] = useState(searchParams.get('group') || 'all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('all');
-  const [sortBy, setSortBy] = useState('date');
+  const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
   
   // Modal states
@@ -52,6 +53,10 @@ function Expenses() {
       
       setExpenses(expensesData || []);
       
+      if (expensesData && expensesData.length > 0) {
+        await loadUserData(expensesData);
+      }
+      
     } catch (err) {
       console.error('Failed to load expenses:', err);
       setError(err.message || 'Failed to load expenses');
@@ -70,17 +75,14 @@ function Expenses() {
   };
 
   const loadCategories = async () => {
-    // This could come from API or be hardcoded
     const categoriesData = [
-      'Food & Dining',
-      'Transportation',
-      'Accommodation',
-      'Entertainment',
-      'Shopping',
-      'Utilities',
-      'Groceries',
-      'Gas',
-      'Other'
+      'FOOD',          
+      'TRANSPORTATION',
+      'LODGING',       
+      'ACTIVITIES',    
+      'SHOPPING',
+      'TRAVEL_FEES',  
+      'OTHER'
     ];
     setCategories(categoriesData);
   };
@@ -100,7 +102,7 @@ function Expenses() {
     try {
       const updatedExpense = await apiService.updateExpense(expenseId, expenseData);
       setExpenses(expenses.map(expense => 
-        expense.id === expenseId ? updatedExpense : expense
+        expense.expenseId === expenseId ? updatedExpense : expense
       ));
       setShowEditModal(false);
       setSelectedExpense(null);
@@ -117,7 +119,7 @@ function Expenses() {
 
     try {
       await apiService.deleteExpense(expenseId);
-      setExpenses(expenses.filter(expense => expense.id !== expenseId));
+      setExpenses(expenses.filter(expense => expense.expenseId !== expenseId));
     } catch (err) {
       console.error('Failed to delete expense:', err);
       setError(err.message || 'Failed to delete expense');
@@ -135,6 +137,32 @@ function Expenses() {
     }
   };
 
+  const loadUserData = async (expensesData) => {
+    // Get all unique user IDs from expenses
+    const userIds = [...new Set(expensesData.map(expense => expense.createdBy))];
+    const newUserCache = { ...userCache };
+    
+    // Fetch user data for each unique user ID
+    for (const userId of userIds) {
+      if (!newUserCache[userId]) {
+        try {
+          const userData = await apiService.getUser(userId);
+          newUserCache[userId] = `${userData.firstName} ${userData.lastName}`;
+        } catch (err) {
+          console.error(`Failed to load user ${userId}:`, err);
+          newUserCache[userId] = 'Unknown User';
+        }
+      }
+    }
+    
+    // Update the cache with all user data
+    setUserCache(newUserCache);
+  };
+
+  const getUserName = (userId) => {
+    return userCache[userId];
+  };
+
   const getGroupName = (groupId) => {
     const group = groups.find(g => g.id === groupId || g.groupId === groupId);
     return group ? group.name : 'Unknown Group';
@@ -142,31 +170,38 @@ function Expenses() {
 
   // Filter and sort expenses
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Handle search - check name and description
+    const matchesSearch = (expense.name && expense.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (expense.description && expense.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesGroup = filterGroup === 'all' || expense.groupId.toString() === filterGroup;
+    // Handle group filter
+    const matchesGroup = filterGroup === 'all' || (expense.groupId && expense.groupId.toString() === filterGroup);
+    
+    // Handle category filter
     const matchesCategory = filterCategory === 'all' || expense.category === filterCategory;
     
+    // Handle date filter
     let matchesDate = true;
     if (filterDateRange !== 'all') {
-      const expenseDate = new Date(expense.date);
+      const expenseDate = expense.createdAt ? new Date(expense.createdAt) : null;
       const now = new Date();
       
-      switch (filterDateRange) {
-        case 'today':
-          matchesDate = expenseDate.toDateString() === now.toDateString();
-          break;
-        case 'week':
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          matchesDate = expenseDate >= weekAgo;
-          break;
-        case 'month':
-          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          matchesDate = expenseDate >= monthAgo;
-          break;
-        default:
-          matchesDate = true;
+      if (expenseDate) {
+        switch (filterDateRange) {
+          case 'today':
+            matchesDate = expenseDate.toDateString() === now.toDateString();
+            break;
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            matchesDate = expenseDate >= weekAgo;
+            break;
+          case 'month':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            matchesDate = expenseDate >= monthAgo;
+            break;
+          default:
+            matchesDate = true;
+        }
       }
     }
     
@@ -175,21 +210,21 @@ function Expenses() {
     let aValue, bValue;
     
     switch (sortBy) {
-      case 'date':
-        aValue = new Date(a.date);
-        bValue = new Date(b.date);
+      case 'createdAt':
+        aValue = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        bValue = b.createdAt ? new Date(b.createdAt) : new Date(0);
         break;
-      case 'amount':
-        aValue = a.amount;
-        bValue = b.amount;
+      case 'totalCost':
+        aValue = a.totalCost || 0;
+        bValue = b.totalCost || 0;
         break;
-      case 'description':
-        aValue = a.description.toLowerCase();
-        bValue = b.description.toLowerCase();
+      case 'name':
+        aValue = a.name ? a.name.toLowerCase() : '';
+        bValue = b.name ? b.name.toLowerCase() : '';
         break;
       default:
-        aValue = new Date(a.date);
-        bValue = new Date(b.date);
+        aValue = a.createdAt ? new Date(a.createdAt) : new Date(0);
+        bValue = b.createdAt ? new Date(b.createdAt) : new Date(0);
     }
     
     if (sortOrder === 'asc') {
@@ -199,13 +234,15 @@ function Expenses() {
     }
   });
 
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const userPaidTotal = filteredExpenses
-    .filter(expense => expense.paidBy === currentUser?.userId)
-    .reduce((sum, expense) => sum + expense.amount, 0);
-  const userShareTotal = filteredExpenses.reduce((sum, expense) => {
-    const userSplit = expense.splits?.find(split => split.userId === currentUser?.userId);
-    return sum + (userSplit?.amount || 0);
+  // Calculate totals using userExpenses
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + (expense.totalCost || 0), 0);
+  const userPaidTotal = filteredExpenses.reduce((sum, expense) => {
+    const userExpense = expense.userExpenses?.find(ue => ue.userId === currentUser?.userId);
+    return sum + (userExpense?.amountPaid || 0);
+  }, 0);
+  const userOwedTotal = filteredExpenses.reduce((sum, expense) => {
+    const userExpense = expense.userExpenses?.find(ue => ue.userId === currentUser?.userId);
+    return sum + (userExpense?.amountOwed || 0);
   }, 0);
 
   if (loading) {
@@ -234,6 +271,44 @@ function Expenses() {
 
       {error && <ErrorAlert error={error} onRetry={loadExpenses} />}
 
+      {/* Summary Cards */}
+      {filteredExpenses.length > 0 && (
+        <div className="row mb-4">
+          <div className="col-md-3">
+            <div className="card text-center">
+              <div className="card-body">
+                <h4 className="text-primary">{filteredExpenses.length}</h4>
+                <p className="card-text small">Total Expenses</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card text-center">
+              <div className="card-body">
+                <h4 className="text-success">{formatCurrency(totalExpenses)}</h4>
+                <p className="card-text small">Total Amount</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card text-center">
+              <div className="card-body">
+                <h4 className="text-info">{formatCurrency(userPaidTotal)}</h4>
+                <p className="card-text small">You Paid</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card text-center">
+              <div className="card-body">
+                <h4 className="text-warning">{formatCurrency(userOwedTotal)}</h4>
+                <p className="card-text small">You Owe</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="card mb-4">
         <div className="card-body">
@@ -260,7 +335,7 @@ function Expenses() {
               >
                 <option value="all">All Groups</option>
                 {groups.map(group => (
-                  <option key={group.id || group.groupId} value={group.id || group.groupId}>
+                  <option key={group.groupId} value={group.groupId}>
                     {group.name}
                   </option>
                 ))}
@@ -302,10 +377,12 @@ function Expenses() {
                   setSortOrder(order);
                 }}
               >
-                <option value="date-desc">Newest First</option>
-                <option value="date-asc">Oldest First</option>
-                <option value="amount-desc">Highest Amount</option>
-                <option value="amount-asc">Lowest Amount</option>
+                <option value="createdAt-desc">Newest First</option>
+                <option value="createdAt-asc">Oldest First</option>
+                <option value="totalCost-desc">Highest Amount</option>
+                <option value="totalCost-asc">Lowest Amount</option>
+                <option value="name-asc">A-Z</option>
+                <option value="name-desc">Z-A</option>
               </select>
             </div>
             <div className="col-md-1">
@@ -316,7 +393,7 @@ function Expenses() {
                   setFilterGroup('all');
                   setFilterCategory('all');
                   setFilterDateRange('all');
-                  setSortBy('date');
+                  setSortBy('createdAt');
                   setSortOrder('desc');
                 }}
                 title="Clear all filters"
@@ -327,44 +404,6 @@ function Expenses() {
           </div>
         </div>
       </div>
-
-      {/* Summary Cards */}
-      {filteredExpenses.length > 0 && (
-        <div className="row mb-4">
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-primary">{filteredExpenses.length}</h4>
-                <p className="card-text small">Total Expenses</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-success">{formatCurrency(totalExpenses)}</h4>
-                <p className="card-text small">Total Amount</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-info">{formatCurrency(userPaidTotal)}</h4>
-                <p className="card-text small">You Paid</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-warning">{formatCurrency(userShareTotal)}</h4>
-                <p className="card-text small">Your Share</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Expenses List */}
       {filteredExpenses.length === 0 ? (
@@ -398,11 +437,11 @@ function Expenses() {
               <table className="table table-hover mb-0">
                 <thead className="table-light">
                   <tr>
-                    <th>Description</th>
+                    <th>Name</th>
                     <th>Amount</th>
                     <th>Group</th>
                     <th>Category</th>
-                    <th>Paid By</th>
+                    <th>Created By</th>
                     <th>Date</th>
                     <th>Your Share</th>
                     <th></th>
@@ -410,17 +449,17 @@ function Expenses() {
                 </thead>
                 <tbody>
                   {filteredExpenses.map(expense => {
-                    const userSplit = expense.splits?.find(split => split.userId === currentUser?.userId);
-                    const isPaidByUser = expense.paidBy === currentUser?.userId;
+                    const userExpense = expense.userExpenses?.find(ue => ue.userId === currentUser?.userId);
+                    const isCreatedByUser = expense.createdBy === currentUser?.userId;
                     
                     return (
-                      <tr key={expense.id} className="align-middle">
+                      <tr key={expense.expenseId} className="align-middle">
                         <td>
                           <div className="d-flex align-items-center">
                             <div>
-                              <div className="fw-medium">{expense.description}</div>
-                              {expense.notes && (
-                                <small className="text-muted">{expense.notes}</small>
+                              <div className="fw-medium">{expense.name}</div>
+                              {expense.description && (
+                                <small className="text-muted">{expense.description}</small>
                               )}
                               {expense.hasReceipt && (
                                 <div className="mt-1">
@@ -434,7 +473,7 @@ function Expenses() {
                           </div>
                         </td>
                         <td>
-                          <span className="fw-bold">{formatCurrency(expense.amount)}</span>
+                          <span className="fw-bold">{formatCurrency(expense.totalCost)}</span>
                         </td>
                         <td>
                           <span className="badge bg-light text-dark">
@@ -449,17 +488,24 @@ function Expenses() {
                         <td>
                           <div className="d-flex align-items-center">
                             <FaUser className="text-muted me-1" size={12} />
-                            {expense.paidByName}
-                            {isPaidByUser && ' (You)'}
+                            {getUserName(expense.createdBy)}
+                            {isCreatedByUser && ' (You)'}
                           </div>
                         </td>
                         <td>
-                          <small>{new Date(expense.date).toLocaleDateString()}</small>
+                          <small>{new Date(expense.createdAt).toLocaleDateString()}</small>
                         </td>
                         <td>
-                          <span className={userSplit?.amount ? 'fw-medium' : 'text-muted'}>
-                            {formatCurrency(userSplit?.amount || 0)}
+                          <span className={userExpense?.amountOwed ? 'fw-medium' : 'text-muted'}>
+                            {formatCurrency(userExpense?.amountOwed || 0)}
                           </span>
+                          {userExpense?.amountPaid > 0 && (
+                            <div>
+                              <small className="text-success">
+                                Paid: {formatCurrency(userExpense.amountPaid)}
+                              </small>
+                            </div>
+                          )}
                         </td>
                         <td>
                           <div className="dropdown">
@@ -475,12 +521,12 @@ function Expenses() {
                               <li>
                                 <button 
                                   className="dropdown-item"
-                                  onClick={() => handleViewDetails(expense.id)}
+                                  onClick={() => handleViewDetails(expense.expenseId)}
                                 >
                                   <FaEye className="me-2" /> View Details
                                 </button>
                               </li>
-                              {isPaidByUser && (
+                              {isCreatedByUser && (
                                 <>
                                   <li>
                                     <button 
@@ -497,7 +543,7 @@ function Expenses() {
                                   <li>
                                     <button 
                                       className="dropdown-item text-danger"
-                                      onClick={() => handleDeleteExpense(expense.id)}
+                                      onClick={() => handleDeleteExpense(expense.expenseId)}
                                     >
                                       <FaTrash className="me-2" /> Delete
                                     </button>

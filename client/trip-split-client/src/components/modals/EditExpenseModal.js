@@ -1,440 +1,546 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button, Tab, Tabs } from 'react-bootstrap';
-import { FaReceipt, FaEdit, FaTrash, FaComment, FaFileImage, FaDownload, FaUsers, FaDollarSign, FaCalendar, FaTag, FaUser, FaCopy, FaPaperPlane } from 'react-icons/fa';
-import { apiService } from '../../services/apiService';
+import { Modal, Button } from 'react-bootstrap';
+import { FaReceipt, FaEquals, FaDollarSign, FaEdit } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
-import { formatCurrency } from '../../utils/helpers';
+import { apiService } from '../../services/apiService';
 
-function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }) {
+function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories }) {
   const { currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('details');
-  const [comments, setComments] = useState([]);
-  const [receipts, setReceipts] = useState([]);
-  const [newComment, setNewComment] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    totalCost: '',
+    groupId: '',
+    category: '',
+    description: '',
+    date: '',
+    receipt: null
+  });
+  
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [userExpenses, setUserExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (show && expense) {
-      loadExpenseData();
-      setActiveTab('details'); // Reset to details tab when opening
-    }
-  }, [show, expense]);
+    if (expense && show) {
+      // Populate form with expense data
+      setFormData({
+        name: expense.name || '',
+        totalCost: expense.totalCost?.toString() || '',
+        groupId: expense.groupId?.toString() || '',
+        category: expense.category || '',
+        description: expense.description || '',
+        date: expense.createdAt ? expense.createdAt.split('T')[0] : '',
+        receipt: null
+      });
 
-  const loadExpenseData = async () => {
-    if (!expense) return;
+      // Set existing userExpenses
+      if (expense.userExpenses) {
+        setUserExpenses(expense.userExpenses.map(ue => ({
+          userId: ue.userId,
+          name: ue.userName || 'Unknown User',
+          amountOwed: ue.amountOwed || 0,
+          amountPaid: ue.amountPaid || 0,
+          included: true
+        })));
+      }
+
+      // Load group members
+      if (expense.groupId) {
+        loadGroupMembers(expense.groupId);
+      }
+    }
+  }, [expense, show]);
+
+  useEffect(() => {
+    if (groupMembers.length > 0 && formData.totalCost) {
+      updatePayerInUserExpenses();
+    }
+  }, [groupMembers, formData.totalCost]);
+
+  const loadGroupMembers = async (groupId) => {
+    try {
+      const userGroups = await apiService.getGroupMembers(groupId);
+      const members = userGroups.map(userGroup => ({
+        id: userGroup.user.appUserId,
+        name: `${userGroup.user.firstName} ${userGroup.user.lastName}`,
+        email: userGroup.user.email,
+        isAdmin: userGroup.admin
+      }));
+      
+      setGroupMembers(members);
+    } catch (err) {
+      console.error('Failed to load group members:', err);
+    }
+  };
+
+  const updatePayerInUserExpenses = () => {
+    const totalCost = parseFloat(formData.totalCost) || 0;
+    const currentPayer = userExpenses.find(ue => ue.amountPaid > 0);
+    
+    if (currentPayer) {
+      setUserExpenses(userExpenses.map(ue => ({
+        ...ue,
+        amountPaid: ue.userId === currentPayer.userId ? totalCost : 0
+      })));
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setFormData(prev => ({ ...prev, receipt: file }));
+  };
+
+  const handleAmountOwedChange = (userId, value) => {
+    const updatedUserExpenses = userExpenses.map(ue => {
+      if (ue.userId === userId) {
+        return { ...ue, amountOwed: parseFloat(value) || 0 };
+      }
+      return ue;
+    });
+    setUserExpenses(updatedUserExpenses);
+  };
+
+  const handlePayerChange = (newPayerId) => {
+    const totalCost = parseFloat(formData.totalCost) || 0;
+    const updatedUserExpenses = userExpenses.map(ue => ({
+      ...ue,
+      amountPaid: ue.userId === parseInt(newPayerId) ? totalCost : 0
+    }));
+    setUserExpenses(updatedUserExpenses);
+  };
+
+  const toggleMemberInclusion = (userId) => {
+    const updatedUserExpenses = userExpenses.map(ue => {
+      if (ue.userId === userId) {
+        return { 
+          ...ue, 
+          included: !ue.included,
+          amountOwed: !ue.included ? ue.amountOwed : 0
+        };
+      }
+      return ue;
+    });
+    setUserExpenses(updatedUserExpenses);
+    
+    const includedMembers = updatedUserExpenses.filter(ue => ue.included);
+    if (includedMembers.length > 0) {
+      const totalCost = parseFloat(formData.totalCost) || 0;
+      const equalShare = totalCost / includedMembers.length;
+      
+      setUserExpenses(updatedUserExpenses.map(ue => ({
+        ...ue,
+        amountOwed: ue.included ? equalShare : 0
+      })));
+    }
+  };
+
+  const validateUserExpenses = () => {
+    const includedUserExpenses = userExpenses.filter(ue => ue.included);
+    const totalOwed = includedUserExpenses.reduce((sum, ue) => sum + (ue.amountOwed || 0), 0);
+    const totalPaid = userExpenses.reduce((sum, ue) => sum + (ue.amountPaid || 0), 0);
+    const expenseAmount = parseFloat(formData.totalCost) || 0;
+    
+    return Math.abs(totalOwed - expenseAmount) < 0.01 && Math.abs(totalPaid - expenseAmount) < 0.01;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!formData.name.trim()) {
+      setError('Name is required');
+      return;
+    }
+    if (!formData.totalCost || parseFloat(formData.totalCost) <= 0) {
+      setError('Total cost must be greater than 0');
+      return;
+    }
+    if (!formData.groupId) {
+      setError('Please select a group');
+      return;
+    }
+    if (!formData.category) {
+      setError('Please select a category');
+      return;
+    }
+    if (!validateUserExpenses()) {
+      setError('Split amounts do not match the total expense amount or payment amount is incorrect');
+      return;
+    }
 
     try {
       setLoading(true);
       setError('');
       
-      // temp data
-      const commentsData = expense.comments || [];
-      const receiptsData = expense.receipts || (expense.hasReceipt ? [{ id: 1, filename: 'receipt.jpg', url: '#' }] : []);
+      const expenseData = {
+        expenseId: expense.expenseId,
+        name: formData.name.trim(),
+        totalCost: parseFloat(formData.totalCost),
+        groupId: parseInt(formData.groupId),
+        category: formData.category,
+        description: formData.description.trim() || null,
+        createdBy: expense.createdBy,
+        createdAt: formData.date,
+        // Send userExpenses for the user_expense table
+        userExpenses: userExpenses
+          .filter(ue => ue.included)
+          .map(ue => ({
+            userId: ue.userId,
+            amountOwed: ue.amountOwed,
+            amountPaid: ue.amountPaid
+          }))
+      };
       
-      setComments(commentsData);
-      setReceipts(receiptsData);
+      await onSubmit(expense.expenseId, expenseData);
       
     } catch (err) {
-      console.error('Failed to load expense data:', err);
-      setError(err.message || 'Failed to load expense details');
+      setError(err.message || 'Failed to update expense');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-
-    try {
-      // This would be an API call: await apiService.addComment(expense.id, newComment)
-      const comment = {
-        id: Date.now(),
-        text: newComment.trim(),
-        author: `${currentUser?.firstName} ${currentUser?.lastName}`,
-        authorId: currentUser?.userId,
-        createdAt: new Date().toISOString()
-      };
-      
-      setComments([...comments, comment]);
-      setNewComment('');
-    } catch (err) {
-      console.error('Failed to add comment:', err);
-      setError(err.message || 'Failed to add comment');
-    }
-  };
-
-  const handleDownloadReceipt = async (receiptId, filename) => {
-    try {
-      // This would download the receipt file
-      // Implementation depends on your backend API
-      console.log('Downloading receipt:', receiptId, filename);
-      // await apiService.downloadReceipt(receiptId);
-    } catch (err) {
-      console.error('Failed to download receipt:', err);
-      setError(err.message || 'Failed to download receipt');
-    }
-  };
-
-  const handleCopyExpenseId = () => {
-    navigator.clipboard.writeText(expense?.id?.toString() || '');
-    alert('Expense ID copied to clipboard!');
+  const handleClose = () => {
+    setFormData({
+      name: '',
+      totalCost: '',
+      groupId: '',
+      category: '',
+      description: '',
+      date: '',
+      receipt: null
+    });
+    setUserExpenses([]);
+    setError('');
+    onHide();
   };
 
   if (!expense) return null;
 
-  const group = groups?.find(g => (g.id || g.groupId) === expense.groupId);
-  const userSplit = expense.splits?.find(split => split.userId === currentUser?.userId);
-  const isPaidByUser = expense.paidBy === currentUser?.userId;
-  const totalSplitAmount = expense.splits?.reduce((sum, split) => sum + (split.amount || 0), 0) || 0;
+  const totalOwed = userExpenses.reduce((sum, ue) => sum + (ue.included ? ue.amountOwed || 0 : 0), 0);
+  const totalPaid = userExpenses.reduce((sum, ue) => sum + (ue.amountPaid || 0), 0);
+  const expenseAmount = parseFloat(formData.totalCost) || 0;
+  const currentPayer = userExpenses.find(ue => ue.amountPaid > 0);
 
   return (
-    <Modal show={show} onHide={onHide} size="xl">
+    <Modal show={show} onHide={handleClose} size="xl">
       <Modal.Header closeButton>
         <Modal.Title>
-          <FaReceipt className="me-2" />
-          {expense.description}
+          <FaEdit className="me-2" />
+          Edit Expense
         </Modal.Title>
       </Modal.Header>
       
-      <Modal.Body>
-        {error && (
-          <div className="alert alert-danger">{error}</div>
-        )}
+      <form onSubmit={handleSubmit}>
+        <Modal.Body>
+          {error && (
+            <div className="alert alert-danger">{error}</div>
+          )}
 
-        {/* Expense Header Info */}
-        <div className="row mb-4">
-          <div className="col-md-8">
-            <div className="d-flex gap-4 mb-3">
-              <div>
-                <h4 className="text-primary mb-0">{formatCurrency(expense.amount)}</h4>
-                <small className="text-muted">Total Amount</small>
-              </div>
-              <div>
-                <h5 className="mb-0">{formatCurrency(userSplit?.amount || 0)}</h5>
-                <small className="text-muted">Your Share</small>
-              </div>
-              <div>
-                <h5 className={`mb-0 ${isPaidByUser ? 'text-success' : 'text-muted'}`}>
-                  {isPaidByUser ? formatCurrency(expense.amount) : '$0.00'}
-                </h5>
-                <small className="text-muted">You Paid</small>
-              </div>
-            </div>
-            
-            <div className="d-flex gap-3 flex-wrap mb-3">
-              <span className="d-flex align-items-center text-muted">
-                <FaUsers className="me-1" />
-                {group?.name || 'Unknown Group'}
-              </span>
-              <span className="d-flex align-items-center text-muted">
-                <FaCalendar className="me-1" />
-                {new Date(expense.date).toLocaleDateString()}
-              </span>
-              {expense.category && (
-                <span className="d-flex align-items-center text-muted">
-                  <FaTag className="me-1" />
-                  {expense.category}
-                </span>
-              )}
-              <span className="d-flex align-items-center text-muted">
-                <FaUser className="me-1" />
-                Paid by {expense.paidByName || 'Unknown'}{isPaidByUser ? ' (You)' : ''}
-              </span>
-            </div>
-
-            {expense.notes && (
+          <div className="row">
+            <div className="col-md-6">
+              {/* Basic Info */}
               <div className="mb-3">
-                <strong>Notes:</strong>
-                <p className="text-muted mb-0 mt-1">{expense.notes}</p>
+                <label className="form-label">Name *</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="e.g. Dinner at Tokyo Restaurant"
+                  required
+                />
               </div>
-            )}
-          </div>
-          
-          <div className="col-md-4 text-end">
-            <div className="btn-group mb-3">
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={handleCopyExpenseId}
-                title="Copy Expense ID"
-              >
-                <FaCopy className="me-1" /> Copy ID
-              </button>
-              {isPaidByUser && (
-                <>
-                  <button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={() => {
-                      onHide();
-                      onEdit(expense);
-                    }}
-                  >
-                    <FaEdit className="me-1" /> Edit
-                  </button>
-                  <button
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this expense?')) {
-                        onHide();
-                        onDelete(expense.id);
-                      }
-                    }}
-                  >
-                    <FaTrash className="me-1" /> Delete
-                  </button>
-                </>
-              )}
-            </div>
-            
-            <div className="d-flex gap-2 justify-content-end flex-wrap">
-              {receipts.length > 0 && (
-                <span className="badge bg-info">
-                  <FaFileImage className="me-1" />
-                  {receipts.length} Receipt{receipts.length > 1 ? 's' : ''}
-                </span>
-              )}
-              {comments.length > 0 && (
-                <span className="badge bg-secondary">
-                  <FaComment className="me-1" />
-                  {comments.length} Comment{comments.length > 1 ? 's' : ''}
-                </span>
-              )}
-              <span className="badge bg-primary">
-                {expense.splitType || 'Equal'} Split
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Tabs */}
-        <Tabs activeKey={activeTab} onSelect={(tab) => setActiveTab(tab)} className="mb-3">
-          {/* Split Details Tab */}
-          <Tab eventKey="details" title="Split Details">
-            <div className="row">
-              <div className="col-md-8">
-                <h6>How this expense was split:</h6>
-                <div className="table-responsive">
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>Person</th>
-                        <th>Amount</th>
-                        <th>Percentage</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {expense.splits?.map(split => (
-                        <tr key={split.userId}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <FaUser className="text-muted me-2" size={12} />
-                              {split.name || split.userName || 'Unknown User'}
-                              {split.userId === currentUser?.userId && ' (You)'}
-                              {split.userId === expense.paidBy && ' 💳'}
-                            </div>
-                          </td>
-                          <td>
-                            <span className="fw-medium">{formatCurrency(split.amount)}</span>
-                          </td>
-                          <td>
-                            <span className="text-muted">
-                              {expense.amount > 0 ? ((split.amount / expense.amount) * 100).toFixed(1) : 0}%
-                            </span>
-                          </td>
-                          <td>
-                            {split.userId === expense.paidBy ? (
-                              <span className="badge bg-success">Paid</span>
-                            ) : split.settled ? (
-                              <span className="badge bg-info">Settled</span>
-                            ) : (
-                              <span className="badge bg-warning text-dark">Owes</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="table-light">
-                        <th>Total</th>
-                        <th>{formatCurrency(totalSplitAmount)}</th>
-                        <th>100.0%</th>
-                        <th></th>
-                      </tr>
-                    </tfoot>
-                  </table>
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Total Cost *</label>
+                    <div className="input-group">
+                      <span className="input-group-text">$</span>
+                      <input
+                        type="number"
+                        className="form-control"
+                        name="totalCost"
+                        value={formData.totalCost}
+                        onChange={handleChange}
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Date *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
-              
-              <div className="col-md-4">
-                <h6>Summary</h6>
-                <div className="card">
-                  <div className="card-body">
-                    <div className="mb-2">
-                      <small className="text-muted">Expense ID</small>
-                      <div className="font-monospace">{expense.id}</div>
+
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Group *</label>
+                    <select
+                      className="form-select"
+                      name="groupId"
+                      value={formData.groupId}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select a group</option>
+                      {groups.map(group => (
+                        <option key={group.id || group.groupId} value={group.id || group.groupId}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <label className="form-label">Category *</label>
+                    <select
+                      className="form-select"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map(category => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Who Paid?</label>
+                <select
+                  className="form-select"
+                  value={currentPayer?.userId || ''}
+                  onChange={(e) => handlePayerChange(e.target.value)}
+                >
+                  <option value="">Select who paid</option>
+                  {groupMembers.map(member => (
+                    <option key={member.id} value={member.id}>
+                      {member.name} {member.id === currentUser?.userId ? '(You)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <small className="text-muted">This person will have the full amount as "paid"</small>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-control"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows="3"
+                  placeholder="Additional details about the expense (optional)"
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Receipt</label>
+                <input
+                  type="file"
+                  className="form-control"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+                <small className="text-muted">Upload a new receipt image (optional)</small>
+              </div>
+            </div>
+
+            <div className="col-md-6">
+              {/* Split Configuration */}
+              <div className="mb-3">
+                <label className="form-label">Split Among Members</label>
+                <small className="text-muted d-block">Choose who owes what amount</small>
+              </div>
+
+              {/* User Expenses Details */}
+              {userExpenses.length > 0 && (
+                <div className="mb-3">
+                  <label className="form-label">Who Owes What</label>
+                  <div className="border rounded p-3">
+                    <div className="row mb-2 fw-bold">
+                      <div className="col-1"></div>
+                      <div className="col-4">Member</div>
+                      <div className="col-3">Amount Owed</div>
+                      <div className="col-2">Paid</div>
+                      <div className="col-2">%</div>
                     </div>
-                    <div className="mb-2">
-                      <small className="text-muted">Created</small>
-                      <div>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : 'Unknown'}</div>
-                    </div>
-                    <div className="mb-2">
-                      <small className="text-muted">Split Method</small>
-                      <div>
-                        <span className="badge bg-primary">
-                          {expense.splitType === 'equal' && 'Equal Split'}
-                          {expense.splitType === 'percentage' && 'Percentage Split'}
-                          {expense.splitType === 'amount' && 'Custom Amounts'}
-                          {expense.splitType === 'shares' && 'Share-based'}
-                          {!expense.splitType && 'Equal Split'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mb-2">
-                      <small className="text-muted">People Involved</small>
-                      <div>{expense.splits?.length || 0} members</div>
-                    </div>
-                    {userSplit && (
-                      <div className="mt-3 p-2 bg-light rounded">
-                        <small className="text-muted">Your Balance</small>
-                        <div className={`fw-bold ${isPaidByUser ? 'text-success' : 'text-danger'}`}>
-                          {isPaidByUser 
-                            ? `+${formatCurrency(expense.amount - userSplit.amount)}` 
-                            : `-${formatCurrency(userSplit.amount)}`
-                          }
+                    <hr className="my-2" />
+                    
+                    {userExpenses.map(userExpense => (
+                      <div key={userExpense.userId} className="row align-items-center mb-2">
+                        <div className="col-1">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            checked={userExpense.included}
+                            onChange={() => toggleMemberInclusion(userExpense.userId)}
+                          />
                         </div>
-                        <small className="text-muted">
-                          {isPaidByUser ? 'You are owed' : 'You owe'}
-                        </small>
+                        <div className="col-4">
+                          <span className={userExpense.included ? '' : 'text-muted'}>
+                            {userExpense.name}
+                            {userExpense.userId === currentUser?.userId && ' (You)'}
+                          </span>
+                        </div>
+                        <div className="col-3">
+                          <div className="input-group input-group-sm">
+                            <span className="input-group-text">$</span>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={userExpense.amountOwed || ''}
+                              onChange={(e) => handleAmountOwedChange(userExpense.userId, e.target.value)}
+                              disabled={!userExpense.included}
+                              min="0"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                        <div className="col-2 text-center">
+                          {userExpense.amountPaid > 0 ? (
+                            <span className="badge bg-success">
+                              ${userExpense.amountPaid.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-muted">$0.00</span>
+                          )}
+                        </div>
+                        <div className="col-2 text-end">
+                          <small className="text-muted">
+                            {userExpense.included && expenseAmount > 0 
+                              ? `${((userExpense.amountOwed / expenseAmount) * 100).toFixed(1)}%`
+                              : '0%'
+                            }
+                          </small>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <hr />
+                    <div className="row">
+                      <div className="col-5">
+                        <strong>Total Owed:</strong>
+                      </div>
+                      <div className="col-3 text-end">
+                        <strong className={Math.abs(totalOwed - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
+                          ${totalOwed.toFixed(2)}
+                        </strong>
+                      </div>
+                      <div className="col-2 text-end">
+                        <strong className={Math.abs(totalPaid - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
+                          ${totalPaid.toFixed(2)}
+                        </strong>
+                      </div>
+                      <div className="col-2"></div>
+                    </div>
+                    <div className="row">
+                      <div className="col-5">
+                        <small className="text-muted">Expense Total:</small>
+                      </div>
+                      <div className="col-3 text-end">
+                        <small className="text-muted">${expenseAmount.toFixed(2)}</small>
+                      </div>
+                      <div className="col-2 text-end">
+                        <small className="text-muted">${expenseAmount.toFixed(2)}</small>
+                      </div>
+                      <div className="col-2"></div>
+                    </div>
+                    
+                    {(Math.abs(totalOwed - expenseAmount) >= 0.01 || Math.abs(totalPaid - expenseAmount) >= 0.01) && (
+                      <div className="row mt-2">
+                        <div className="col-12">
+                          <small className="text-danger">
+                            {Math.abs(totalOwed - expenseAmount) >= 0.01 && 
+                              `Owed difference: ${Math.abs(totalOwed - expenseAmount).toFixed(2)}`
+                            }
+                            {Math.abs(totalOwed - expenseAmount) >= 0.01 && Math.abs(totalPaid - expenseAmount) >= 0.01 && ' | '}
+                            {Math.abs(totalPaid - expenseAmount) >= 0.01 && 
+                              `Paid difference: ${Math.abs(totalPaid - expenseAmount).toFixed(2)}`
+                            }
+                          </small>
+                        </div>
                       </div>
                     )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Tab>
-
-          {/* Receipts Tab */}
-          <Tab eventKey="receipts" title={`Receipts (${receipts.length})`}>
-            <h6>Receipt Images</h6>
-            {receipts.length === 0 ? (
-              <div className="text-center py-4">
-                <FaFileImage className="text-muted mb-3" size={48} />
-                <h5>No Receipts</h5>
-                <p className="text-muted">No receipt images were uploaded for this expense.</p>
-              </div>
-            ) : (
-              <div className="row">
-                {receipts.map(receipt => (
-                  <div key={receipt.id} className="col-md-4 mb-3">
-                    <div className="card">
-                      <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{height: '200px'}}>
-                        <FaFileImage size={48} className="text-muted" />
-                      </div>
-                      <div className="card-body">
-                        <h6 className="card-title">{receipt.filename}</h6>
-                        <p className="card-text">
-                          <small className="text-muted">
-                            Uploaded {receipt.uploadedAt ? new Date(receipt.uploadedAt).toLocaleDateString() : 'recently'}
-                          </small>
-                        </p>
-                        <button
-                          className="btn btn-outline-primary btn-sm"
-                          onClick={() => handleDownloadReceipt(receipt.id, receipt.filename)}
-                        >
-                          <FaDownload className="me-1" /> Download
-                        </button>
-                      </div>
+                    
+                    <div className="mt-2">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm"
+                        onClick={() => {
+                          const includedMembers = userExpenses.filter(ue => ue.included);
+                          if (includedMembers.length > 0) {
+                            const equalShare = expenseAmount / includedMembers.length;
+                            setUserExpenses(userExpenses.map(ue => ({
+                              ...ue,
+                              amountOwed: ue.included ? equalShare : 0
+                            })));
+                          }
+                        }}
+                      >
+                        <FaEquals className="me-1" /> Split Equally
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </Tab>
-
-          {/* Comments Tab */}
-          <Tab eventKey="comments" title={`Comments (${comments.length})`}>
-            <div className="mb-4">
-              <h6>Discussion</h6>
-              
-              {/* Add Comment Form */}
-              <form onSubmit={handleAddComment} className="mb-4">
-                <div className="input-group">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Add a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <button 
-                    type="submit" 
-                    className="btn btn-outline-primary"
-                    disabled={!newComment.trim()}
-                  >
-                    <FaPaperPlane />
-                  </button>
-                </div>
-              </form>
-
-              {/* Comments List */}
-              {comments.length === 0 ? (
-                <div className="text-center py-4">
-                  <FaComment className="text-muted mb-3" size={48} />
-                  <h5>No Comments</h5>
-                  <p className="text-muted">Be the first to comment on this expense.</p>
-                </div>
-              ) : (
-                <div className="comments-list">
-                  {comments.map(comment => (
-                    <div key={comment.id} className="card mb-3">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <div className="d-flex align-items-center">
-                            <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{width: '32px', height: '32px'}}>
-                              <FaUser size={14} />
-                            </div>
-                            <div>
-                              <strong>{comment.author}</strong>
-                              {comment.authorId === currentUser?.userId && (
-                                <span className="badge bg-light text-dark ms-2">You</span>
-                              )}
-                            </div>
-                          </div>
-                          <small className="text-muted">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </small>
-                        </div>
-                        <p className="mb-0">{comment.text}</p>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
-          </Tab>
-        </Tabs>
-      </Modal.Body>
-      
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
-          Close
-        </Button>
-        {isPaidByUser && (
+          </div>
+        </Modal.Body>
+        
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Cancel
+          </Button>
           <Button 
             variant="primary" 
-            onClick={() => {
-              onHide();
-              onEdit(expense);
-            }}
+            type="submit"
+            disabled={loading || !validateUserExpenses()}
           >
-            <FaEdit className="me-1" /> Edit Expense
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2"></span>
+                Updating...
+              </>
+            ) : (
+              'Update Expense'
+            )}
           </Button>
-        )}
-      </Modal.Footer>
+        </Modal.Footer>
+      </form>
     </Modal>
   );
 }
 
-export default ExpenseDetailsModal;
+export default EditExpenseModal;

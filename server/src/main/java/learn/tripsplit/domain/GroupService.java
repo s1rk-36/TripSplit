@@ -120,6 +120,36 @@ public class GroupService {
         result.setPayload(joinedGroup);
         return result;
     }
+    public Result<Void> removeUserFromGroup(int groupId, int userId) {
+        Result<Void> result = new Result<>();
+
+        // Check if group exists
+        Group group = repository.findById(groupId);
+        if (group == null) {
+            result.addMessage("Group not found", ResultType.NOT_FOUND);
+            return result;
+        }
+
+        // Check if user is actually in the group
+        if (!repository.isUserMember(groupId, userId)) {
+            result.addMessage("User is not a member of this group", ResultType.NOT_FOUND);
+            return result;
+        }
+
+        // Remove user from group
+        boolean removed = repository.removeUserFromGroup(groupId, userId);
+        if (!removed) {
+            result.addMessage("Failed to remove user from group", ResultType.INVALID);
+            return result;
+        }
+
+        return result;
+    }
+
+    public boolean isUserAdmin(int groupId, int userId) {
+        return repository.isUserAdmin(groupId, userId);
+    }
+
 
     private Result<Group> validate(Group group) {
         Result<Group> result = new Result<>();
