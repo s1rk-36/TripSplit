@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
-import { FaUsers, FaPlus, FaTimes, FaEdit } from 'react-icons/fa';
+import {FaEdit } from 'react-icons/fa';
 
 function EditGroupModal({ show, onHide, group, onSubmit }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    isActive: true
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,21 +15,21 @@ function EditGroupModal({ show, onHide, group, onSubmit }) {
       setFormData({
         name: group.name || '',
         description: group.description || '',
-        isActive: group.isActive !== undefined ? group.isActive : true
       });
     }
   }, [group]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value} = e.target;
     setFormData(prev => ({ 
       ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+      [name]: value 
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("changing to ", formData);
     
     // Validate form
     if (!formData.name.trim()) {
@@ -45,7 +44,6 @@ function EditGroupModal({ show, onHide, group, onSubmit }) {
       await onSubmit(group.id, {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        isActive: formData.isActive
       });
       
     } catch (err) {
@@ -99,53 +97,6 @@ function EditGroupModal({ show, onHide, group, onSubmit }) {
               placeholder="Brief description of the group"
             />
           </div>
-
-          <div className="mb-3">
-            <div className="form-check">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleChange}
-              />
-              <label className="form-check-label" htmlFor="isActive">
-                Active Group
-              </label>
-              <small className="form-text text-muted d-block">
-                Inactive groups are considered settled and won't appear in active filters
-              </small>
-            </div>
-          </div>
-
-          {group && (
-            <div className="alert alert-info">
-              <h6>Group Information</h6>
-              <div className="row">
-                <div className="col-md-6">
-                  <small className="text-muted">
-                    <strong>Created:</strong> {new Date(group.createdAt).toLocaleDateString()}
-                  </small>
-                </div>
-                <div className="col-md-6">
-                  <small className="text-muted">
-                    <strong>Invite Code:</strong> {group.inviteCode}
-                  </small>
-                </div>
-                <div className="col-md-6">
-                  <small className="text-muted">
-                    <strong>Members:</strong> {group.memberCount || group.members?.length || 0}
-                  </small>
-                </div>
-                <div className="col-md-6">
-                  <small className="text-muted">
-                    <strong>Total Expenses:</strong> ${(group.totalExpenses || 0).toFixed(2)}
-                  </small>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="alert alert-warning">
             <strong>Note:</strong> You can manage group members from the group details page. 

@@ -169,6 +169,34 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
     }
 
     @Override
+    public List<UserGroup> getGroupMembers(int groupId) {
+        final String sql = "select "
+                + "ug.user_id as ug_user_id, "
+                + "ug.group_id as ug_group_id, "
+                + "ug.is_admin as ug_is_admin, "
+
+                + "u.user_id as u_user_id, "
+                + "u.first_name as u_first_name, "
+                + "u.last_name as u_last_name, "
+                + "u.email as u_email, "
+                + "u.username as u_username, "
+                + "u.password_hash as u_password_hash, "
+                + "u.disabled as u_disabled "
+
+                + "from user_group ug "
+                + "inner join `user` u on ug.user_id = u.user_id "
+                + "where ug.group_id = ? "
+                + "order by u.first_name, u.last_name;";
+
+        UserGroupMapper userGroupMapper = new UserGroupMapper(this);
+
+        return jdbcTemplate.query(sql,
+                (rs, rowNum) -> userGroupMapper.mapRow(rs, rowNum, "ug_", "u_", "", ""),
+                groupId
+        );
+    }
+
+    @Override
     public boolean addUserToGroup(int groupId, int userId, boolean isAdmin) {
         final String sql = "INSERT INTO user_group (group_id, user_id, is_admin) VALUES (?, ?, ?);";
 

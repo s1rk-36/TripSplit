@@ -80,7 +80,6 @@ export const auth = {
 
   logout() {
     this.clearCurrentUser();
-    window.location.href = '/login';
   },
 };
 
@@ -93,6 +92,7 @@ export const useAuth = () => {
     isAuthenticated,
     login: auth.setCurrentUser,
     logout: auth.logout,
+    clearCurrentUser: auth.clearCurrentUser,
     getToken: auth.getToken,
     hasRole: auth.hasRole,
     isTokenExpired: auth.isTokenExpired

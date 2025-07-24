@@ -306,8 +306,6 @@ function Expenses() {
                 <option value="date-asc">Oldest First</option>
                 <option value="amount-desc">Highest Amount</option>
                 <option value="amount-asc">Lowest Amount</option>
-                <option value="description-asc">A-Z</option>
-                <option value="description-desc">Z-A</option>
               </select>
             </div>
             <div className="col-md-1">
