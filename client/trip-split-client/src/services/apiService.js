@@ -9,16 +9,12 @@ const handleResponse = async (response) => {
     }
 
     const responseText = await response.text();
-    console.log('Raw response text:', responseText);
 
     let errorMessage;
     try {
       const errorArray = JSON.parse(responseText);
-      console.log('Parsed error array:', errorArray);
       errorMessage = errorArray.join(', ');
-      console.log('Joined error message:', errorMessage);
     } catch (parseError) {
-      console.log('JSON parse failed, using raw text:', parseError);
       errorMessage = responseText || `HTTP ${response.status}: ${response.statusText}`;
     }
 
@@ -260,6 +256,7 @@ export const apiService = {
 
 
   async updateGroup(id, group) {
+    console.log("updating", group);
     return makeAuthenticatedRequest(`/groups/${id}`, {
       method: 'PUT',
       body: JSON.stringify(group)

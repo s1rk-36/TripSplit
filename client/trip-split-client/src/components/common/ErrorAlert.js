@@ -1,13 +1,6 @@
 import { FaExclamationTriangle, FaRedo, FaTimes } from 'react-icons/fa';
 
 function ErrorAlert({ error, onRetry, onDismiss, type = 'danger' }) {
-  // Debug logging
-  console.log('=== ErrorAlert Debug ===');
-  console.log('error prop:', error);
-  console.log('error type:', typeof error);
-  console.log('error instanceof Error:', error instanceof Error);
-  console.log('error.message:', error?.message);
-  console.log('Array.isArray(error):', Array.isArray(error));
   
   // Handle different error types
   let displayError = error;

@@ -68,17 +68,12 @@ function Groups() {
     }
   };
 
-  const handleEditGroup = async (updatedGroup) => {
+  const handleEditGroup = async (groupId, updatedGroup) => {
     try {
-      const result = await apiService.updateGroup(updatedGroup);
+      console.log(updatedGroup);
+      const result = await apiService.updateGroup(groupId, updatedGroup);
       
-      // Update the local groups state with the updated group
-      setGroups(groups.map(group => 
-        (group.groupId || group.id) === (updatedGroup.groupId || updatedGroup.id) 
-          ? result // Use the response from API
-          : group
-      ));
-      
+      loadGroups();
       setShowEditModal(false);
       setSelectedGroup(null);
     } catch (err) {

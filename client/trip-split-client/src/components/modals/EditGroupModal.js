@@ -6,7 +6,6 @@ function EditGroupModal({ show, onHide, group, onSubmit }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    isActive: true
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,17 +14,16 @@ function EditGroupModal({ show, onHide, group, onSubmit }) {
     if (group) {
       setFormData({
         name: group.name || '',
-        description: group.description || '',
-        isActive: group.isActive !== undefined ? group.isActive : true
+        description: group.description || ''
       });
     }
   }, [group]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({ 
       ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+      [name]: value 
     }));
   };
 
