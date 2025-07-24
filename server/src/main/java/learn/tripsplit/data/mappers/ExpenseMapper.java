@@ -31,14 +31,14 @@ public class ExpenseMapper implements RowMapper<Expense> {
         expense.setExpenseId(resultSet.getInt(expensePrefix + "expense_id"));
         String name = resultSet.getString(expensePrefix + "expense_name");
         expense.setName(name != null ? name : resultSet.getString(expensePrefix + "name"));
-        expense.setTotalCost(resultSet.getBigDecimal("total_cost"));
-        expense.setCategory(Category.valueOf(resultSet.getString("category")));
+        expense.setTotalCost(resultSet.getBigDecimal(expensePrefix + "total_cost"));
+        expense.setCategory(Category.valueOf(resultSet.getString(expensePrefix + "category")));
         String description = resultSet.getString(expensePrefix + "expense_description");
         expense.setDescription(description != null ? description : resultSet.getString(groupPrefix + "description"));
-        expense.setCreatedAt(resultSet.getTimestamp("created_at").toLocalDateTime());
+        expense.setCreatedAt(resultSet.getTimestamp(expensePrefix + "created_at").toLocalDateTime());
 
-        expense.setGroup(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix));
-        expense.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix));
+        expense.setGroupId(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix).getGroupId());
+        expense.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix).getAppUserId());
 
         return expense;
     }

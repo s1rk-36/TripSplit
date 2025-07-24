@@ -171,6 +171,7 @@ async login(credentials) {
   },
 
   async createExpense(expense) {
+    console.log("sending over", expense);
     return makeAuthenticatedRequest('/expenses', {
       method: 'POST',
       body: JSON.stringify(expense)

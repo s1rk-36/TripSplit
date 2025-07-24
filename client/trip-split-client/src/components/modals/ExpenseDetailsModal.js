@@ -1,592 +1,440 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button } from 'react-bootstrap';
-import { FaReceipt, FaCamera, FaEquals, FaPercentage, FaDollarSign, FaUsers, FaEdit } from 'react-icons/fa';
+import { Modal, Button, Tab, Tabs } from 'react-bootstrap';
+import { FaReceipt, FaEdit, FaTrash, FaComment, FaFileImage, FaDownload, FaUsers, FaDollarSign, FaCalendar, FaTag, FaUser, FaCopy, FaPaperPlane } from 'react-icons/fa';
+import { apiService } from '../../services/apiService';
 import { useAuth } from '../../utils/auth';
+import { formatCurrency } from '../../utils/helpers';
 
-function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories }) {
+function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete }) {
   const { currentUser } = useAuth();
-  const [formData, setFormData] = useState({
-    description: '',
-    amount: '',
-    groupId: '',
-    category: '',
-    date: '',
-    paidBy: '',
-    splitType: 'equal',
-    notes: '',
-    receipt: null
-  });
-  const [groupMembers, setGroupMembers] = useState([]);
-  const [splits, setSplits] = useState([]);
+  const [activeTab, setActiveTab] = useState('details');
+  const [comments, setComments] = useState([]);
+  const [receipts, setReceipts] = useState([]);
+  const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (expense && show) {
-      // Populate form with expense data
-      setFormData({
-        description: expense.description || '',
-        amount: expense.amount?.toString() || '',
-        groupId: expense.groupId?.toString() || '',
-        category: expense.category || '',
-        date: expense.date || '',
-        paidBy: expense.paidBy?.toString() || '',
-        splitType: expense.splitType || 'equal',
-        notes: expense.notes || '',
-        receipt: null // Don't pre-populate file input
-      });
-
-      // Set existing splits
-      if (expense.splits) {
-        setSplits(expense.splits.map(split => ({
-          userId: split.userId,
-          name: split.name || split.userName || 'Unknown User',
-          amount: split.amount || 0,
-          percentage: expense.amount > 0 ? ((split.amount / expense.amount) * 100) : 0,
-          shares: split.shares || 1,
-          included: true
-        })));
-      }
-
-      // Load group members
-      if (expense.groupId) {
-        loadGroupMembers(expense.groupId);
-      }
+    if (show && expense) {
+      loadExpenseData();
+      setActiveTab('details'); // Reset to details tab when opening
     }
-  }, [expense, show]);
+  }, [show, expense]);
 
-  useEffect(() => {
-    if (groupMembers.length > 0 && formData.splitType && formData.amount) {
-      recalculateSplits();
-    }
-  }, [groupMembers, formData.splitType, formData.amount]);
-
-  const loadGroupMembers = async (groupId) => {
-    try {
-      const group = groups.find(g => (g.id || g.groupId).toString() === groupId.toString());
-      if (group && group.members) {
-        setGroupMembers(group.members);
-      } else if (group) {
-        // If no members array, create a basic member list
-        setGroupMembers([
-          { id: currentUser?.userId, name: `${currentUser?.firstName} ${currentUser?.lastName}` }
-        ]);
-      }
-    } catch (err) {
-      console.error('Failed to load group members:', err);
-    }
-  };
-
-  const recalculateSplits = () => {
-    if (groupMembers.length === 0) return;
-
-    const amount = parseFloat(formData.amount) || 0;
-    
-    // If we have existing splits, preserve them but recalculate if needed
-    if (splits.length > 0) {
-      if (formData.splitType === 'equal') {
-        const includedMembers = splits.filter(split => split.included);
-        const equalShare = includedMembers.length > 0 ? amount / includedMembers.length : 0;
-        
-        setSplits(splits.map(split => ({
-          ...split,
-          amount: split.included ? equalShare : 0,
-          percentage: split.included ? (100 / includedMembers.length) : 0
-        })));
-      }
-    } else {
-      // Initialize splits if none exist
-      initializeSplits();
-    }
-  };
-
-  const initializeSplits = () => {
-    if (groupMembers.length === 0) return;
-
-    const amount = parseFloat(formData.amount) || 0;
-    const equalShare = amount / groupMembers.length;
-
-    const newSplits = groupMembers.map(member => ({
-      userId: member.id,
-      name: member.name,
-      amount: formData.splitType === 'equal' ? equalShare : 0,
-      percentage: formData.splitType === 'equal' ? (100 / groupMembers.length) : 0,
-      shares: formData.splitType === 'equal' ? 1 : 0,
-      included: true
-    }));
-
-    setSplits(newSplits);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setFormData(prev => ({ ...prev, receipt: file }));
-  };
-
-  const handleSplitChange = (userId, field, value) => {
-    const updatedSplits = splits.map(split => {
-      if (split.userId === userId) {
-        return { ...split, [field]: value };
-      }
-      return split;
-    });
-
-    // Recalculate based on split type
-    if (formData.splitType === 'percentage') {
-      const totalPercentage = updatedSplits.reduce((sum, split) => sum + (split.percentage || 0), 0);
-      if (totalPercentage <= 100) {
-        const amount = parseFloat(formData.amount) || 0;
-        updatedSplits.forEach(split => {
-          split.amount = (amount * (split.percentage || 0)) / 100;
-        });
-      }
-    } else if (formData.splitType === 'shares') {
-      const totalShares = updatedSplits.reduce((sum, split) => sum + (split.shares || 0), 0);
-      if (totalShares > 0) {
-        const amount = parseFloat(formData.amount) || 0;
-        updatedSplits.forEach(split => {
-          split.amount = (amount * (split.shares || 0)) / totalShares;
-          split.percentage = ((split.shares || 0) / totalShares) * 100;
-        });
-      }
-    }
-
-    setSplits(updatedSplits);
-  };
-
-  const handleSplitTypeChange = (newSplitType) => {
-    setFormData(prev => ({ ...prev, splitType: newSplitType }));
-    
-    // Recalculate splits based on new type
-    if (newSplitType === 'equal') {
-      recalculateSplits();
-    }
-  };
-
-  const toggleMemberInclusion = (userId) => {
-    const updatedSplits = splits.map(split => {
-      if (split.userId === userId) {
-        return { ...split, included: !split.included };
-      }
-      return split;
-    });
-    setSplits(updatedSplits);
-    
-    // Recalculate splits for included members only
-    const includedMembers = updatedSplits.filter(split => split.included);
-    if (includedMembers.length > 0 && formData.splitType === 'equal') {
-      const amount = parseFloat(formData.amount) || 0;
-      const equalShare = amount / includedMembers.length;
-      
-      setSplits(updatedSplits.map(split => ({
-        ...split,
-        amount: split.included ? equalShare : 0,
-        percentage: split.included ? (100 / includedMembers.length) : 0
-      })));
-    }
-  };
-
-  const validateSplits = () => {
-    const includedSplits = splits.filter(split => split.included);
-    const totalSplitAmount = includedSplits.reduce((sum, split) => sum + (split.amount || 0), 0);
-    const expenseAmount = parseFloat(formData.amount) || 0;
-    
-    return Math.abs(totalSplitAmount - expenseAmount) < 0.01;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!formData.description.trim()) {
-      setError('Description is required');
-      return;
-    }
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      setError('Amount must be greater than 0');
-      return;
-    }
-    if (!formData.groupId) {
-      setError('Please select a group');
-      return;
-    }
-    if (!validateSplits()) {
-      setError('Split amounts do not match the total expense amount');
-      return;
-    }
+  const loadExpenseData = async () => {
+    if (!expense) return;
 
     try {
       setLoading(true);
       setError('');
       
-      const expenseData = {
-        ...formData,
-        amount: parseFloat(formData.amount),
-        groupId: parseInt(formData.groupId),
-        paidBy: parseInt(formData.paidBy),
-        splits: splits.filter(split => split.included && split.amount > 0)
-      };
+      // temp data
+      const commentsData = expense.comments || [];
+      const receiptsData = expense.receipts || (expense.hasReceipt ? [{ id: 1, filename: 'receipt.jpg', url: '#' }] : []);
       
-      await onSubmit(expense.id, expenseData);
+      setComments(commentsData);
+      setReceipts(receiptsData);
       
     } catch (err) {
-      setError(err.message || 'Failed to update expense');
+      console.error('Failed to load expense data:', err);
+      setError(err.message || 'Failed to load expense details');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    setFormData({
-      description: '',
-      amount: '',
-      groupId: '',
-      category: '',
-      date: '',
-      paidBy: '',
-      splitType: 'equal',
-      notes: '',
-      receipt: null
-    });
-    setSplits([]);
-    setError('');
-    onHide();
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    try {
+      // This would be an API call: await apiService.addComment(expense.id, newComment)
+      const comment = {
+        id: Date.now(),
+        text: newComment.trim(),
+        author: `${currentUser?.firstName} ${currentUser?.lastName}`,
+        authorId: currentUser?.userId,
+        createdAt: new Date().toISOString()
+      };
+      
+      setComments([...comments, comment]);
+      setNewComment('');
+    } catch (err) {
+      console.error('Failed to add comment:', err);
+      setError(err.message || 'Failed to add comment');
+    }
+  };
+
+  const handleDownloadReceipt = async (receiptId, filename) => {
+    try {
+      // This would download the receipt file
+      // Implementation depends on your backend API
+      console.log('Downloading receipt:', receiptId, filename);
+      // await apiService.downloadReceipt(receiptId);
+    } catch (err) {
+      console.error('Failed to download receipt:', err);
+      setError(err.message || 'Failed to download receipt');
+    }
+  };
+
+  const handleCopyExpenseId = () => {
+    navigator.clipboard.writeText(expense?.id?.toString() || '');
+    alert('Expense ID copied to clipboard!');
   };
 
   if (!expense) return null;
 
-  const totalSplitAmount = splits.reduce((sum, split) => sum + (split.included ? split.amount || 0 : 0), 0);
-  const expenseAmount = parseFloat(formData.amount) || 0;
+  const group = groups?.find(g => (g.id || g.groupId) === expense.groupId);
+  const userSplit = expense.splits?.find(split => split.userId === currentUser?.userId);
+  const isPaidByUser = expense.paidBy === currentUser?.userId;
+  const totalSplitAmount = expense.splits?.reduce((sum, split) => sum + (split.amount || 0), 0) || 0;
 
   return (
-    <Modal show={show} onHide={handleClose} size="xl">
+    <Modal show={show} onHide={onHide} size="xl">
       <Modal.Header closeButton>
         <Modal.Title>
-          <FaEdit className="me-2" />
-          Edit Expense
+          <FaReceipt className="me-2" />
+          {expense.description}
         </Modal.Title>
       </Modal.Header>
       
-      <form onSubmit={handleSubmit}>
-        <Modal.Body>
-          {error && (
-            <div className="alert alert-danger">{error}</div>
-          )}
+      <Modal.Body>
+        {error && (
+          <div className="alert alert-danger">{error}</div>
+        )}
 
-          <div className="row">
-            <div className="col-md-6">
-              {/* Basic Info */}
-              <div className="mb-3">
-                <label className="form-label">Description *</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="e.g. Dinner at Tokyo Restaurant"
-                  required
-                />
+        {/* Expense Header Info */}
+        <div className="row mb-4">
+          <div className="col-md-8">
+            <div className="d-flex gap-4 mb-3">
+              <div>
+                <h4 className="text-primary mb-0">{formatCurrency(expense.amount)}</h4>
+                <small className="text-muted">Total Amount</small>
               </div>
-
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Amount *</label>
-                    <div className="input-group">
-                      <span className="input-group-text">$</span>
-                      <input
-                        type="number"
-                        className="form-control"
-                        name="amount"
-                        value={formData.amount}
-                        onChange={handleChange}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <label className="form-label">Date *</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
+              <div>
+                <h5 className="mb-0">{formatCurrency(userSplit?.amount || 0)}</h5>
+                <small className="text-muted">Your Share</small>
               </div>
-
-              <div className="mb-3">
-                <label className="form-label">Group *</label>
-                <select
-                  className="form-select"
-                  name="groupId"
-                  value={formData.groupId}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select a group</option>
-                  {groups.map(group => (
-                    <option key={group.id || group.groupId} value={group.id || group.groupId}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Category</label>
-                <select
-                  className="form-select"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                >
-                  <option value="">Select a category</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Paid By</label>
-                <select
-                  className="form-select"
-                  name="paidBy"
-                  value={formData.paidBy}
-                  onChange={handleChange}
-                >
-                  {groupMembers.map(member => (
-                    <option key={member.id} value={member.id}>
-                      {member.name} {member.id === currentUser?.userId ? '(You)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Receipt</label>
-                <input
-                  type="file"
-                  className="form-control"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-                <small className="text-muted">Upload a new receipt image (optional)</small>
-              </div>
-
-              <div className="mb-3">
-                <label className="form-label">Notes</label>
-                <textarea
-                  className="form-control"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  rows="2"
-                  placeholder="Additional notes (optional)"
-                />
+              <div>
+                <h5 className={`mb-0 ${isPaidByUser ? 'text-success' : 'text-muted'}`}>
+                  {isPaidByUser ? formatCurrency(expense.amount) : '$0.00'}
+                </h5>
+                <small className="text-muted">You Paid</small>
               </div>
             </div>
+            
+            <div className="d-flex gap-3 flex-wrap mb-3">
+              <span className="d-flex align-items-center text-muted">
+                <FaUsers className="me-1" />
+                {group?.name || 'Unknown Group'}
+              </span>
+              <span className="d-flex align-items-center text-muted">
+                <FaCalendar className="me-1" />
+                {new Date(expense.date).toLocaleDateString()}
+              </span>
+              {expense.category && (
+                <span className="d-flex align-items-center text-muted">
+                  <FaTag className="me-1" />
+                  {expense.category}
+                </span>
+              )}
+              <span className="d-flex align-items-center text-muted">
+                <FaUser className="me-1" />
+                Paid by {expense.paidByName || 'Unknown'}{isPaidByUser ? ' (You)' : ''}
+              </span>
+            </div>
 
-            <div className="col-md-6">
-              {/* Split Configuration */}
+            {expense.notes && (
               <div className="mb-3">
-                <label className="form-label">Split Method</label>
-                <div className="btn-group w-100" role="group">
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-equal"
-                    checked={formData.splitType === 'equal'}
-                    onChange={() => handleSplitTypeChange('equal')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-equal">
-                    <FaEquals className="me-1" /> Equal
-                  </label>
+                <strong>Notes:</strong>
+                <p className="text-muted mb-0 mt-1">{expense.notes}</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="col-md-4 text-end">
+            <div className="btn-group mb-3">
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={handleCopyExpenseId}
+                title="Copy Expense ID"
+              >
+                <FaCopy className="me-1" /> Copy ID
+              </button>
+              {isPaidByUser && (
+                <>
+                  <button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => {
+                      onHide();
+                      onEdit(expense);
+                    }}
+                  >
+                    <FaEdit className="me-1" /> Edit
+                  </button>
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to delete this expense?')) {
+                        onHide();
+                        onDelete(expense.id);
+                      }
+                    }}
+                  >
+                    <FaTrash className="me-1" /> Delete
+                  </button>
+                </>
+              )}
+            </div>
+            
+            <div className="d-flex gap-2 justify-content-end flex-wrap">
+              {receipts.length > 0 && (
+                <span className="badge bg-info">
+                  <FaFileImage className="me-1" />
+                  {receipts.length} Receipt{receipts.length > 1 ? 's' : ''}
+                </span>
+              )}
+              {comments.length > 0 && (
+                <span className="badge bg-secondary">
+                  <FaComment className="me-1" />
+                  {comments.length} Comment{comments.length > 1 ? 's' : ''}
+                </span>
+              )}
+              <span className="badge bg-primary">
+                {expense.splitType || 'Equal'} Split
+              </span>
+            </div>
+          </div>
+        </div>
 
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-percentage"
-                    checked={formData.splitType === 'percentage'}
-                    onChange={() => handleSplitTypeChange('percentage')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-percentage">
-                    <FaPercentage className="me-1" /> %
-                  </label>
-
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-amount"
-                    checked={formData.splitType === 'amount'}
-                    onChange={() => handleSplitTypeChange('amount')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-amount">
-                    <FaDollarSign className="me-1" /> Amount
-                  </label>
-
-                  <input
-                    type="radio"
-                    className="btn-check"
-                    name="splitType"
-                    id="edit-split-shares"
-                    checked={formData.splitType === 'shares'}
-                    onChange={() => handleSplitTypeChange('shares')}
-                  />
-                  <label className="btn btn-outline-primary" htmlFor="edit-split-shares">
-                    <FaUsers className="me-1" /> Shares
-                  </label>
+        {/* Tabs */}
+        <Tabs activeKey={activeTab} onSelect={(tab) => setActiveTab(tab)} className="mb-3">
+          {/* Split Details Tab */}
+          <Tab eventKey="details" title="Split Details">
+            <div className="row">
+              <div className="col-md-8">
+                <h6>How this expense was split:</h6>
+                <div className="table-responsive">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Person</th>
+                        <th>Amount</th>
+                        <th>Percentage</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {expense.splits?.map(split => (
+                        <tr key={split.userId}>
+                          <td>
+                            <div className="d-flex align-items-center">
+                              <FaUser className="text-muted me-2" size={12} />
+                              {split.name || split.userName || 'Unknown User'}
+                              {split.userId === currentUser?.userId && ' (You)'}
+                              {split.userId === expense.paidBy && ' 💳'}
+                            </div>
+                          </td>
+                          <td>
+                            <span className="fw-medium">{formatCurrency(split.amount)}</span>
+                          </td>
+                          <td>
+                            <span className="text-muted">
+                              {expense.amount > 0 ? ((split.amount / expense.amount) * 100).toFixed(1) : 0}%
+                            </span>
+                          </td>
+                          <td>
+                            {split.userId === expense.paidBy ? (
+                              <span className="badge bg-success">Paid</span>
+                            ) : split.settled ? (
+                              <span className="badge bg-info">Settled</span>
+                            ) : (
+                              <span className="badge bg-warning text-dark">Owes</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="table-light">
+                        <th>Total</th>
+                        <th>{formatCurrency(totalSplitAmount)}</th>
+                        <th>100.0%</th>
+                        <th></th>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
               </div>
-
-              {/* Split Details */}
-              {splits.length > 0 && (
-                <div className="mb-3">
-                  <label className="form-label">Split Details</label>
-                  <div className="border rounded p-3">
-                    {splits.map(split => (
-                      <div key={split.userId} className="row align-items-center mb-2">
-                        <div className="col-1">
-                          <input
-                            type="checkbox"
-                            className="form-check-input"
-                            checked={split.included}
-                            onChange={() => toggleMemberInclusion(split.userId)}
-                          />
-                        </div>
-                        <div className="col-4">
-                          <span className={split.included ? '' : 'text-muted'}>
-                            {split.name}
-                          </span>
-                        </div>
-                        <div className="col-3">
-                          {formData.splitType === 'percentage' ? (
-                            <div className="input-group input-group-sm">
-                              <input
-                                type="number"
-                                className="form-control"
-                                value={split.percentage || ''}
-                                onChange={(e) => handleSplitChange(split.userId, 'percentage', parseFloat(e.target.value) || 0)}
-                                disabled={!split.included}
-                                min="0"
-                                max="100"
-                              />
-                              <span className="input-group-text">%</span>
-                            </div>
-                          ) : formData.splitType === 'shares' ? (
-                            <input
-                              type="number"
-                              className="form-control form-control-sm"
-                              value={split.shares || ''}
-                              onChange={(e) => handleSplitChange(split.userId, 'shares', parseInt(e.target.value) || 0)}
-                              disabled={!split.included}
-                              min="0"
-                              placeholder="Shares"
-                            />
-                          ) : formData.splitType === 'amount' ? (
-                            <div className="input-group input-group-sm">
-                              <span className="input-group-text">$</span>
-                              <input
-                                type="number"
-                                className="form-control"
-                                value={split.amount || ''}
-                                onChange={(e) => handleSplitChange(split.userId, 'amount', parseFloat(e.target.value) || 0)}
-                                disabled={!split.included}
-                                min="0"
-                                step="0.01"
-                              />
-                            </div>
-                          ) : (
-                            <span className="text-muted">
-                              ${(split.amount || 0).toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="col-4 text-end">
-                          <small className="text-muted">
-                            ${(split.amount || 0).toFixed(2)}
-                          </small>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <hr />
-                    <div className="row">
-                      <div className="col-8">
-                        <strong>Total:</strong>
-                      </div>
-                      <div className="col-4 text-end">
-                        <strong className={Math.abs(totalSplitAmount - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
-                          ${totalSplitAmount.toFixed(2)}
-                        </strong>
+              
+              <div className="col-md-4">
+                <h6>Summary</h6>
+                <div className="card">
+                  <div className="card-body">
+                    <div className="mb-2">
+                      <small className="text-muted">Expense ID</small>
+                      <div className="font-monospace">{expense.id}</div>
+                    </div>
+                    <div className="mb-2">
+                      <small className="text-muted">Created</small>
+                      <div>{expense.createdAt ? new Date(expense.createdAt).toLocaleDateString() : 'Unknown'}</div>
+                    </div>
+                    <div className="mb-2">
+                      <small className="text-muted">Split Method</small>
+                      <div>
+                        <span className="badge bg-primary">
+                          {expense.splitType === 'equal' && 'Equal Split'}
+                          {expense.splitType === 'percentage' && 'Percentage Split'}
+                          {expense.splitType === 'amount' && 'Custom Amounts'}
+                          {expense.splitType === 'shares' && 'Share-based'}
+                          {!expense.splitType && 'Equal Split'}
+                        </span>
                       </div>
                     </div>
-                    <div className="row">
-                      <div className="col-8">
-                        <small className="text-muted">Expense Amount:</small>
-                      </div>
-                      <div className="col-4 text-end">
-                        <small className="text-muted">${expenseAmount.toFixed(2)}</small>
-                      </div>
+                    <div className="mb-2">
+                      <small className="text-muted">People Involved</small>
+                      <div>{expense.splits?.length || 0} members</div>
                     </div>
-                    {Math.abs(totalSplitAmount - expenseAmount) >= 0.01 && (
-                      <div className="row">
-                        <div className="col-12">
-                          <small className="text-danger">
-                            Difference: ${Math.abs(totalSplitAmount - expenseAmount).toFixed(2)}
-                          </small>
+                    {userSplit && (
+                      <div className="mt-3 p-2 bg-light rounded">
+                        <small className="text-muted">Your Balance</small>
+                        <div className={`fw-bold ${isPaidByUser ? 'text-success' : 'text-danger'}`}>
+                          {isPaidByUser 
+                            ? `+${formatCurrency(expense.amount - userSplit.amount)}` 
+                            : `-${formatCurrency(userSplit.amount)}`
+                          }
                         </div>
+                        <small className="text-muted">
+                          {isPaidByUser ? 'You are owed' : 'You owe'}
+                        </small>
                       </div>
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          </Tab>
+
+          {/* Receipts Tab */}
+          <Tab eventKey="receipts" title={`Receipts (${receipts.length})`}>
+            <h6>Receipt Images</h6>
+            {receipts.length === 0 ? (
+              <div className="text-center py-4">
+                <FaFileImage className="text-muted mb-3" size={48} />
+                <h5>No Receipts</h5>
+                <p className="text-muted">No receipt images were uploaded for this expense.</p>
+              </div>
+            ) : (
+              <div className="row">
+                {receipts.map(receipt => (
+                  <div key={receipt.id} className="col-md-4 mb-3">
+                    <div className="card">
+                      <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{height: '200px'}}>
+                        <FaFileImage size={48} className="text-muted" />
+                      </div>
+                      <div className="card-body">
+                        <h6 className="card-title">{receipt.filename}</h6>
+                        <p className="card-text">
+                          <small className="text-muted">
+                            Uploaded {receipt.uploadedAt ? new Date(receipt.uploadedAt).toLocaleDateString() : 'recently'}
+                          </small>
+                        </p>
+                        <button
+                          className="btn btn-outline-primary btn-sm"
+                          onClick={() => handleDownloadReceipt(receipt.id, receipt.filename)}
+                        >
+                          <FaDownload className="me-1" /> Download
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Tab>
+
+          {/* Comments Tab */}
+          <Tab eventKey="comments" title={`Comments (${comments.length})`}>
+            <div className="mb-4">
+              <h6>Discussion</h6>
+              
+              {/* Add Comment Form */}
+              <form onSubmit={handleAddComment} className="mb-4">
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Add a comment..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                  />
+                  <button 
+                    type="submit" 
+                    className="btn btn-outline-primary"
+                    disabled={!newComment.trim()}
+                  >
+                    <FaPaperPlane />
+                  </button>
+                </div>
+              </form>
+
+              {/* Comments List */}
+              {comments.length === 0 ? (
+                <div className="text-center py-4">
+                  <FaComment className="text-muted mb-3" size={48} />
+                  <h5>No Comments</h5>
+                  <p className="text-muted">Be the first to comment on this expense.</p>
+                </div>
+              ) : (
+                <div className="comments-list">
+                  {comments.map(comment => (
+                    <div key={comment.id} className="card mb-3">
+                      <div className="card-body">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <div className="d-flex align-items-center">
+                            <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{width: '32px', height: '32px'}}>
+                              <FaUser size={14} />
+                            </div>
+                            <div>
+                              <strong>{comment.author}</strong>
+                              {comment.authorId === currentUser?.userId && (
+                                <span className="badge bg-light text-dark ms-2">You</span>
+                              )}
+                            </div>
+                          </div>
+                          <small className="text-muted">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </small>
+                        </div>
+                        <p className="mb-0">{comment.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
-        </Modal.Body>
-        
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Cancel
-          </Button>
+          </Tab>
+        </Tabs>
+      </Modal.Body>
+      
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onHide}>
+          Close
+        </Button>
+        {isPaidByUser && (
           <Button 
             variant="primary" 
-            type="submit"
-            disabled={loading || !validateSplits()}
+            onClick={() => {
+              onHide();
+              onEdit(expense);
+            }}
           >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2"></span>
-                Updating...
-              </>
-            ) : (
-              'Update Expense'
-            )}
+            <FaEdit className="me-1" /> Edit Expense
           </Button>
-        </Modal.Footer>
-      </form>
+        )}
+      </Modal.Footer>
     </Modal>
   );
 }
 
-export default EditExpenseModal;
+export default ExpenseDetailsModal;

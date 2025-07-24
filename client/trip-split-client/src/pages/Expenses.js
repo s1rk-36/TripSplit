@@ -70,18 +70,15 @@ function Expenses() {
   };
 
   const loadCategories = async () => {
-    // This could come from API or be hardcoded
-    const categoriesData = [
-      'Food & Dining',
-      'Transportation',
-      'Accommodation',
-      'Entertainment',
-      'Shopping',
-      'Utilities',
-      'Groceries',
-      'Gas',
-      'Other'
-    ];
+  const categoriesData = [
+    'FOOD',          
+    'TRANSPORTATION',
+    'LODGING',       
+    'ACTIVITIES',    
+    'SHOPPING',
+    'TRAVEL_FEES',  
+    'OTHER'
+  ];
     setCategories(categoriesData);
   };
 
@@ -142,8 +139,7 @@ function Expenses() {
 
   // Filter and sort expenses
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = expense.name.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesGroup = filterGroup === 'all' || expense.groupId.toString() === filterGroup;
     const matchesCategory = filterCategory === 'all' || expense.category === filterCategory;
@@ -180,12 +176,8 @@ function Expenses() {
         bValue = new Date(b.date);
         break;
       case 'amount':
-        aValue = a.amount;
-        bValue = b.amount;
-        break;
-      case 'description':
-        aValue = a.description.toLowerCase();
-        bValue = b.description.toLowerCase();
+        aValue = a.totalCost;
+        bValue = b.totalCost;
         break;
       default:
         aValue = new Date(a.date);
@@ -199,13 +191,13 @@ function Expenses() {
     }
   });
 
-  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.totalCost, 0);
   const userPaidTotal = filteredExpenses
     .filter(expense => expense.paidBy === currentUser?.userId)
-    .reduce((sum, expense) => sum + expense.amount, 0);
+    .reduce((sum, expense) => sum + expense.totalCost, 0);
   const userShareTotal = filteredExpenses.reduce((sum, expense) => {
     const userSplit = expense.splits?.find(split => split.userId === currentUser?.userId);
-    return sum + (userSplit?.amount || 0);
+    return sum + (userSplit?.totalCost || 0);
   }, 0);
 
   if (loading) {
@@ -398,7 +390,7 @@ function Expenses() {
               <table className="table table-hover mb-0">
                 <thead className="table-light">
                   <tr>
-                    <th>Description</th>
+                    <th>Name</th>
                     <th>Amount</th>
                     <th>Group</th>
                     <th>Category</th>
@@ -418,10 +410,8 @@ function Expenses() {
                         <td>
                           <div className="d-flex align-items-center">
                             <div>
-                              <div className="fw-medium">{expense.description}</div>
-                              {expense.notes && (
-                                <small className="text-muted">{expense.notes}</small>
-                              )}
+                              <div className="fw-medium">{expense.name}</div>
+                    
                               {expense.hasReceipt && (
                                 <div className="mt-1">
                                   <span className="badge bg-info">
@@ -434,7 +424,7 @@ function Expenses() {
                           </div>
                         </td>
                         <td>
-                          <span className="fw-bold">{formatCurrency(expense.amount)}</span>
+                          <span className="fw-bold">{formatCurrency(expense.totalCost)}</span>
                         </td>
                         <td>
                           <span className="badge bg-light text-dark">
@@ -457,8 +447,8 @@ function Expenses() {
                           <small>{new Date(expense.date).toLocaleDateString()}</small>
                         </td>
                         <td>
-                          <span className={userSplit?.amount ? 'fw-medium' : 'text-muted'}>
-                            {formatCurrency(userSplit?.amount || 0)}
+                          <span className={userSplit?.totalCost ? 'fw-medium' : 'text-muted'}>
+                            {formatCurrency(userSplit?.totalCost || 0)}
                           </span>
                         </td>
                         <td>

@@ -53,6 +53,7 @@ public class GroupController {
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
             }
 
+
             // Get current user
             String username = authentication.getName();
             AppUser currentUser = appUserService.findByUsername(username);

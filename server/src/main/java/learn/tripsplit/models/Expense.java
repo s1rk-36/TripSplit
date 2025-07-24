@@ -14,23 +14,23 @@ public class Expense {
     private Category category;
     private String description;
     private LocalDateTime createdAt;
-    private Group group;
-    private AppUser createdBy;
+    private int groupId;
+    private int createdBy;
     private List<Receipt> receipts;
     private List<Comment> comments;
-    private List<UserExpense> users = new ArrayList<>();
+    private List<UserExpense> userExpenses = new ArrayList<>();
 
     // Constructors
     public Expense() {}
 
-    public Expense(int expenseId, String name, BigDecimal totalCost, Category category, String description, LocalDateTime createdAt, Group group, AppUser createdBy) {
+    public Expense(int expenseId, String name, BigDecimal totalCost, Category category, String description, LocalDateTime createdAt, int groupId, int createdBy) {
         this.expenseId = expenseId;
         this.name = name;
         this.totalCost = totalCost;
         this.category = category;
         this.description = description;
         this.createdAt = createdAt;
-        this.group = group;
+        this.groupId = groupId;
         this.createdBy = createdBy;
     }
 
@@ -83,19 +83,19 @@ public class Expense {
         this.createdAt = createdAt;
     }
 
-    public Group getGroup() {
-        return group;
+    public int getGroupId() {
+        return groupId;
     }
 
-    public void setGroup(Group group) {
-        this.group = group;
+    public void setGroupId(int groupId) {
+        this.groupId = groupId;
     }
 
-    public AppUser getCreatedBy() {
+    public int getCreatedBy() {
         return createdBy;
     }
 
-    public void setCreatedBy(AppUser createdBy) {
+    public void setCreatedBy(int createdBy) {
         this.createdBy = createdBy;
     }
 
@@ -115,25 +115,21 @@ public class Expense {
         this.comments = comments;
     }
 
-    public List<UserExpense> getUsers() {
-        return users;
-    }
+    public List<UserExpense> getUserExpenses() { return userExpenses; }
 
-    public void setUsers(List<UserExpense> users) {
-        this.users = users;
-    }
+    public void setUserExpenses(List<UserExpense> userExpenses) { this.userExpenses = userExpenses; }
 
     // equals & hashCode
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Expense expense = (Expense) o;
-        return expenseId == expense.expenseId && Objects.equals(name, expense.name) && Objects.equals(totalCost, expense.totalCost) && Objects.equals(category, expense.category) && Objects.equals(description, expense.description) && Objects.equals(createdAt, expense.createdAt) && Objects.equals(group, expense.group) && Objects.equals(createdBy, expense.createdBy);
+        return expenseId == expense.expenseId && Objects.equals(name, expense.name) && Objects.equals(totalCost, expense.totalCost) && Objects.equals(category, expense.category) && Objects.equals(description, expense.description) && Objects.equals(createdAt, expense.createdAt) && Objects.equals(groupId, expense.groupId) && Objects.equals(createdBy, expense.createdBy);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(expenseId, name, totalCost, category, description, createdAt, group, createdBy);
+        return Objects.hash(expenseId, name, totalCost, category, description, createdAt, groupId, createdBy);
     }
 
 }

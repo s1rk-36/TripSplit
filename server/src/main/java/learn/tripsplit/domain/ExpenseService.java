@@ -101,11 +101,11 @@ public class ExpenseService {
             result.addMessage("expense createdAt is required and must be in the past", ResultType.INVALID);
         }
 
-        if (expense.getGroup() == null || expense.getGroup().getGroupId() <= 0) {
+        if (expense.getGroupId() <= 0) {
             result.addMessage("valid group is required", ResultType.INVALID);
         }
 
-        if (expense.getCreatedBy() == null || expense.getCreatedBy().getAppUserId() <= 0){
+        if (expense.getCreatedBy() <= 0){
             result.addMessage("valid expense creator required", ResultType.INVALID);
         }
 

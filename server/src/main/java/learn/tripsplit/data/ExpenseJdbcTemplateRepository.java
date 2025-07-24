@@ -1,6 +1,7 @@
 package learn.tripsplit.data;
 
 import learn.tripsplit.data.mappers.*;
+import learn.tripsplit.models.Category;
 import learn.tripsplit.models.Expense;
 import learn.tripsplit.models.UserExpense;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -67,23 +68,27 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
 
     @Override
     public List<Expense> findByGroupId(int groupId) {
-        final String sql = "select e.expense_id, e.group_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
-                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
+        final String sql = "SELECT e.expense_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
+                + "u.first_name, u.last_name, u.email "
                 + "from expense e "
-                + "inner join `user` u on e.created_by = u.user_id "
+                + "inner join user u on e.created_by = u.user_id "
                 + "where e.group_id = ? "
                 + "order by e.created_at desc;";
 
-        List<Expense> expenses = jdbcTemplate.query(sql, new ExpenseMapper(this), groupId);
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Expense expense = new Expense();
+            expense.setExpenseId(rs.getInt("expense_id"));
+            expense.setName(rs.getString("name"));
+            expense.setTotalCost(rs.getBigDecimal("total_cost"));
+            expense.setCategory(Category.valueOf(rs.getString("category")));
+            expense.setDescription(rs.getString("description"));
+            expense.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            expense.setGroupId(groupId);
+            expense.setCreatedBy(rs.getInt("created_by"));
 
-        for (Expense expense : expenses) {
-            addReceipts(expense);
-            addComments(expense);
-        }
-
-        return expenses;
+            return expense;
+        }, groupId);
     }
-
     @Override
     @Transactional
     public Expense findById(int expenseId) {
@@ -139,25 +144,25 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
     }
 
     @Override
+    @Transactional
     public Expense add(Expense expense) {
         if (expense == null) {
             return null;
         }
 
-        final String sql = "insert into expense (`name`, total_cost, category, `description`, created_at, group_id, created_by) "
+        final String expenseSql = "insert into expense (`name`, total_cost, category, `description`, created_at, group_id, created_by) "
                 + "values (?,?,?,?,?,?,?);";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         int rowsAffected = jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(expenseSql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, expense.getName());
             ps.setBigDecimal(2, expense.getTotalCost());
             ps.setString(3, expense.getCategory().toString());
             ps.setString(4, expense.getDescription());
             ps.setTimestamp(5, Timestamp.valueOf(expense.getCreatedAt()));
-            ps.setInt(6, expense.getGroup().getGroupId());
-            ps.setInt(7, expense.getCreatedBy().getAppUserId());
-
+            ps.setInt(6, expense.getGroupId());
+            ps.setInt(7, expense.getCreatedBy());
             return ps;
         }, keyHolder);
 
@@ -166,7 +171,26 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
         }
 
         expense.setExpenseId(keyHolder.getKey().intValue());
+
+        if (expense.getUserExpenses() != null && !expense.getUserExpenses().isEmpty()) {
+            addUserExpenses(expense.getExpenseId(), expense.getUserExpenses());
+        }
+
         return expense;
+    }
+
+    private void addUserExpenses(int expenseId, List<UserExpense> userExpenses) {
+        final String userExpenseSql = "insert into user_expense (user_id, expense_id, amount_owned, amount_paid) "
+                + "values (?, ?, ?, ?);";
+
+        for (UserExpense userExpense : userExpenses) {
+            jdbcTemplate.update(userExpenseSql,
+                    userExpense.getUserId(),
+                    expenseId,
+                    userExpense.getAmountOwed(),
+                    userExpense.getAmountPaid()
+            );
+        }
     }
 
     @Override
@@ -284,7 +308,7 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
                 expense.getExpenseId()
         );
 
-        expense.setUsers(userExpenses);
+        expense.setUserExpenses(userExpenses);
     }
 
 }
