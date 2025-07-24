@@ -38,24 +38,10 @@ public class GroupService {
         }
 
         group = repository.add(group);
-
-        if (group != null) {
-            // Add all users to user_group table
-            for (UserGroup userGroup : group.getUsers()) {
-                boolean success = repository.addUserToGroup(
-                        group.getGroupId(),
-                        userGroup.getUser().getAppUserId(),
-                        userGroup.getIsAdmin()
-                );
-                if (!success) {
-                    result.addMessage("Failed to add user " + userGroup.getUser().getEmail() + " to group", ResultType.INVALID);
-                }
-            }
-        }
-
         result.setPayload(group);
         return result;
     }
+
     public Result<Group> update(Group group) {
         Result<Group> result = validate(group);
         if (!result.isSuccess()) {
@@ -79,39 +65,6 @@ public class GroupService {
         return repository.deleteById(groupId);
     }
 
-    public List<Group> findGroupsByUserId(int userId) {
-        return repository.findGroupsByUserId(userId);
-    }
-
-    public Result<Group> joinGroup(int groupId, int userId) {
-        Result<Group> result = new Result<>();
-
-        // check if group exists
-        Group group = repository.findById(groupId);
-        if (group == null) {
-            result.addMessage("Group not found", ResultType.NOT_FOUND);
-            return result;
-        }
-
-        // Check if user is already a member
-        if (repository.isUserMember(groupId, userId)) {
-            result.addMessage("User is already a member of this group", ResultType.INVALID);
-            return result;
-        }
-
-        // Add user to group as regular member
-        boolean success = repository.addUserToGroup(groupId, userId, false);
-        if (!success) {
-            result.addMessage("Failed to join group", ResultType.INVALID);
-            return result;
-        }
-
-        // Return the joined group
-        Group joinedGroup = repository.findById(groupId);
-        result.setPayload(joinedGroup);
-        return result;
-    }
-
     private Result<Group> validate(Group group) {
         Result<Group> result = new Result<>();
 
@@ -126,12 +79,12 @@ public class GroupService {
         result.addMessage("group name must be between 3 and 100 characters", ResultType.INVALID);
     }
 
-        if (group.getCreatedBy() <= 0) {
-            result.addMessage("no user found for createdBy", ResultType.INVALID);
+        if (group.getCreatedBy() == null || group.getCreatedBy().getAppUserId() <= 0) {
+            result.addMessage("valid group creator required", ResultType.INVALID);
         }
 
-        if (group.getUsers() == null) {
-            result.addMessage("user list cannot be null", ResultType.INVALID);
+        if (group.getUsers() == null || group.getUsers().isEmpty()) {
+            result.addMessage("user list cannot be null or empty", ResultType.INVALID);
             return result;
         }
 

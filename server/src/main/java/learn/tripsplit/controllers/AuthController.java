@@ -1,11 +1,9 @@
 package learn.tripsplit.controllers;
 
 import learn.tripsplit.App;
-import learn.tripsplit.data.AppUserJdbcTemplateRepository;
 import learn.tripsplit.domain.Result;
 import learn.tripsplit.models.AppUser;
 import learn.tripsplit.security.AppUserService;
-import learn.tripsplit.security.AuthorityUtils;
 import learn.tripsplit.security.JwtConverter;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -15,9 +13,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,15 +38,9 @@ public class AuthController {
 
     @PostMapping("/authenticate")
     public ResponseEntity<Map<String, String>> authenticate(@RequestBody Map<String, String> credentials) {
-        //first get email of user
-        AppUser appUser = appUserService.findByEmail(credentials.get("email"));
-        if (appUser == null) {
-            System.out.println("User NOT found in database: " + credentials.get("email"));
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
 
         UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(appUser.getUsername(), credentials.get("password"));
+                new UsernamePasswordAuthenticationToken(credentials.get("username"), credentials.get("password"));
 
         try {
             Authentication authentication = authenticationManager.authenticate(authToken);
@@ -73,7 +62,6 @@ public class AuthController {
         return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
 
-
     @PostMapping("/register")
     public ResponseEntity<?> createAccount(@RequestBody Map<String, String> credentials) {
         AppUser appUser = null;
@@ -94,18 +82,12 @@ public class AuthController {
                     false,
                     List.of("USER")
             );
-            System.out.println(newAppUser.getUsername());
 
             Result<AppUser> result = appUserService.add(newAppUser);
             if (!result.isSuccess()) {
-                System.out.println("Service add failed: " + result.getMessages());
-                return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(List.of(result.getMessages()), HttpStatus.BAD_REQUEST);
             }
             appUser = result.getPayload();
-            if (appUser == null) {
-                System.out.println("Result payload is null despite success");
-                return new ResponseEntity<>(List.of("Failed to create user"), HttpStatus.INTERNAL_SERVER_ERROR);
-            }
 
         } catch (ValidationException ex) {
             return new ResponseEntity<>(List.of(ex.getMessage()), HttpStatus.BAD_REQUEST);
@@ -114,23 +96,10 @@ public class AuthController {
         }
 
         // happy path...
-        UserDetails userDetails = AuthorityUtils.convertToUserDetails(appUser);
-        String jwtToken = converter.getTokenFromUser((User) userDetails);
 
-        Map<String, Object> map = new HashMap<>();
-        map.put("token", jwtToken);
+        HashMap<String, Integer> map = new HashMap<>();
+        map.put("appUserId", appUser.getAppUserId());
 
-        Map<String, Object> user = new HashMap<>();
-        user.put("id", appUser.getAppUserId());
-        user.put("username", appUser.getUsername());
-        user.put("email", appUser.getEmail());
-        user.put("firstName", appUser.getFirstName());
-        user.put("lastName", appUser.getLastName());
-
-        map.put("user", user);
-
-        System.out.println("Registration successful for user: " + appUser.getUsername());
         return new ResponseEntity<>(map, HttpStatus.CREATED);
-
     }
 }
