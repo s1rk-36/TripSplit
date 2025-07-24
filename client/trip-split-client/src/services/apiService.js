@@ -162,8 +162,8 @@ async login(credentials) {
     return makeAuthenticatedRequest('/expenses');
   },
 
-  async getExpensesByGroup(groupId) {
-    return makeAuthenticatedRequest(`/expenses/group/${groupId}`);
+  async getGroupExpenses(groupId) {
+  return makeAuthenticatedRequest(`/expenses/group/${groupId}`);
   },
 
   async getExpense(id) {
@@ -194,6 +194,9 @@ async login(credentials) {
   async getGroups() {
     return makeAuthenticatedRequest('/user/groups');
   },
+  async getGroupMembers(groupId) {
+  return makeAuthenticatedRequest(`/groups/${groupId}/members`);
+},
 // admin access
   async getAllGroups() {
     return makeAuthenticatedRequest('/groups');
@@ -219,6 +222,7 @@ async login(credentials) {
     });
   },
 
+  
   async updateGroup(id, group) {
     return makeAuthenticatedRequest(`/groups/${id}`, {
       method: 'PUT',

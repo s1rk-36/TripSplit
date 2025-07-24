@@ -46,15 +46,48 @@ public class GroupController {
         return new ResponseEntity<>(group, HttpStatus.OK); // 200
     }
 
+    @GetMapping("/{groupId}/members")
+    public ResponseEntity<List<UserGroup>> getGroupMembers(@PathVariable int groupId, Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+
+            // Get current user
+            String username = authentication.getName();
+            AppUser currentUser = appUserService.findByUsername(username);
+            if (currentUser == null) {
+                currentUser = appUserService.findByEmail(username);
+            }
+
+            if (currentUser == null) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+
+            // Check if user is member of the group
+            if (!service.isUserMember(groupId, currentUser.getAppUserId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+
+            List<UserGroup> members = service.getGroupMembers(groupId);
+
+            return new ResponseEntity<>(members, HttpStatus.OK);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PostMapping("/join")
     public ResponseEntity<Object> joinGroup(@RequestBody Map<String, Object> requestBody, Authentication authentication) {
+
         try {
             if (authentication == null) {
                 return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
             }
 
             // Get group ID from request
-            Object groupIdObj = requestBody.get("inviteCode");
+            Object groupIdObj = requestBody.get("groupId");
             if (groupIdObj == null) {
                 return new ResponseEntity<>("Group ID is required", HttpStatus.BAD_REQUEST);
             }
@@ -91,6 +124,7 @@ public class GroupController {
             return new ResponseEntity<>("Error joining group: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @PostMapping
     public ResponseEntity<Object> add(@RequestBody Map<String, Object> groupData, Authentication authentication) {
         try {

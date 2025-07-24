@@ -1,7 +1,7 @@
 @url = http://localhost:8080/api/groups
 
 ### Token (This is unique to everyone)
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWxpY2VtIiwiYXV0aG9yaXRpZXMiOiJST0xFX1VTRVIiLCJleHAiOjE3NTM0MTIzMTN9.ol98sMHyRyX1v6WLR0ixnjD43ml44IrUYSZZGEgfIWE
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYm9iaiIsImF1dGhvcml0aWVzIjoiUk9MRV9VU0VSIiwiZXhwIjoxNzUzMzkwMjMxfQ.h1Y1RpYFEGPBjAMVl6Gw9tqjyAdn_e31a_KfMke1v2g
 
 ### findAll()
 
@@ -63,38 +63,8 @@ Authorization: Bearer {{token}}
 {
   "groupId": 2,
   "name": "Updated Group",
-  "description": "Updated Group",
-  "createdBy": {
-    "appUserId": 2,
-    "firstName": "Bob",
-    "lastName": "Smith",
-    "email": "bob.smith@example.com",
-    "username": "bobsmith",
-    "passwordHash": "hash_2_example",
-    "disabled": false,
-    "groups": [],
-    "expenses": [],
-    "roles": ["User"]
-  },
-  "users": [
-    {
-      "userId": 2,
-      "groupId": 2,
-      "isAdmin": true,
-      "user": {
-        "appUserId": 2,
-        "firstName": "Bob",
-        "lastName": "Smith",
-        "email": "bob.smith@example.com",
-        "username": "bobsmith",
-        "passwordHash": "hash_2_example",
-        "disabled": false,
-        "groups": [],
-        "expenses": [],
-        "roles": ["User"]
-      }
-    }
-  ]
+  ""
+
 }
 
 ### deleteById()

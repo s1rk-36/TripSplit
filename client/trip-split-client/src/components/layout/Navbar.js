@@ -1,34 +1,29 @@
-import { Link } from 'react-router-dom';
-import { FaDollarSign, FaHome, FaUsers, FaReceipt, FaSignOutAlt, FaCog } from 'react-icons/fa';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import {FaUser, FaCog, FaSignOutAlt, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
 
 function Navbar() {
-  const { currentUser, logout, isAuthenticated } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      logout();
-    }
+  localStorage.removeItem('tripsplit_user');
+  
+  navigate('/login');
+  
+  window.location.reload();
   };
 
-  // Get user initials for profile icon
-  const getUserInitials = () => {
-    // if (!currentUser) return 'U';
-    const firstInitial = currentUser.firstName ? currentUser.firstName.charAt(0).toUpperCase() : '';
-    const lastInitial = currentUser.lastName ? currentUser.lastName.charAt(0).toUpperCase() : '';
-    return firstInitial + lastInitial || currentUser.email?.charAt(0).toUpperCase();
+  const isActive = (path) => {
+    return location.pathname === path ? 'active' : '';
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
       <div className="container">
-        {/* Brand - always visible */}
-        <Link 
-          className="navbar-brand d-flex align-items-center" 
-          to={isAuthenticated ? "/dashboard" : "/"}
-        >
-          <FaDollarSign className="me-2 text-primary" size={32} />
-          <span className="fw-bold text-primary fs-3">TripSplit</span>
+        <Link className="navbar-brand fw-bold" to={currentUser ? "/groups" : "/"}>
+          TripSplit
         </Link>
         
         <button 
@@ -36,64 +31,47 @@ function Navbar() {
           type="button" 
           data-bs-toggle="collapse" 
           data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
         >
           <span className="navbar-toggler-icon"></span>
         </button>
         
         <div className="collapse navbar-collapse" id="navbarNav">
-          {/* Authenticated Navigation */}
-          {isAuthenticated ? (
+          {currentUser ? (
+            // Authenticated user navigation
             <>
-              {/* Left side*/}
               <ul className="navbar-nav me-auto">
               </ul>
-              
-              {/* Right side - User profile */}
+
               <ul className="navbar-nav">
+                {/* Profile Dropdown */}
                 <li className="nav-item dropdown">
                   <a 
-                    className="nav-link dropdown-toggle d-flex align-items-center text-dark" 
+                    className="nav-link dropdown-toggle d-flex align-items-center" 
                     href="#" 
+                    id="profileDropdown" 
                     role="button" 
-                    data-bs-toggle="dropdown"
+                    data-bs-toggle="dropdown" 
                     aria-expanded="false"
-                    style={{ cursor: 'pointer' }}
                   >
-                    {/* Profile Icon with Initials */}
-                    <div 
-                      className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
-                      style={{ 
-                        width: '32px', 
-                        height: '32px', 
-                        fontSize: '14px', 
-                        fontWeight: 'bold' 
-                      }}
-                    >
-                      {getUserInitials()}
+                    <div className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style={{width: '32px', height: '32px'}}>
+                      <FaUser size={16} />
                     </div>
                     <span className="d-none d-md-inline">
-                      {currentUser.firstName} {currentUser.lastName}
+                      {currentUser?.firstName} {currentUser?.lastName}
                     </span>
                   </a>
-                  <ul className="dropdown-menu dropdown-menu-end">
+                  <ul className="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
                     <li>
-                      <h6 className="dropdown-header">
-                        <div className="fw-bold">{currentUser.firstName} {currentUser.lastName}</div>
-                        <small className="text-muted">{currentUser.email}</small>
-                      </h6>
+                      <div className="dropdown-header">
+                        <div className="fw-bold">{currentUser?.firstName} {currentUser?.lastName}</div>
+                        <small className="text-muted">{currentUser?.email}</small>
+                      </div>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
                     <li>
                       <Link className="dropdown-item" to="/profile">
-                        <FaCog className="me-2" /> Account Settings
-                      </Link>
-                    </li>
-                    <li>
-                      <Link className="dropdown-item" to="/dashboard">
-                        <FaHome className="me-2" /> Dashboard
+                        <FaCog className="me-2" />
+                        Account Settings
                       </Link>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
@@ -101,9 +79,9 @@ function Navbar() {
                       <button 
                         className="dropdown-item text-danger" 
                         onClick={handleLogout}
-                        style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left' }}
                       >
-                        <FaSignOutAlt className="me-2" /> Logout
+                        <FaSignOutAlt className="me-2" />
+                        Sign Out
                       </button>
                     </li>
                   </ul>
@@ -111,21 +89,28 @@ function Navbar() {
               </ul>
             </>
           ) : (
-            /* Unauthenticated Navigation */
+            // Non-authenticated user navigation
             <>
               <ul className="navbar-nav me-auto">
-                {/* Empty - pushes login/signup to the right */}
               </ul>
               
-              {/* Right side - Login/Register buttons */}
-              <div className="d-flex gap-2">
-                <Link to="/login" className="btn btn-outline-primary">
-                  Login
-                </Link>
-                <Link to="/register" className="btn btn-primary">
-                  Sign Up
-                </Link>
-              </div>
+              <ul className="navbar-nav">
+                <li className="nav-item">
+                  <Link className={`nav-link ${isActive('/login')}`} to="/login">
+                    <FaSignInAlt className="me-1" />
+                    Sign In
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link 
+                    className={`btn btn-outline-light ms-2 ${isActive('/register')}`} 
+                    to="/register"
+                  >
+                    <FaUserPlus className="me-1" />
+                    Sign Up
+                  </Link>
+                </li>
+              </ul>
             </>
           )}
         </div>

@@ -71,7 +71,6 @@ function GroupDetailsModal({ show, onHide, group, onEdit, onDelete }) {
   };
 
   const getSettlementSuggestions = () => {
-    // Simple settlement calculation - in a real app this would be more sophisticated
     const settlements = [];
     const positiveBalances = balances.filter(b => b.balance > 0);
     const negativeBalances = balances.filter(b => b.balance < 0);
@@ -118,10 +117,6 @@ function GroupDetailsModal({ show, onHide, group, onEdit, onDelete }) {
           <div className="col-md-8">
             <p className="text-muted mb-2">{group.description}</p>
             <div className="d-flex gap-3">
-              <small className="text-muted">
-                <FaCalendar className="me-1" />
-                Created {new Date(group.createdAt).toLocaleDateString()}
-              </small>
               <small className="text-muted">
                 <FaUsers className="me-1" />
                 {group.memberCount || group.members?.length || 0} members
