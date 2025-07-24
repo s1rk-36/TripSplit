@@ -41,12 +41,20 @@ public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository,
 
     @Override
     public List<UserExpense> findByExpenseId(int expenseId) {
-        final String sql = "select ue.user_id, ue.expense_id, ue.amount_owned, ue.amount_paid, "
-                + "u.first_name as first_name, u.last_name as last_name, u.email as email "
-                + "from user_expense ue "
-                + "inner join user u on ue.user_id = u.user_id "
-                + "where ue.expense_id = ?";
-        return jdbcTemplate.query(sql, new UserExpenseMapper(this), expenseId);
+        final String sql = "SELECT ue.user_id, ue.expense_id, ue.amount_owned, ue.amount_paid, "
+                + "u.first_name, u.last_name, u.email "
+                + "FROM user_expense ue "
+                + "INNER JOIN user u ON ue.user_id = u.user_id "
+                + "WHERE ue.expense_id = ?;";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            UserExpense userExpense = new UserExpense();
+            userExpense.setUserId(rs.getInt("user_id"));
+            userExpense.setExpenseId(rs.getInt("expense_id"));
+            userExpense.setAmountOwed(rs.getBigDecimal("amount_owned"));
+            userExpense.setAmountPaid(rs.getBigDecimal("amount_paid"));
+            return userExpense;
+        }, expenseId);
     }
 
     @Override

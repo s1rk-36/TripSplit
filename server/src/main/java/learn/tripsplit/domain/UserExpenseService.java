@@ -85,26 +85,22 @@ public class UserExpenseService {
     public Result<UserExpense> update(UserExpense userExpense) {
         Result<UserExpense> result = new Result<>();
 
-        // Validation
-        if (userExpense.getUserId() <= 0) {
-            result.addMessage("Valid user ID is required for update", ResultType.INVALID);
-        }
-
-        if (userExpense.getExpenseId() <= 0) {
-            result.addMessage("Valid expense ID is required for update", ResultType.INVALID);
-        }
-
-        if (userExpense.getAmountOwed() == null || userExpense.getAmountOwed().compareTo(BigDecimal.ZERO) < 0) {
-            result.addMessage("Amount owed cannot be negative", ResultType.INVALID);
-        }
-
-        if (userExpense.getAmountPaid() == null || userExpense.getAmountPaid().compareTo(BigDecimal.ZERO) < 0) {
+        if (userExpense.getAmountPaid().compareTo(BigDecimal.ZERO) < 0) {
             result.addMessage("Amount paid cannot be negative", ResultType.INVALID);
+            return result;
         }
 
-        if (!userExpenseRepository.update(userExpense)) {
-            result.addMessage("Failed to update UserExpense userId=" + userExpense.getUserId() + " and expenseId=" + userExpense.getExpenseId(), ResultType.INVALID);
+        if (userExpense.getAmountOwed().compareTo(BigDecimal.ZERO) < 0) {
+            result.addMessage("Amount owed cannot be negative", ResultType.INVALID);
+            return result;
         }
+
+        boolean updated = userExpenseRepository.update(userExpense);
+        if (!updated) {
+            result.addMessage("User expense not found or could not be updated", ResultType.NOT_FOUND);
+            return result;
+        }
+
         result.setPayload(userExpense);
         return result;
     }

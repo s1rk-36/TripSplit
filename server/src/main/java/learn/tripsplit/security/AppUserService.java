@@ -147,20 +147,25 @@ public class AppUserService implements UserDetailsService {
             result.addMessage("email cannot be duplicated", ResultType.INVALID);
         }
 
-        validateUsername(result, appUser.getUsername());
-        validatePassword(result, appUser.getPasswordHash());
+
+        result = validateUsername(result, appUser);
+        result = validatePassword(result, appUser.getPasswordHash());
 
         return result;
     }
 
-    private Result<AppUser> validateUsername(Result<AppUser> result, String username) {
+    private Result<AppUser> validateUsername(Result<AppUser> result, AppUser appUser) {
+        String username = appUser.getUsername();
         if (username == null || username.isBlank()) {
             result.addMessage("username is required", ResultType.INVALID);
         } else if (username.length() > 50) {
             result.addMessage("username must be less than 50 characters", ResultType.INVALID);
         }
 
-        if (repository.findByUsername(username) != null) {
+
+        boolean duplicateNameExists = repository.usernameExists(appUser);
+
+        if (duplicateNameExists) {
             result.addMessage("username cannot be duplicated", ResultType.INVALID);
         }
 

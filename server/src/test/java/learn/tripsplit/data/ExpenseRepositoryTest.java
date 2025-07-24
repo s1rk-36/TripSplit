@@ -7,8 +7,6 @@ import learn.tripsplit.models.Group;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
 
@@ -42,8 +40,8 @@ class ExpenseRepositoryTest {
 
     @Test
     void shouldFindById() throws DataAccessException {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expected = new Expense (
                 1,
                 "Flight Tickets",
@@ -51,8 +49,8 @@ class ExpenseRepositoryTest {
                 Category.TRAVEL_FEES,
                 "Round trip flights to Tokyo",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser);
+                groupId,
+                appUserId);
 
         Expense actual = repository.findById(1);
 
@@ -69,8 +67,8 @@ class ExpenseRepositoryTest {
 
     @Test
     void shouldAdd() throws DataAccessException {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 9999,
                 "Added Expense Name",
@@ -78,8 +76,8 @@ class ExpenseRepositoryTest {
                 Category.TRAVEL_FEES,
                 "Added Description",
                 LocalDateTime.now(),
-                group,
-                appUser);
+                groupId,
+                appUserId);
 
         Expense actual = repository.add(expense);
 
@@ -123,8 +121,8 @@ class ExpenseRepositoryTest {
 
     @Test
     void shouldDeleteById() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 9999,
                 "Expense To Be Deleted",
@@ -132,8 +130,8 @@ class ExpenseRepositoryTest {
                 Category.TRAVEL_FEES,
                 "Description To Be Deleted",
                 LocalDateTime.now(),
-                group,
-                appUser);
+                groupId,
+                appUserId);
 
         Expense toBeDeleted = repository.add(expense);
 
@@ -160,8 +158,8 @@ class ExpenseRepositoryTest {
     }
 
     private Group getGroup1() {
-        AppUser appUser1 = getUser1();
-        return new Group (1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUser1);
+        int appUserId = getUser1().getAppUserId();
+        return new Group (1, "Japan Spring Trip", "A cherry blossom tour across Tokyo and Kyoto.", appUserId);
     }
 
 }

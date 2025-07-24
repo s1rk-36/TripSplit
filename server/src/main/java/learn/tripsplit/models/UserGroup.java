@@ -6,7 +6,7 @@ public class UserGroup {
     // Fields
     private int userId;
     private int groupId;
-    private boolean isAdmin;
+    private boolean isGroupAdmin;
 
     private AppUser appUser;
     private Group group;
@@ -15,10 +15,10 @@ public class UserGroup {
     public UserGroup() {
     }
 
-    public UserGroup(int userId, int groupId, boolean isAdmin) {
+    public UserGroup(int userId, int groupId, boolean isGroupAdmin) {
         this.userId = userId;
         this.groupId = groupId;
-        this.isAdmin = isAdmin;
+        this.isGroupAdmin = isGroupAdmin;
     }
 
     // Getters and Setters
@@ -38,12 +38,12 @@ public class UserGroup {
         this.groupId = groupId;
     }
 
-    public boolean getIsAdmin() {
-        return isAdmin;
+    public boolean getIsGroupAdmin() {
+        return isGroupAdmin;
     }
 
-    public void setIsAdmin(boolean admin) {
-        isAdmin = admin;
+    public void setIsGroupAdmin(boolean admin) {
+        isGroupAdmin = admin;
     }
 
     public AppUser getUser() {
@@ -67,12 +67,12 @@ public class UserGroup {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         UserGroup userGroup = (UserGroup) o;
-        return userId == userGroup.userId && groupId == userGroup.groupId && isAdmin == userGroup.isAdmin;
+        return userId == userGroup.userId && groupId == userGroup.groupId && isGroupAdmin == userGroup.isGroupAdmin;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, groupId, isAdmin);
+        return Objects.hash(userId, groupId, isGroupAdmin);
     }
 
 }

@@ -30,7 +30,7 @@ public class UserGroupMapper implements RowMapper<UserGroup> {
         UserGroup userGroup = new UserGroup();
         userGroup.setUserId(resultSet.getInt(userGroupPrefix + "user_id"));
         userGroup.setGroupId(resultSet.getInt(userGroupPrefix + "group_id"));
-        userGroup.setIsAdmin(resultSet.getBoolean(userGroupPrefix + "is_admin"));
+        userGroup.setIsGroupAdmin(resultSet.getBoolean(userGroupPrefix + "is_admin"));
 
         userGroup.setUser(appUserMapper.mapRow(resultSet, i, userPrefix));
         userGroup.setGroup(groupMapper.mapRow(resultSet, i, groupPrefix, createdByPrefix));

@@ -168,6 +168,31 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
     }
 
     @Override
+    public boolean removeUserFromGroup(int groupId, int userId) {
+        final String sql = "DELETE FROM user_group WHERE group_id = ? AND user_id = ?;";
+
+        try {
+            int rowsAffected = jdbcTemplate.update(sql, groupId, userId);
+            return rowsAffected > 0;
+        } catch (Exception e) {
+            System.out.println("Error removing user from group: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isUserAdmin(int groupId, int userId) {
+        final String sql = "SELECT is_admin FROM user_group WHERE group_id = ? AND user_id = ?;";
+
+        try {
+            Boolean isAdmin = jdbcTemplate.queryForObject(sql, Boolean.class, groupId, userId);
+            return isAdmin != null && isAdmin;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
     public List<UserGroup> getGroupMembers(int groupId) {
         final String sql = "select "
                 + "ug.user_id as ug_user_id, "
@@ -180,17 +205,31 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
                 + "u.email as u_email, "
                 + "u.username as u_username, "
                 + "u.password_hash as u_password_hash, "
-                + "u.disabled as u_disabled "
+                + "u.disabled as u_disabled, "
+
+                + "g.group_id, "
+                + "g.`name` as group_name, "
+                + "g.`description` as group_description, "
+
+                + "gcb.user_id as gcb_user_id, "
+                + "gcb.first_name as gcb_first_name, "
+                + "gcb.last_name as gcb_last_name, "
+                + "gcb.email as gcb_email, "
+                + "gcb.username as gcb_username, "
+                + "gcb.password_hash as gcb_password_hash, "
+                + "gcb.disabled as gcb_disabled "
 
                 + "from user_group ug "
                 + "inner join `user` u on ug.user_id = u.user_id "
+                + "inner join `group` g on ug.group_id = g.group_id "
+                + "inner join `user` gcb on g.created_by = gcb.user_id "
                 + "where ug.group_id = ? "
                 + "order by u.first_name, u.last_name;";
 
         UserGroupMapper userGroupMapper = new UserGroupMapper(this);
 
         return jdbcTemplate.query(sql,
-                (rs, rowNum) -> userGroupMapper.mapRow(rs, rowNum, "ug_", "u_", "", ""),
+                (rs, rowNum) -> userGroupMapper.mapRow(rs, rowNum, "ug_", "u_", "", "gcb_"),
                 groupId
         );
     }
