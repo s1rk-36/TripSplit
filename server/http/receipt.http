@@ -1,7 +1,7 @@
 @url = http://localhost:8080/api/receipts
 
 ### Token (This is unique to everyone)
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoidGVzdEV4YW1wbGUiLCJhdXRob3JpdGllcyI6IlJPTEVfVVNFUiIsImV4cCI6MTc1MzQ2Mjg5OX0.0FOcLMjHy2fyDxHqU-51q_CIv7HSEfvo9ppBupaNXow
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoidGVzdEV4YW1wbGUiLCJhdXRob3JpdGllcyI6IlJPTEVfVVNFUiIsImV4cCI6MTc1MzQ2NDE3N30.0YlkrrjpY51LAI_e2-tRrBYN6XdGI0VgVC4qJgVxvGU
 
 ### FIND ALL RECEIPTS
 GET {{url}} HTTP/1.1

@@ -2,13 +2,13 @@ package learn.tripsplit.controllers;
 
 import learn.tripsplit.domain.AmazonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/storage")
 public class BucketController {
-
     private final AmazonClient amazonClient;
 
     @Autowired
@@ -17,12 +17,14 @@ public class BucketController {
     }
 
     @PostMapping("/uploadFile")
-    public String uploadFile(@RequestParam("file") MultipartFile file) {
-        return amazonClient.uploadFile(file);
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+        String url = amazonClient.uploadFile(file);
+        return ResponseEntity.ok(url);
     }
 
     @DeleteMapping("/deleteFile")
-    public String deleteFile(@RequestParam("url") String fileUrl) {
-        return amazonClient.deleteFileFromS3Bucket(fileUrl);
+    public ResponseEntity<String> deleteFile(@RequestParam("url") String fileUrl) {
+        amazonClient.deleteFileFromS3Bucket(fileUrl);
+        return ResponseEntity.ok("Deleted successfully");
     }
 }
