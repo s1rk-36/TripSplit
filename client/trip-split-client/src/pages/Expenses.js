@@ -92,6 +92,8 @@ function Expenses() {
       const newExpense = await apiService.createExpense(expenseData);
       setExpenses([newExpense, ...expenses]);
       setShowCreateModal(false);
+
+      return newExpense;
     } catch (err) {
       console.error('Failed to create expense:', err);
       throw new Error(err.message || 'Failed to create expense');
@@ -515,7 +517,7 @@ function Expenses() {
                             >
                               ⋮
                             </button>
-                            <ul className="dropdown-menu dropdown-menu-end">
+                            <ul className="dropdown-menu">
                               <li>
                                 <button 
                                   className="dropdown-item"
@@ -588,6 +590,7 @@ function Expenses() {
         onHide={() => {
           setShowDetailsModal(false);
           setSelectedExpense(null);
+          loadExpenses();
         }}
         expense={selectedExpense}
         groups={groups}

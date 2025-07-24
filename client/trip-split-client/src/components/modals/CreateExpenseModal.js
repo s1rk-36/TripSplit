@@ -189,8 +189,22 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
             amountPaid: 0
           }))
       };
-      
-      await onSubmit(expenseData);
+
+      const createdExpense = await onSubmit(expenseData);
+      console.log(createdExpense);
+      // Upload receipt if provided
+      if (formData.receipt) {
+        console.log("provided receipt", formData.receipt);
+        try {
+          console.log("sending receipt",formData);
+          await apiService.uploadExpenseReceipt(createdExpense.expenseId, formData.receipt);
+        } catch (receiptError) {
+          console.error('Failed to upload receipt:', receiptError);
+          setError('Expense created but receipt upload failed. You can add it later.');
+          return;
+        }
+      }
+
       
       // Reset form
       setFormData({
@@ -353,6 +367,27 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
                   onChange={handleFileChange}
                 />
                 <small className="text-muted">Upload a photo of the receipt (optional)</small>
+                {formData.receipt && (
+                  <div className="mt-2 p-2 border rounded bg-light">
+                    <small className="text-success d-block mb-2">
+                      ✓ Selected: {formData.receipt.name}
+                    </small>
+                    <img
+                      src={URL.createObjectURL(formData.receipt)}
+                      alt="Receipt preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '200px',
+                        objectFit: 'contain',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '4px'
+                      }}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

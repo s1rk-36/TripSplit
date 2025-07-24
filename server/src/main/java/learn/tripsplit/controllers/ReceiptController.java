@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -74,6 +75,33 @@ public class ReceiptController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @PostMapping("/expense/{expenseId}/upload")
+    public ResponseEntity<Object> createReceiptWithFile(
+            @PathVariable int expenseId,
+            @RequestPart("file") MultipartFile multipartFile) {
+
+        Receipt receipt = new Receipt();
+        receipt.setExpenseId(expenseId);
+        receipt.setImageUrl("N/A");
+        receipt.setUploadedAt(LocalDateTime.now());
+
+        Result<Receipt> createResult = receiptService.add(receipt);
+        if (!createResult.isSuccess()) {
+            return new ResponseEntity<>(createResult.getMessages(), HttpStatus.BAD_REQUEST);
+        }
+
+        Receipt createdReceipt = createResult.getPayload();
+
+        // Upload file
+        Result<Receipt> uploadResult = receiptService.uploadFile(createdReceipt, multipartFile);
+        if (!uploadResult.isSuccess()) {
+            receiptService.deleteById(createdReceipt.getReceiptId());
+            return new ResponseEntity<>(uploadResult.getMessages(), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(uploadResult.getPayload(), HttpStatus.OK);
     }
 
     @PostMapping("/{receiptId}/uploadFile")

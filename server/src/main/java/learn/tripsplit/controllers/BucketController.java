@@ -22,7 +22,7 @@ public class BucketController {
     }
 
     @DeleteMapping("/deleteFile")
-    public String deleteFile(@RequestParam("url") String fileUrl) {
-        return amazonClient.deleteFileFromS3Bucket(fileUrl);
+    public void deleteFile(@RequestParam("url") String fileUrl) {
+        amazonClient.deleteFileFromS3Bucket(fileUrl);
     }
 }
