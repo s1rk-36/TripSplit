@@ -58,9 +58,9 @@ function Groups() {
     }
   };
 
-  const handleJoinGroup = async (inviteCode) => {
+  const handleJoinGroup = async (groupId) => {
     try {
-      const joinedGroup = await apiService.joinGroup({ inviteCode });
+      const joinedGroup = await apiService.joinGroup({groupId});
       setGroups([...groups, joinedGroup]);
       setShowJoinModal(false);
     } catch (err) {
@@ -72,8 +72,8 @@ function Groups() {
   const handleEditGroup = async (groupId, groupData) => {
     try {
       const updatedGroup = await apiService.updateGroup(groupId, groupData);
-      setGroups(groups.map(group =>
-        group.id === groupId ? updatedGroup : group
+      setGroups(groups.map(group => 
+        group.groupId === groupId ? updatedGroup : group
       ));
       setShowEditModal(false);
       setSelectedGroup(null);
@@ -84,16 +84,30 @@ function Groups() {
   };
 
   const handleDeleteGroup = async (groupId) => {
-    if (!window.confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+    if (!window.confirm('Are you sure you want to delete this group? This action cannot be undone and will remove all expenses and data associated with this group.')) {
       return;
     }
 
     try {
       await apiService.deleteGroup(groupId);
-      setGroups(groups.filter(group => group.id !== groupId));
+      setGroups(groups.filter(group => group.groupId !== groupId));
     } catch (err) {
       console.error('Failed to delete group:', err);
       setError(err.message || 'Failed to delete group');
+    }
+  };
+
+  const handleLeaveGroup = async (groupId) => {
+    if (!window.confirm('Are you sure you want to leave this group? You will lose access to all group expenses and data.')) {
+      return;
+    }
+
+    try {
+      await apiService.leaveGroup(groupId);
+      setGroups(groups.filter(group => group.groupId !== groupId));
+    } catch (err) {
+      console.error('Failed to leave group:', err);
+      setError(err.message || 'Failed to leave group');
     }
   };
 
@@ -109,10 +123,9 @@ function Groups() {
     }
   };
 
-  const handleCopyInviteCode = (inviteCode) => {
-    navigator.clipboard.writeText(inviteCode);
-    // You could add a toast notification here
-    alert('Invite code copied to clipboard!');
+  const handleCopyInviteCode = (groupId) => {
+    navigator.clipboard.writeText(groupId.toString());
+    alert('Group ID copied to clipboard!');
   };
 
   // Filter groups based on search and status
@@ -127,8 +140,6 @@ function Groups() {
     return matchesSearch;
   });
 
-  const totalExpenses = groups.reduce((sum, group) => sum + (group.totalExpenses || 0), 0);
-  const totalBalance = groups.reduce((sum, group) => sum + (group.userBalance || 0), 0);
 
   if (loading) {
     return (
@@ -150,7 +161,7 @@ function Groups() {
 
       {error && <ErrorAlert error={error} onRetry={loadGroups} />}
 
-      {/* Search and Buttons */}
+      {/* Search and Filters */}
       <div className="row mb-4">
         <div className="col-md-8">
           <div className="input-group">
@@ -166,8 +177,9 @@ function Groups() {
             />
           </div>
         </div>
-        <div className="btn-group col md-4">
-          <button
+        
+        <div className="btn-group col-md-4">
+          <button 
             className="btn btn-outline-primary"
             onClick={() => setShowJoinModal(true)}
           >
@@ -180,51 +192,8 @@ function Groups() {
             <FaPlus className="me-1" /> Create Group
           </button>
         </div>
-      </div>
 
-      {/* Quick Stats */}
-      {groups.length > 0 && (
-        <div className="row mb-4">
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-primary">{groups.length}</h4>
-                <p className="card-text small">Total Groups</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-success">{formatCurrency(totalExpenses)}</h4>
-                <p className="card-text small">Total Expenses</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className={totalBalance >= 0 ? 'text-success' : 'text-danger'}>
-                  {formatCurrency(Math.abs(totalBalance))}
-                </h4>
-                <p className="card-text small">
-                  {totalBalance >= 0 ? 'You are owed' : 'You owe'}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-info">
-                  {groups.reduce((sum, group) => sum + (group.memberCount || 0), 0)}
-                </h4>
-                <p className="card-text small">Total Members</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Groups List */}
       {filteredGroups.length === 0 ? (
@@ -259,7 +228,7 @@ function Groups() {
       ) : (
         <div className="row">
           {filteredGroups.map(group => (
-            <div key={group.id} className="col-md-6 col-lg-4 mb-4">
+            <div key={group.groupId} className="col-md-6 col-lg-4 mb-4">
               <div className="card h-100 shadow-sm">
                 <div className="card-body">
                   <div className="d-flex justify-content-between align-items-start mb-3">
@@ -333,9 +302,6 @@ function Groups() {
                         <FaUsers className="text-muted me-2" size={16} />
                         <span className="small">{group.memberCount || 0} members</span>
                       </div>
-                      <span className={`badge ${group.isActive ? 'bg-success' : 'bg-secondary'}`}>
-                        {group.isActive ? 'Active' : 'Settled'}
-                      </span>
                     </div>
                     <div className="d-flex align-items-center justify-content-between mb-2">
                       <div className="d-flex align-items-center">
@@ -350,6 +316,16 @@ function Groups() {
                       )}
                     </div>
                   </div>
+                  
+                  {/* Recent Activity */}
+                  {group.recentActivity && (
+                    <div className="mb-3">
+                      <small className="text-muted">Recent:</small>
+                      <div className="small text-truncate">
+                        {group.recentActivity}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="card-footer bg-transparent">
