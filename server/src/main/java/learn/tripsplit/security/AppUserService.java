@@ -48,6 +48,7 @@ public class AppUserService implements UserDetailsService {
         if (!result.isSuccess()) {
             return result;
         }
+
         appUser.setPasswordHash(encoder.encode(appUser.getPasswordHash()));
 
         if (appUser.getAppUserId() != 0) {

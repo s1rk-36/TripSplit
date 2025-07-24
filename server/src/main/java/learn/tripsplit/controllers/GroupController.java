@@ -63,7 +63,7 @@ public class GroupController {
         return ErrorResponse.build(result);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @DeleteMapping("{groupId}")
     public ResponseEntity<Void> deleteById(@PathVariable int groupId) {
         if (service.deleteById(groupId)) {
@@ -72,5 +72,4 @@ public class GroupController {
 
         return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
     }
-
 }

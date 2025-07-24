@@ -1,7 +1,7 @@
 @url = http://localhost:8080/api/group
 
 ### Token (This is unique to everyone)
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWxpY2VtIiwiYXV0aG9yaXRpZXMiOiJST0xFX1VTRVIiLCJleHAiOjE3NTMzMDQ1Nzl9.wfJ0onncGr8ZxEciXWNnSR4ThP3iaxRxyxwf5FiwgVc
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWxpY2VtIiwiYXV0aG9yaXRpZXMiOiJST0xFX1VTRVIiLCJleHAiOjE3NTMzMTgyNjV9.-e1xBQGqGUMq-bhlRbEQCxwNe41pRX12FiyIf-3qLWU
 
 ### findAll()
 

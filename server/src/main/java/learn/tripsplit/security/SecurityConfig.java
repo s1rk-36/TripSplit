@@ -28,11 +28,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.authorizeRequests()
                 // TODO add antMatchers here to configure access to specific API endpoints
-                // allows unauthenticated users to access /authenticate and /register.
-                .antMatchers("/api/auth/authenticate", "/api/auth/register").permitAll()
-                .antMatchers("/api/admin/**").hasRole("ADMIN")
-                .antMatchers(HttpMethod.DELETE, "/api/user/**", "/api/group/**").hasRole("ADMIN")
-                // require authentication for any request...
+                // Public access
+                .antMatchers("/api/auth/authenticate",
+                        "/api/auth/register",
+                        "/api/moderator/register").permitAll()
+                // Specific role-based access
+                .antMatchers(HttpMethod.DELETE, "/api/user/**", "/api/group/**").hasAnyRole("ADMIN", "MODERATOR")
+                // All other endpoints must be authenticated
                 .anyRequest().authenticated()
                 .and()
                 .addFilter(new JwtRequestFilter(authenticationManager(), converter))
