@@ -49,8 +49,12 @@ public class ReceiptJdbcTemplateRepository implements ReceiptRepository {
 
     @Override
     public Receipt add(Receipt receipt) {
+        if (receipt == null) {
+            return null;
+        }
+
         final String sql = "insert into receipt (expense_id, image_url, uploaded_at) "
-                + "values (?,?,?);";
+                + "values (?, ?, ?);";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         int rowsAffected = jdbcTemplate.update(connection -> {
@@ -71,6 +75,10 @@ public class ReceiptJdbcTemplateRepository implements ReceiptRepository {
 
     @Override
     public boolean update(Receipt receipt) {
+        if (receipt == null) {
+            return false;
+        }
+
         final String sql = "update receipt set "
                 + "image_url = ? "
                 + "where receipt_id = ?;";
