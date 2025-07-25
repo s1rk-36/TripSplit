@@ -96,9 +96,7 @@ function Groups() {
 
   const handleEditGroup = async (groupId, updatedGroup) => {
     try {
-      console.log(updatedGroup);
       const result = await apiService.updateGroup(groupId, updatedGroup);
-      
       loadGroups();
       setShowEditModal(false);
       setSelectedGroup(null);

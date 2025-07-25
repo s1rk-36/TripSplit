@@ -1,8 +1,7 @@
 @url = http://localhost:8080/api/groups
 
 ### Token (This is unique to everyone)
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWxpY2VqIiwiYXV0aG9yaXRpZXMiOiJST0xFX0FETUlOIiwiZXhwIjoxNzUzNDc4MzMxfQ.Rx95LR-k0qaGafI96203j7RNKfvSC73ccLWO2a2rQyI
-
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWRtaW4iLCJhdXRob3JpdGllcyI6IlJPTEVfQURNSU4iLCJleHAiOjE3NTM0OTUyNjV9.Nzb1KeC8g7NqZlfO-XxS4UNjmDUHr7DVCZZEIDzVMGQ
 ### findAll()
 
 GET {{url}} HTTP/1.1
@@ -57,5 +56,5 @@ Authorization: Bearer {{token}}
 
 ### deleteById()
 
-DELETE {{url}}/4 HTTP/1.1
+DELETE {{url}}/6 HTTP/1.1
 Authorization: Bearer {{token}}

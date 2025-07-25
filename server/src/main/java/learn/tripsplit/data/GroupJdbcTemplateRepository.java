@@ -33,7 +33,14 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
                 + "order by group_id asc "
                 + "limit 1000;";
 
-        return jdbcTemplate.query(sql, new GroupMapper(this));
+        List<Group> groups = jdbcTemplate.query(sql, new GroupMapper(this));
+
+        // Add users to each group (same as findGroupsByUserId)
+        for (Group group : groups) {
+            addUsers(group);
+        }
+
+        return groups;
     }
 
     @Override

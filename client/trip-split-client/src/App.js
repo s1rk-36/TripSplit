@@ -9,6 +9,7 @@ import Groups from './pages/Groups';
 import NotFound from './pages/NotFound';
 import ProfileSettings from './pages/ProfileSettings';
 import { AuthProvider } from './utils/auth';
+import AdminDashboard from './pages/AdminDashboard';
 
 
 function App() {
@@ -27,6 +28,8 @@ function App() {
                     <Route path="/groups" element={<Groups />} />
                     <Route path="/profile" element={<ProfileSettings />} />
                     <Route path="/expenses" element={<Expenses />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+
                     {/*
                     <Route path="/expenses/:id" element={<ExpenseDetails />} />
                     <Route path="/groups/:groupId/expenses" element={<GroupExpenses />} />

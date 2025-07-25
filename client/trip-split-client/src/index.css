@@ -86,6 +86,14 @@ code {
   overflow: visible !important;
 }
 
+.nav-tabs .nav-link {
+  color: black !important;
+}
+
+.nav-tabs .nav-link.active {
+  color: black !important;
+}
+
 @media (max-width: 768px) {
   .btn-group {
     flex-direction: column;
