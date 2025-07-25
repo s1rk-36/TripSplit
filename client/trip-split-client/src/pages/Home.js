@@ -29,30 +29,30 @@ function Home() {
             <div className="col-lg-6 text-center">
               {/* App Screenshots */}
               <div className="position-relative">
-                <div className="row g-3">
-                  <div className="col-6">
-                    <div className="bg-white rounded-3 p-3 shadow-lg">
+                <div className="row g-4">
+                  <div className="col-12 mb-4">
+                    <div className="bg-white rounded-3 p-4 shadow-lg">
                       <img 
-                        src=""
-                        alt="TripSplit Dashboard"
+                        src="/group_demo.png"
+                        alt="TripSplit Groups Dashboard showing various travel groups and expense sharing options"
                         className="img-fluid rounded-2"
-                        style={{ maxHeight: '400px', objectFit: 'cover' }}
+                        style={{ maxHeight: '700px', objectFit: 'cover', width: '100%' }}
                       />
-                      <div className="mt-2">
-                        <small className="text-muted fw-bold">Dashboard View</small>
+                      <div className="mt-3 text-center">
+                        <h6 className="text-primary fw-bold mb-0">Groups Overview</h6>
                       </div>
                     </div>
                   </div>
-                  <div className="col-6">
-                    <div className="bg-white rounded-3 p-3 shadow-lg">
+                  <div className="col-12">
+                    <div className="bg-white rounded-3 p-4 shadow-lg">
                       <img 
-                        src=""
-                        alt="Expense Split View"
+                        src="/expense_demo.png"
+                        alt="Expense splitting interface showing how to divide costs among group members"
                         className="img-fluid rounded-2"
-                        style={{ maxHeight: '400px', objectFit: 'cover' }}
+                        style={{ maxHeight: '700px', objectFit: 'cover', width: '100%' }}
                       />
-                      <div className="mt-2">
-                        <small className="text-muted fw-bold">Expense Splitting</small>
+                      <div className="mt-3 text-center">
+                        <h6 className="text-primary fw-bold mb-0">Expense Splitting</h6>
                       </div>
                     </div>
                   </div>
