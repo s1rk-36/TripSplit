@@ -50,10 +50,16 @@ public class ReceiptService {
         // Validation
         if (receipt == null) {
             result.addMessage("Receipt cannot be null.", ResultType.INVALID);
+            return result;
+        }
+
+        if (receipt.getReceiptId() != 0) {
+            result.addMessage("receiptId should not be set for `add` operation", ResultType.INVALID);
         }
 
         if (receipt.getExpenseId() <= 0) {
             result.addMessage("Valid expense ID is required.", ResultType.INVALID);
+            return result;
         }
 
         if (receipt.getImageUrl() == null || receipt.getImageUrl().isBlank()) {
@@ -85,12 +91,18 @@ public class ReceiptService {
         Result<Receipt> result = new Result<>();
 
         // Validation
+        if (receipt == null) {
+            result.addMessage("Receipt cannot be null.", ResultType.INVALID);
+            return result;
+        }
+
         if (receipt.getReceiptId() <= 0) {
             result.addMessage("Receipt ID must be set for update.", ResultType.INVALID);
         }
 
         if (receipt.getImageUrl() == null || receipt.getImageUrl().isBlank()) {
             result.addMessage("Image URL is required.", ResultType.INVALID);
+            return result;
         }
 
         if (!receiptRepository.update(receipt)) {
