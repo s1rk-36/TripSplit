@@ -95,14 +95,22 @@ class ExpenseRepositoryTest {
 
     @Test
     void shouldUpdate() {
-        Expense expense = new Expense();
-        expense.setExpenseId(1);
-        expense.setName("Updated Expense Name");
-        expense.setTotalCost(BigDecimal.ONE);
-        expense.setCategory(Category.TRAVEL_FEES);
-        expense.setDescription("Updated Description");
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
+        Expense expense = new Expense (
+                0,
+                "Updated Expense",
+                BigDecimal.valueOf(1200),
+                Category.TRAVEL_FEES,
+                "",
+                LocalDateTime.of(2025, 3, 10, 0, 0),
+                groupId,
+                appUserId
+        );
 
-        assertTrue(repository.update(expense));
+        Expense toBeUpdated = repository.add(expense);
+
+        assertTrue(repository.update(toBeUpdated));
     }
 
     @Test
