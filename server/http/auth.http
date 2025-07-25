@@ -7,7 +7,7 @@ Content-Type: application/json
 
 {
     "email": "test@example.com",
-    "password": "password1."
+    "password": "P@ssw0rd!"
 }
 
 ### Register
@@ -25,7 +25,7 @@ Content-Type: application/json
 
 # All first 5 users share the same password: P@ssw0rd!
 # To login as any of the first 5, just change the email
-### Login as Alice
+### Login as Alice (Admin)
 
 POST {{url}}/authenticate HTTP/1.1
 Content-Type: application/json
