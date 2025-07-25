@@ -146,7 +146,10 @@ public class AuthController {
 
     private Result<String> validatePassword(String password) {
         Result<String> result = new Result<>();
-
+        if(password.length() < 8){
+            result.addMessage("password must be at least 8 chracters long", ResultType.INVALID);
+            return result;
+        }
         int digits = 0;
         int letters = 0;
         int others = 0;
