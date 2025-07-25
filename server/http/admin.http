@@ -1,8 +1,10 @@
 @url = http://localhost:8080/api/admin/user
 
-### Token for existing admin's token here. example: Alice's token
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWRtaW4iLCJhdXRob3JpdGllcyI6IlJPTEVfQURNSU4iLCJleHAiOjE3NTM0OTM3NTd9.jm4jO5ArLRq9kjAc1a6rCaSt7XvsnCf8LwWzSsfeU8s
-PUT {{url}}/1/roles
+### Token for existing admin's token here.
+# It will not work if it is not the token of an admin
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWRtaW4iLCJhdXRob3JpdGllcyI6IlJPTEVfQURNSU4iLCJleHAiOjE3NTM0OTMzMTR9.FOOwKMtzZQCQgrIqOzfktSuXsaJDW1JhKto6ZXiyIo4
+
+PUT {{url}}/6/roles
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
