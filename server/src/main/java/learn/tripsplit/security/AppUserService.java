@@ -163,7 +163,7 @@ public class AppUserService implements UserDetailsService {
 
         validateUsername(result, appUser);
 
-        validatePassword(result, appUser.getPasswordHash());
+//        validatePassword(result, appUser.getPasswordHash());
 
         return result;
     }

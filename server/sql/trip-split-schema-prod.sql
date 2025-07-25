@@ -236,12 +236,12 @@ insert into user_expense (user_id, expense_id, amount_owned, amount_paid) values
 -- Expense 10: Island Tour ($180) by users 5 only
 (5, 10, 180.00, 180.00); -- Eve paid full
 
-insert into receipt (receipt_id, image_url, uploaded_at, expense_id) values
-(1, 'https://example.com/receipts/flight-ticket.jpg', '2025-07-01 00:00:00', 1),
-(2, 'https://example.com/receipts/hotel-booking.png', '2025-07-02 00:00:00', 2),
-(3, 'https://example.com/receipts/conference-fee.pdf', '2025-07-03 00:00:00', 3),
-(4, 'https://example.com/receipts/taxi-fare.jpeg', '2025-07-03 00:00:00', 4),
-(5, 'https://example.com/receipts/dinner-bill.jpg', '2025-07-04 00:00:00', 5);
+insert into receipt (image_url, uploaded_at, expense_id) values
+('https://example.com/receipts/flight-ticket.jpg', '2025-07-01 00:00:00', 1),
+('https://example.com/receipts/hotel-booking.png', '2025-07-02 00:00:00', 2),
+('https://example.com/receipts/conference-fee.pdf', '2025-07-03 00:00:00', 3),
+('https://example.com/receipts/taxi-fare.jpeg', '2025-07-03 00:00:00', 4),
+('https://example.com/receipts/dinner-bill.jpg', '2025-07-04 00:00:00', 5);
 
 insert into `comment` (comment_id, `timestamp`, content, expense_id, created_by) values
 (1, '2025-07-01 10:23:45', 'I’ve uploaded the flight ticket receipt. Please confirm.', 1, 1),

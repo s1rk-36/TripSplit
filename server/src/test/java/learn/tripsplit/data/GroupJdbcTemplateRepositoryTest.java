@@ -60,9 +60,7 @@ public class GroupJdbcTemplateRepositoryTest {
 
         assertNotNull(actual);
         assertTrue(actual.getGroupId() > 0);
-        assertEquals("Added Group Name", actual.getName());
-        assertEquals("Added Description", actual.getDescription());
-        assertEquals(1, actual.getCreatedBy());
+        assertEquals(group, actual);
     }
 
     @Test

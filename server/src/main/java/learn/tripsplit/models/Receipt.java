@@ -13,7 +13,8 @@ public class Receipt {
     // Constructors
     public Receipt() {}
 
-    public Receipt(int expenseId, String imageUrl) {
+    public Receipt(int receiptId, int expenseId, String imageUrl) {
+        this.receiptId = receiptId;
         this.expenseId = expenseId;
         this.imageUrl = imageUrl;
         this.uploadedAt = LocalDateTime.now();
@@ -37,12 +38,12 @@ public class Receipt {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Receipt receipt = (Receipt) o;
-        return expenseId == receipt.expenseId && Objects.equals(imageUrl, receipt.imageUrl) && Objects.equals(uploadedAt, receipt.uploadedAt);
+        return receiptId == receipt.receiptId && expenseId == receipt.expenseId && Objects.equals(imageUrl, receipt.imageUrl) && Objects.equals(uploadedAt, receipt.uploadedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(expenseId, imageUrl, uploadedAt);
+        return Objects.hash(receiptId, expenseId, imageUrl, uploadedAt);
     }
 
 }

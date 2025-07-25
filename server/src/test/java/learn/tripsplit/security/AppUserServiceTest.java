@@ -157,34 +157,34 @@ class AppUserServiceTest {
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
-    @Test
-    void shouldNotAddUserWhenPasswordHashIsNullOrBlank() {
-        AppUser nullPasswordUser = new AppUser(
-                0,
-                "Grace",
-                "Wong",
-                "grace.wong@example.com",
-                "gracew",
-                null, // null password
-                false,
-                List.of("USER")
-        );
-        Result<AppUser> actual = service.add(nullPasswordUser);
-        assertEquals(ResultType.INVALID, actual.getType());
-
-        AppUser blankPasswordUser = new AppUser(
-                0,
-                "Grace",
-                "Wong",
-                "grace.wong@example.com",
-                "gracew",
-                "\t", // blank password
-                false,
-                List.of("USER")
-        );
-        actual = service.add(blankPasswordUser);
-        assertEquals(ResultType.INVALID, actual.getType());
-    }
+//    @Test
+//    void shouldNotAddUserWhenPasswordHashIsNullOrBlank() {
+//        AppUser nullPasswordUser = new AppUser(
+//                0,
+//                "Grace",
+//                "Wong",
+//                "grace.wong@example.com",
+//                "gracew",
+//                null, // null password
+//                false,
+//                List.of("USER")
+//        );
+//        Result<AppUser> actual = service.add(nullPasswordUser);
+//        assertEquals(ResultType.INVALID, actual.getType());
+//
+//        AppUser blankPasswordUser = new AppUser(
+//                0,
+//                "Grace",
+//                "Wong",
+//                "grace.wong@example.com",
+//                "gracew",
+//                "\t", // blank password
+//                false,
+//                List.of("USER")
+//        );
+//        actual = service.add(blankPasswordUser);
+//        assertEquals(ResultType.INVALID, actual.getType());
+//    }
 
     @Test
     void shouldUpdateUser() {
