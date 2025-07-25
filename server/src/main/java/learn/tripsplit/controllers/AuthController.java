@@ -3,6 +3,7 @@ package learn.tripsplit.controllers;
 import learn.tripsplit.App;
 import learn.tripsplit.data.AppUserJdbcTemplateRepository;
 import learn.tripsplit.domain.Result;
+import learn.tripsplit.domain.ResultType;
 import learn.tripsplit.models.AppUser;
 import learn.tripsplit.security.AppUserService;
 import learn.tripsplit.security.AuthorityUtils;
@@ -91,6 +92,11 @@ public class AuthController {
             String username = credentials.get("username");
             String password = credentials.get("password");
 
+            Result<String> passwordValidation = validatePassword(password);
+            if (!passwordValidation.isSuccess()) {
+                return new ResponseEntity<>(passwordValidation.getMessages(), HttpStatus.BAD_REQUEST);
+            }
+
             AppUser newAppUser = new AppUser(0,
                     firstName,
                     lastName,
@@ -100,8 +106,6 @@ public class AuthController {
                     false,
                     List.of("USER")
             );
-            System.out.println(newAppUser.getUsername());
-
             Result<AppUser> result = appUserService.add(newAppUser);
             if (!result.isSuccess()) {
                 System.out.println("Service add failed: " + result.getMessages());
@@ -138,5 +142,33 @@ public class AuthController {
         System.out.println("Registration successful for user: " + appUser.getUsername());
         return new ResponseEntity<>(map, HttpStatus.CREATED);
 
+    }
+
+    private Result<String> validatePassword(String password) {
+        Result<String> result = new Result<>();
+        if(password.length() < 8){
+            result.addMessage("password must be at least 8 chracters long", ResultType.INVALID);
+            return result;
+        }
+        int digits = 0;
+        int letters = 0;
+        int others = 0;
+        for (char c : password.toCharArray()) {
+            if (Character.isDigit(c)) {
+                digits++;
+            } else if (Character.isLetter(c)) {
+                letters++;
+            } else {
+                others++;
+            }
+        }
+
+        if (digits == 0 || letters == 0 || others == 0) {
+            result.addMessage("password must contain a digit, a letter, and a non-digit/non-letter", ResultType.INVALID);
+            return result;
+        }
+
+
+        return result;
     }
 }

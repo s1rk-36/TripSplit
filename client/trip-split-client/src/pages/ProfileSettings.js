@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock, FaSave, FaEye, FaEyeSlash, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -8,6 +9,7 @@ import { useAuth, auth } from '../utils/auth';
 
 function ProfileSettings() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -58,11 +60,13 @@ function ProfileSettings() {
         ...currentStoredUser,
         firstName: profileData.firstName,
         lastName: profileData.lastName,
-        username: profileData.username,
+        email: profileData.email,
       };
       localStorage.setItem('tripsplit_user', JSON.stringify(updatedUser));
 
       setSuccess('Profile updated successfully!');
+      
+      navigate('/groups');
 
       window.location.reload();
       
@@ -155,12 +159,12 @@ function ProfileSettings() {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Username *</label>
+                    <label className="form-label">Email *</label>
                     <input
-                      type="text"
+                      type="email"
                       className="form-control"
-                      name="username"
-                      value={profileData.username}
+                      name="email"
+                      value={profileData.email}
                       onChange={handleProfileChange}
                       required
                     />

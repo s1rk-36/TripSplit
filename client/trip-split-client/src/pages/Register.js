@@ -166,6 +166,7 @@ function Register() {
                         value={formData.username}
                         onChange={handleChange}
                         placeholder="Choose a username"
+                        required
                         autoComplete="username"
                       />
                     </div>                  </div>

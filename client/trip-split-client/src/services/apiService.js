@@ -233,6 +233,10 @@ export const apiService = {
   async getAllGroups() {
     return makeAuthenticatedRequest('/groups');
   },
+  async getAllUsers() {
+    return makeAuthenticatedRequest('/user');
+  },
+
 
   async getGroup(id) {
     return makeAuthenticatedRequest(`/groups/${id}`);
@@ -269,6 +273,7 @@ export const apiService = {
     });
   },
 
+
   // User Expenses endpoints 
   async getUser(userId) {
     return makeAuthenticatedRequest(`/user/${userId}`);
@@ -284,6 +289,12 @@ export const apiService = {
 
   async getExpenseSplits(expenseId) {
     return makeAuthenticatedRequest(`/user-expenses/expense/${expenseId}`);
+  },
+  
+  async deleteUser(id) {
+    return makeAuthenticatedRequest(`/user/${id}`, {
+      method: 'DELETE'
+    });
   },
 
   // Comments endpoints 

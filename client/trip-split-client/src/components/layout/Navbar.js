@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {FaUser, FaCog, FaSignOutAlt, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
-import { useAuth, auth } from '../../utils/auth'; // Import both useAuth and auth object
+import {FaUser, FaCog, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaUserShield } from 'react-icons/fa';
+import { useAuth, auth } from '../../utils/auth'
 
 function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -10,23 +10,19 @@ function Navbar() {
   const [displayUser, setDisplayUser] = useState(null);
   const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Get fresh user data from localStorage whenever component updates
   useEffect(() => {
     const freshUser = auth.getCurrentUser();
     setDisplayUser(freshUser);
   }, [currentUser, forceUpdate]);
 
-  // Listen for storage changes (when profile is updated)
   useEffect(() => {
     const handleStorageChange = () => {
       const freshUser = auth.getCurrentUser();
       setDisplayUser(freshUser);
     };
 
-    // Listen for storage events
     window.addEventListener('storage', handleStorageChange);
     
-    // Also listen for a custom event that we can trigger manually
     window.addEventListener('userDataUpdated', handleStorageChange);
 
     return () => {
@@ -46,11 +42,12 @@ function Navbar() {
   };
 
   const userToDisplay = displayUser || currentUser;
+  const isAdmin = userToDisplay?.email === 'admin@example.com';
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
       <div className="container">
-        <Link className="navbar-brand fw-bold" to={userToDisplay ? "/groups" : "/"}>
+        <Link className="navbar-brand fw-bold" to={userToDisplay ? (isAdmin ? "/admin" : "/groups") : "/"}>
           TripSplit
         </Link>
         
@@ -81,28 +78,36 @@ function Navbar() {
                     data-bs-toggle="dropdown" 
                     aria-expanded="false"
                   >
-                    <div className="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style={{width: '32px', height: '32px'}}>
-                      <FaUser size={16} />
+                    <div className={`text-white rounded-circle d-flex align-items-center justify-content-center me-2 ${isAdmin ? 'bg-danger' : 'text-primary'}`} style={{width: '32px', height: '32px'}}>
+                      {isAdmin ? <FaUserShield size={16} /> : <FaUser size={16} />}
                     </div>
                     <span className="d-none d-md-inline">
-                      {userToDisplay?.firstName} {userToDisplay?.lastName}
+                      {isAdmin ? 'Admin' : `${userToDisplay?.firstName} ${userToDisplay?.lastName}`}
                     </span>
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
                     <li>
                       <div className="dropdown-header">
-                        <div className="fw-bold">{userToDisplay?.firstName} {userToDisplay?.lastName}</div>
-                        <small className="text-muted">{userToDisplay?.email}</small>
+                        <div className="fw-bold">
+                          {isAdmin ? 'Administrator' : `${userToDisplay?.firstName} ${userToDisplay?.lastName}`}
+                        </div>
                       </div>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <Link className="dropdown-item" to="/profile">
-                        <FaCog className="me-2" />
-                        Account Settings
-                      </Link>
-                    </li>
-                    <li><hr className="dropdown-divider" /></li>
+                    
+                    {/* Only show profile settings for non-admin users */}
+                    {!isAdmin && (
+                      <>
+                        <li>
+                          <Link className="dropdown-item" to="/profile">
+                            <FaCog className="me-2" />
+                            Account Settings
+                          </Link>
+                        </li>
+                        <li><hr className="dropdown-divider" /></li>
+                      </>
+                    )}
+                    
                     <li>
                       <button 
                         className="dropdown-item text-danger" 

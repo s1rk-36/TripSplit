@@ -153,12 +153,17 @@ public class AppUserService implements UserDetailsService {
 
         if (appUser.getEmail() == null || appUser.getEmail().isBlank()) {
             result.addMessage("email is required", ResultType.INVALID);
-        } else if (repository.findByEmail(appUser.getEmail()) != null && appUser.getAppUserId() < 1) {
-            result.addMessage("email cannot be duplicated", ResultType.INVALID);
-            return result;
+        } else {
+            AppUser existing = repository.findByEmail(appUser.getEmail());
+            if (existing != null && existing.getAppUserId() != appUser.getAppUserId()) {
+                result.addMessage("email cannot be duplicated", ResultType.INVALID);
+                return result;
+            }
         }
 
         validateUsername(result, appUser);
+
+        validatePassword(result, appUser.getPasswordHash());
 
         return result;
     }

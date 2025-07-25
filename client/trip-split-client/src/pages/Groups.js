@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPlus, FaUsers, FaCalendar, FaUser, FaEye, FaEdit, FaTrash, FaSearch, FaFilter, FaCrown, FaUserPlus } from 'react-icons/fa';
+import { FaPlus, FaUsers, FaCalendar, FaUser, FaEye, FaEdit, FaTrash, FaSearch, FaFilter, FaCrown, FaUserPlus, FaCopy, FaCheck } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
@@ -20,6 +20,7 @@ function Groups() {
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [copiedGroupId, setCopiedGroupId] = useState(null);
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -43,6 +44,31 @@ function Groups() {
       setError(err.message || 'Failed to load groups');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const copyGroupId = async (groupId) => {
+    try {
+      await navigator.clipboard.writeText(groupId.toString());
+      setCopiedGroupId(groupId);
+      // Reset the copied state after 2 seconds
+      setTimeout(() => setCopiedGroupId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy group ID:', err);
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = groupId.toString();
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedGroupId(groupId);
+        setTimeout(() => setCopiedGroupId(null), 2000);
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
     }
   };
 
@@ -70,9 +96,7 @@ function Groups() {
 
   const handleEditGroup = async (groupId, updatedGroup) => {
     try {
-      console.log(updatedGroup);
       const result = await apiService.updateGroup(groupId, updatedGroup);
-      
       loadGroups();
       setShowEditModal(false);
       setSelectedGroup(null);
@@ -89,7 +113,7 @@ function Groups() {
 
     try {
       await apiService.deleteGroup(groupId);
-      setGroups(groups.filter(group => (group.groupId || group.id) !== groupId));
+      setGroups(groups.filter(group => group.groupId !== groupId));
     } catch (err) {
       console.error('Failed to delete group:', err);
       setError(err.message || 'Failed to delete group');
@@ -158,7 +182,7 @@ function Groups() {
           <h2>Groups</h2>
           <p className="text-muted">Manage your expense sharing groups</p>
         </div>
-                    <div className="btn-group">
+        <div className="btn-group">
           <button 
             className="btn btn-outline-primary"
             onClick={() => setShowJoinModal(true)}
@@ -255,15 +279,12 @@ function Groups() {
             }
           </p>
           {(!searchTerm && filterType === 'all') && (
-
- 
           <button 
             className="btn btn-primary"
             onClick={() => setShowCreateModal(true)}
           >
             <FaPlus className="me-1" /> Create Group
           </button>
-
           )}
         </div>
       ) : (
@@ -276,7 +297,7 @@ function Groups() {
             const isCurrentUserAdmin = currentUserMembership?.isGroupAdmin || false;
 
             return (
-              <div key={group.groupId || group.id} className="col-md-6 col-lg-4 mb-4">
+              <div key={group.groupId} className="col-md-6 col-lg-4 mb-4">
                 <div className="card h-100">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start mb-2">
@@ -301,11 +322,24 @@ function Groups() {
                       <p className="card-text text-muted small mb-3">{group.description}</p>
                     )}
                     
+                    {/* Group ID with copy button */}
+                    <div className="d-flex align-items-center mb-2">
+                      <button
+                        className={`btn btn-sm ${copiedGroupId === (group.groupId ) ? 'btn-success' : 'btn-outline-secondary'}`}
+                        onClick={() => copyGroupId(group.groupId)}
+                        title={copiedGroupId === (group.groupId) ? 'Copied!' : 'Copy Group ID'}
+                        style={{ padding: '2px 6px' }}
+                      >
+                        {copiedGroupId === (group.groupId) ? <FaCheck size={10} /> : <FaCopy size={10} />}
+                         <span>Copy Invite Code</span>
+                      </button>
+                    </div>
+                    
                   </div>
                   
                   <div className="card-footer d-flex justify-content-between align-items-center">
                     <Link 
-                      to={`/expenses?group=${group.groupId || group.id}`}
+                      to={`/expenses?group=${group.groupId}`}
                       className="btn btn-outline-primary btn-sm"
                     >
                       <FaEye className="me-1" /> View Expenses
@@ -336,7 +370,7 @@ function Groups() {
                           </button>
                           <button
                             className="btn btn-outline-danger btn-sm"
-                            onClick={() => handleDeleteGroup(group.groupId || group.id)}
+                            onClick={() => handleDeleteGroup(group.groupId)}
                           >
                             <FaTrash className="me-1" /> Delete
                           </button>
@@ -359,7 +393,7 @@ function Groups() {
         currentUser={currentUser}
       />
 
-         <JoinGroupModal
+      <JoinGroupModal
         show={showJoinModal}
         onHide={() => setShowJoinModal(false)}
         onSubmit={handleJoinGroup}

@@ -97,7 +97,7 @@ create table user_expense (
 );
 
 create table receipt (
-	receipt_id int primary key not null,
+	receipt_id int primary key auto_increment,
     image_url varchar(2083) not null,
     uploaded_at datetime not null,
     expense_id int not null,
@@ -129,6 +129,7 @@ insert into `role`(role_id, `name`) values
 (2, 'USER');
 
 insert into `user` (first_name, last_name, email, username, password_hash) values
+('Admin', 'Example', 'admin@example.com', 'admin', '$2a$10$PXaZQJCkCJ.uL10tI2xEA.kPb4GrkiTExXoR1MUAE2gojnE.Qutga'),
 ('Alice', 'Johnson', 'alice.johnson@example.com', 'alicej', '$2a$10$WrxcpXeA6NaQRJC5Z/3ukujReusfTUJcv/M6Ft.5hBDpQ1M3AJNjW'),
 ('Bob', 'Smith', 'bob.smith@example.com', 'bobsmith', '$2a$10$xx6q8rBpcJK5nMYJSMF15ul8qx6aTVagr1XSk02ZJ.s6tdeUqL7oG'),
 ('Carol', 'Davis', 'carol.davis@example.com', 'carold', '$2a$10$.WL/GjcCfr1ix0ZgA/.sk.VWs2b.Iqj1QpKfTkyxdArKrvrNFN5ni'),
@@ -140,7 +141,8 @@ insert into user_role (user_id, role_id)values
 (2, 2),
 (3, 2),
 (4, 2),
-(5, 2);
+(5, 2),
+(6, 2);
 
 insert into `group` (`name`, `description`, created_by) values
 ('Japan Spring Trip', 'A cherry blossom tour across Tokyo and Kyoto.', 1),
@@ -151,28 +153,31 @@ insert into `group` (`name`, `description`, created_by) values
 
 insert into user_group (user_id, group_id, is_admin) values
 -- Group 1: Japan Spring Trip
-(1, 1, true),   -- Alice (admin)
-(2, 1, false),  -- Bob
-(3, 1, false),  -- Carol
+(1, 1, true),   -- Admin (group admin)
+(2, 1, false),  -- Alice
+(3, 1, false),  -- Bob
+(4, 1, false),  -- Carol
 	
 -- Group 2: NYC Business Conference
-(2, 2, true),   -- Bob (admin)
-(4, 2, false),  -- David
-(5, 2, false),  -- Eve
+(2, 2, true),   -- Alice (group admin)
+(4, 2, false),  -- Carol
+(5, 2, false),  -- David
+(6, 2, false),  -- Eve
 
 -- Group 3: Iceland Road Adventure
-(3, 3, true),   -- Carol (admin)
-(1, 3, false),  -- Alice
+(3, 3, true),   -- Bob (group admin)
+(6, 3, false),  -- Eve
+(1, 3, false),  -- Admin
 	
 -- Group 4: Vegas Bachelor Party
-(4, 4, true),   -- David (admin)
-(2, 4, false),  -- Bob
-(5, 4, false),  -- Eve
+(4, 4, true),   -- Carol (group admin)
+(2, 4, false),  -- Alice
+(5, 4, false),  -- David
 	
 -- Group 5: Thailand Escape
-(5, 5, true),   -- Eve (admin) in Thailand trip
-(3, 5, false),  -- Carol
-(4, 5, false);  -- David
+(5, 5, true),   -- David (group admin)
+(3, 5, false),  -- Bob
+(4, 5, false);  -- Carol
 
 insert into expense (expense_id, `name`, total_cost, category, `description`, created_at, group_id, created_by) values
 (1, 'Flight Tickets', 1200.00, 'TRAVEL_FEES', 'Round trip flights to Tokyo', '2025-03-10 00:00:00', 1, 1),

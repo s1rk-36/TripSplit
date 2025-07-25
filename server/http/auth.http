@@ -6,8 +6,8 @@ POST {{url}}/authenticate HTTP/1.1
 Content-Type: application/json
 
 {
-    "email": "test@example.com",
-    "password": "P@ssw0rd!"
+    "email": "admin@example.com",
+    "password": "admin1."
 }
 
 ### Register
@@ -23,24 +23,23 @@ Content-Type: application/json
     "password": "P@ssw0rd!"
 }
 
-# All first 5 users share the same password: P@ssw0rd!
-# To login as any of the first 5, just change the email
-### Login as Alice (Admin)
+### Login as Admin
+
+POST {{url}}/authenticate HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin1."
+}
+
+### Users 2-6 share the same password: P@ssw0rd!
+### To login as any user 2-6, just change the email 
 
 POST {{url}}/authenticate HTTP/1.1
 Content-Type: application/json
 
 {
   "email": "alice.johnson@example.com",
-  "password": "P@ssw0rd!"
-}
-
-### 
-
-POST {{url}}/authenticate HTTP/1.1
-Content-Type: application/json
-
-{
-  "email": "bob.smith@example.com",
   "password": "P@ssw0rd!"
 }

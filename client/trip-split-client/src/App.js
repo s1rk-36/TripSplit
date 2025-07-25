@@ -5,14 +5,11 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
-// import ExpenseDetails from './pages/ExpenseDetails';
 import Groups from './pages/Groups';
-// import GroupAdd from './pages/GroupAdd';
-// import GroupExpenses from './pages/GroupExpenses';
-// import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import ProfileSettings from './pages/ProfileSettings';
 import { AuthProvider } from './utils/auth';
+import AdminDashboard from './pages/AdminDashboard';
 
 
 function App() {
@@ -31,6 +28,8 @@ function App() {
                     <Route path="/groups" element={<Groups />} />
                     <Route path="/profile" element={<ProfileSettings />} />
                     <Route path="/expenses" element={<Expenses />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+
                     {/*
                     <Route path="/expenses/:id" element={<ExpenseDetails />} />
                     <Route path="/groups/:groupId/expenses" element={<GroupExpenses />} />

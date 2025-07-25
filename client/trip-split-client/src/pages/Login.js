@@ -47,8 +47,15 @@ function Login() {
       
       auth.setCurrentUser(userData);
       
-      // Redirect to dashboard
-      navigate('/groups');
+      if (formData.email === 'admin@example.com' && formData.password === 'admin1.') {
+        console.log('Admin login detected, redirecting to admin dashboard');
+        navigate('/admin')
+      } else {
+        console.log('Regular user login, redirecting to groups');
+        // Redirect to dashboard
+        navigate('/groups');
+      }
+
       
     } catch (err) {
       console.error('Login error:', err);
