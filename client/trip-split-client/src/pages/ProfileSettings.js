@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock, FaSave, FaEye, FaEyeSlash, FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -8,6 +9,7 @@ import { useAuth, auth } from '../utils/auth';
 
 function ProfileSettings() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -63,6 +65,8 @@ function ProfileSettings() {
       localStorage.setItem('tripsplit_user', JSON.stringify(updatedUser));
 
       setSuccess('Profile updated successfully!');
+      
+      navigate('/groups');
 
       window.location.reload();
       
