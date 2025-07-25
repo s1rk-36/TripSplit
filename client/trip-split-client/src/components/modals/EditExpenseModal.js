@@ -23,7 +23,6 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
 
   useEffect(() => {
     if (expense && show) {
-      // Populate form with expense data
       setFormData({
         name: expense.name || '',
         totalCost: expense.totalCost?.toString() || '',
@@ -31,10 +30,10 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
         category: expense.category || '',
         description: expense.description || '',
         date: expense.createdAt ? expense.createdAt.split('T')[0] : '',
-        receipt: null // Don't pre-populate file input
+        receipt: null
       });
 
-      // Load existing receipts if available
+
       if (expense.hasReceipt || expense.expenseId) {
         loadReceipts();
       } else {

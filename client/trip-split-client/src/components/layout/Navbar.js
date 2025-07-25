@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {FaUser, FaCog, FaSignOutAlt, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
-import { useAuth, auth } from '../../utils/auth'; // Import both useAuth and auth object
+import { useAuth, auth } from '../../utils/auth'
 
 function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -10,23 +10,19 @@ function Navbar() {
   const [displayUser, setDisplayUser] = useState(null);
   const [forceUpdate, setForceUpdate] = useState(0);
 
-  // Get fresh user data from localStorage whenever component updates
   useEffect(() => {
     const freshUser = auth.getCurrentUser();
     setDisplayUser(freshUser);
   }, [currentUser, forceUpdate]);
 
-  // Listen for storage changes (when profile is updated)
   useEffect(() => {
     const handleStorageChange = () => {
       const freshUser = auth.getCurrentUser();
       setDisplayUser(freshUser);
     };
 
-    // Listen for storage events
     window.addEventListener('storage', handleStorageChange);
     
-    // Also listen for a custom event that we can trigger manually
     window.addEventListener('userDataUpdated', handleStorageChange);
 
     return () => {
