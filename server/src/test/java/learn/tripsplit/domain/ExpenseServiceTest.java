@@ -28,8 +28,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldFindAll() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 1,
                 "Flight Tickets",
@@ -37,8 +37,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "Round trip flights to Tokyo",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         List<Expense> mockList = List.of(
@@ -49,8 +49,8 @@ public class ExpenseServiceTest {
                         Category.TRAVEL_FEES,
                         "Round trip flights to Tokyo",
                         LocalDateTime.of(2025, 3, 10, 0, 0),
-                        group,
-                        appUser
+                        groupId,
+                        appUserId
                 ),
                 new Expense (
                         2,
@@ -59,8 +59,8 @@ public class ExpenseServiceTest {
                         Category.LODGING,
                         "5 nights stay at Tokyo hotel",
                         LocalDateTime.of(2025, 3, 11, 0, 0),
-                        group,
-                        appUser
+                        groupId,
+                        appUserId
                 )
         );
 
@@ -74,8 +74,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldFindById() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 1,
                 "Flight Tickets",
@@ -83,8 +83,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "Round trip flights to Tokyo",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         when(repository.findById(1)).thenReturn(expense);
@@ -106,8 +106,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldAdd() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expenseIn = new Expense (
                 0,
                 "Added Expense",
@@ -115,8 +115,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "Added Expense",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
         Expense expenseOut = new Expense (
                 1,
@@ -125,8 +125,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "Added Expense",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         // Stub add method, returns expenseOut when expenseIn is added
@@ -141,8 +141,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotAddIfExpenseIdAlreadySet() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 5,
                 "Test Expense",
@@ -150,8 +150,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         Result<Expense> result = service.add(expense);
@@ -162,8 +162,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldUpdate() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 1,
                 "Updated Expense",
@@ -171,8 +171,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         when(repository.update(expense)).thenReturn(true);
@@ -186,8 +186,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotUpdateNonExistent() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 9999,
                 "NonExistent Expense",
@@ -195,8 +195,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         when(repository.update(expense)).thenReturn(false);
@@ -209,8 +209,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotUpdateIfExpenseIdNotSet() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense expense = new Expense (
                 0,
                 "NonExistent Expense",
@@ -218,8 +218,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         Result<Expense> result = service.update(expense);
@@ -238,8 +238,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotValidateNullOrBlankName() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense nullName = new Expense (
                 0,
                 null,
@@ -247,8 +247,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
         Expense blankName = new Expense (
                 0,
@@ -257,8 +257,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         Result<Expense> result1 = service.add(nullName);
@@ -272,8 +272,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotValidateNameLengthOutOfRange() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense belowMin = new Expense (
                 0,
                 "1",
@@ -281,8 +281,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
         Expense aboveMax = new Expense (
                 0,
@@ -291,8 +291,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         Result<Expense> result1 = service.add(belowMin);
@@ -306,8 +306,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotValidateNullOrInvalidTotalCost() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense nullTotal = new Expense (
                 0,
                 "Test Expense",
@@ -315,8 +315,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
         Expense notPositive = new Expense (
                 0,
@@ -325,8 +325,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         Result<Expense> result1 = service.add(nullTotal);
@@ -340,8 +340,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotValidateNullCategory() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense nullCategory = new Expense (
                 0,
                 "Test Expense",
@@ -349,8 +349,8 @@ public class ExpenseServiceTest {
                 null,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         Result<Expense> result = service.add(nullCategory);
@@ -361,8 +361,8 @@ public class ExpenseServiceTest {
 
     @Test
     void shouldNotValidateNullOrInvalidCreatedAt() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
+        int appUserId = getUser1().getAppUserId();
+        int groupId = getGroup1().getGroupId();
         Expense nullCreatedAt = new Expense (
                 0,
                 "Test Expense",
@@ -370,8 +370,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 null,
-                group,
-                appUser
+                groupId,
+                appUserId
         );
         Expense futureCreatedAt = new Expense (
                 0,
@@ -380,8 +380,8 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.now().plusDays(1),
-                group,
-                appUser
+                groupId,
+                appUserId
         );
 
         Result<Expense> result1 = service.add(nullCreatedAt);
@@ -394,20 +394,8 @@ public class ExpenseServiceTest {
     }
 
     @Test
-    void shouldNotValidateNullOrInvalidGroup() {
-        AppUser appUser = getUser1();
-        Group invalidGroupId = getGroup1();
-        invalidGroupId.setGroupId(0);
-        Expense nullGroup = new Expense (
-                0,
-                "Test Expense",
-                BigDecimal.valueOf(1200),
-                Category.TRAVEL_FEES,
-                "",
-                LocalDateTime.of(2025, 3, 10, 0, 0),
-                null,
-                appUser
-        );
+    void shouldNotValidateInvalidGroup() {
+        int appUserId = getUser1().getAppUserId();
         Expense invalidGroup = new Expense (
                 0,
                 "Test Expense",
@@ -415,35 +403,31 @@ public class ExpenseServiceTest {
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                invalidGroupId,
-                appUser
+                0,
+                appUserId
         );
 
-        Result<Expense> result1 = service.add(nullGroup);
-        Result<Expense> result2 = service.add(invalidGroup);
+        Result<Expense> result = service.add(invalidGroup);
 
-        assertEquals(ResultType.INVALID, result1.getType());
-        assertTrue(result1.getMessages().contains("valid group is required"));
-        assertEquals(ResultType.INVALID, result2.getType());
-        assertTrue(result2.getMessages().contains("valid group is required"));
+        assertEquals(ResultType.INVALID, result.getType());
+        assertTrue(result.getMessages().contains("valid group is required"));
     }
 
     @Test
-    void shouldNotValidateNullCreatedBy() {
-        AppUser appUser = getUser1();
-        Group group = getGroup1();
-        Expense nullCreatedBy = new Expense (
+    void shouldNotValidateInvalidCreatedBy() {
+        int groupId = getGroup1().getGroupId();
+        Expense expense = new Expense (
                 0,
-                "Test Expense",
+                "Invalid CreatedBy",
                 BigDecimal.valueOf(1200),
                 Category.TRAVEL_FEES,
                 "",
                 LocalDateTime.of(2025, 3, 10, 0, 0),
-                group,
-                null
+                groupId,
+                0
         );
 
-        Result<Expense> result = service.add(nullCreatedBy);
+        Result<Expense> result = service.add(expense);
 
         assertEquals(ResultType.INVALID, result.getType());
         assertTrue(result.getMessages().contains("valid expense creator required"));

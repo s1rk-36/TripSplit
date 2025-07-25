@@ -17,6 +17,8 @@ select * from user_expense;
 select * from receipt;
 select * from `comment`;
 
+
+
 -- Group CRUD
 -- findAll()
 select g.group_id, g.`name` as group_name, g.`description` as group_description, 
@@ -228,4 +230,3 @@ inner join `group` as eg on e.group_id = eg.group_id
 inner join `user` as egcb on eg.created_by = egcb.user_id 
 inner join `user` as ecb on e.created_by = ecb.user_id 
 where ue.expense_id = 1;
-       

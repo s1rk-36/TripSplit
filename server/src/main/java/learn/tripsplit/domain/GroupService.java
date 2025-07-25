@@ -166,7 +166,7 @@ public class GroupService {
     }
 
         if (group.getCreatedBy() <= 0) {
-            result.addMessage("no user found for createdBy", ResultType.INVALID);
+            result.addMessage("valid group creator required", ResultType.INVALID);
         }
 
         if (group.getUsers() == null || group.getUsers().isEmpty()) {
