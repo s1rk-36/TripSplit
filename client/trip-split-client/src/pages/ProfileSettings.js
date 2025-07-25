@@ -58,7 +58,7 @@ function ProfileSettings() {
         ...currentStoredUser,
         firstName: profileData.firstName,
         lastName: profileData.lastName,
-        username: profileData.username,
+        email: profileData.email,
       };
       localStorage.setItem('tripsplit_user', JSON.stringify(updatedUser));
 
@@ -155,12 +155,12 @@ function ProfileSettings() {
                   </div>
 
                   <div className="mb-3">
-                    <label className="form-label">Username *</label>
+                    <label className="form-label">Email *</label>
                     <input
-                      type="text"
+                      type="email"
                       className="form-control"
-                      name="username"
-                      value={profileData.username}
+                      name="email"
+                      value={profileData.email}
                       onChange={handleProfileChange}
                       required
                     />
