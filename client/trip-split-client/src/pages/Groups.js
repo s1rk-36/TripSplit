@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPlus, FaUsers, FaCalendar, FaUser, FaEye, FaEdit, FaTrash, FaSearch, FaFilter, FaCrown } from 'react-icons/fa';
+import { FaPlus, FaUsers, FaCalendar, FaUser, FaEye, FaEdit, FaTrash, FaSearch, FaFilter, FaCrown, FaUserPlus } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
@@ -9,6 +9,7 @@ import EditGroupModal from '../components/modals/EditGroupModal';
 import GroupDetailsModal from '../components/modals/GroupDetailsModal';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
+import JoinGroupModal from '../components/modals/JoinGroupModal';
 
 function Groups() {
   const { currentUser } = useAuth();
@@ -25,6 +26,7 @@ function Groups() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   useEffect(() => {
     loadGroups();
@@ -55,17 +57,23 @@ function Groups() {
     }
   };
 
-  const handleEditGroup = async (updatedGroup) => {
+  const handleJoinGroup = async (groupId) => {
     try {
-      const result = await apiService.updateGroup(updatedGroup);
+      const joinedGroup = await apiService.joinGroup({ groupId });
+      setGroups([...groups, joinedGroup]);
+      setShowJoinModal(false);
+    } catch (err) {
+      console.error('Failed to join group:', err);
+      throw new Error(err.message || 'Failed to join group');
+    }
+  };
+
+  const handleEditGroup = async (groupId, updatedGroup) => {
+    try {
+      console.log(updatedGroup);
+      const result = await apiService.updateGroup(groupId, updatedGroup);
       
-      // Update the local groups state with the updated group
-      setGroups(groups.map(group => 
-        (group.groupId || group.id) === (updatedGroup.groupId || updatedGroup.id) 
-          ? result // Use the response from API
-          : group
-      ));
-      
+      loadGroups();
       setShowEditModal(false);
       setSelectedGroup(null);
     } catch (err) {
@@ -150,12 +158,20 @@ function Groups() {
           <h2>Groups</h2>
           <p className="text-muted">Manage your expense sharing groups</p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <FaPlus className="me-1" /> Create Group
-        </button>
+                    <div className="btn-group">
+          <button 
+            className="btn btn-outline-primary"
+            onClick={() => setShowJoinModal(true)}
+          >
+            <FaUserPlus className="me-1" /> Join Group
+          </button>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <FaPlus className="me-1" /> Create Group
+          </button>
+        </div>
       </div>
 
       {error && <ErrorAlert error={error} onRetry={loadGroups} />}
@@ -239,12 +255,15 @@ function Groups() {
             }
           </p>
           {(!searchTerm && filterType === 'all') && (
-            <button 
-              className="btn btn-primary btn-lg"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <FaPlus className="me-2" /> Create Your First Group
-            </button>
+
+ 
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <FaPlus className="me-1" /> Create Group
+          </button>
+
           )}
         </div>
       ) : (
@@ -338,6 +357,12 @@ function Groups() {
         onHide={() => setShowCreateModal(false)}
         onSubmit={handleCreateGroup}
         currentUser={currentUser}
+      />
+
+         <JoinGroupModal
+        show={showJoinModal}
+        onHide={() => setShowJoinModal(false)}
+        onSubmit={handleJoinGroup}
       />
 
       <EditGroupModal

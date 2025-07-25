@@ -311,7 +311,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                   <div className="d-flex justify-content-between mb-2">
                     <span>You owe:</span>
                     <span className="fw-bold text-warning">
-                      {formatCurrency(currentUserExpense.amountOwed || 0)}
+                      {formatCurrency(currentUserExpense.amountOwed - currentUserExpense.amountPaid || 0)}
                     </span>
                   </div>
                   <div className="d-flex justify-content-between mb-2">
