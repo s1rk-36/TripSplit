@@ -97,7 +97,7 @@ create table user_expense (
 );
 
 create table receipt (
-	receipt_id int primary key not null,
+	receipt_id int primary key auto_increment,
     image_url varchar(2083) not null,
     uploaded_at datetime not null,
     expense_id int not null,
