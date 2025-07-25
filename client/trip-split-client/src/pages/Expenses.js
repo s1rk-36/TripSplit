@@ -301,7 +301,7 @@ function Expenses() {
           <div className="col-md-3">
             <div className="card text-center">
               <div className="card-body">
-                <h4 className="text-warning">{formatCurrency(userOwedTotal)}</h4>
+                <h4 className="text-warning">{formatCurrency(userOwedTotal - userPaidTotal)}</h4>
                 <p className="card-text small">You Owe</p>
               </div>
             </div>
