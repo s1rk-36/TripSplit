@@ -1,7 +1,7 @@
 @url = http://localhost:8080/api/user
 
 ### Token (This is unique to everyone)
-@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWxpY2VqIiwiYXV0aG9yaXRpZXMiOiJST0xFX0FETUlOIiwiZXhwIjoxNzUzNDczMDg5fQ.be55gKg_LIjrr7E-e6Jt9fkkiyizE0GPLqxfI5e3AG0
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoiYWRtaW4iLCJhdXRob3JpdGllcyI6IlJPTEVfQURNSU4iLCJleHAiOjE3NTM0OTU1MzJ9.aH2__DQbiM19mBtSiFLSkFiLmvX9Cr2e21GJEONo--E
 
 ### findAll()
 
@@ -30,5 +30,5 @@ Authorization: Bearer {{token}}
 
 ### deleteById()
 
-DELETE {{url}}/5 HTTP/1.1
+DELETE {{url}}/7 HTTP/1.1
 Authorization: Bearer {{token}}

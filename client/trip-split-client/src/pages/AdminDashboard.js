@@ -50,7 +50,7 @@ function AdminDashboard() {
     if (!window.confirm('Are you sure you want to delete this user? This cannot be undone.')) return;
     
     try {
-      await apiService.deleteUser(`/admin/users/${userId}`);
+      await apiService.deleteUser(userId);
       setSuccess('User deleted successfully');
       loadData();
       setTimeout(() => setSuccess(''), 3000);
