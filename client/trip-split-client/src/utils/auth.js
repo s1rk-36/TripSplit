@@ -1,3 +1,7 @@
+import { useState, useEffect, createContext, useContext } from 'react';
+
+const AuthContext = createContext();
+
 export const auth = {
   getCurrentUser() {
     const user = localStorage.getItem('tripsplit_user');
@@ -30,10 +34,32 @@ export const auth = {
     }
     
     localStorage.setItem('tripsplit_user', JSON.stringify(user));
+    window.dispatchEvent(new Event('storage'));
+  },
+
+
+  updateUser(updatedUserData) {
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) {
+      console.error('No current user to update');
+      return;
+    }
+
+    const updatedUser = {
+      ...currentUser,
+      ...updatedUserData,
+      token: currentUser.token 
+    };
+
+    localStorage.setItem('tripsplit_user', JSON.stringify(updatedUser));
+    window.dispatchEvent(new Event('storage'));
+    
+    return updatedUser;
   },
 
   clearCurrentUser() {
     localStorage.removeItem('tripsplit_user');
+    window.dispatchEvent(new Event('storage'));
   },
 
   isAuthenticated() {
@@ -83,20 +109,65 @@ export const auth = {
   },
 };
 
-export const useAuth = () => {
-  const currentUser = auth.getCurrentUser();
-  const isAuthenticated = auth.isAuthenticated();
+export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(() => auth.getCurrentUser());
 
-  return {
-    currentUser,
-    isAuthenticated,
-    login: auth.setCurrentUser,
-    logout: auth.logout,
-    clearCurrentUser: auth.clearCurrentUser,
-    getToken: auth.getToken,
-    hasRole: auth.hasRole,
-    isTokenExpired: auth.isTokenExpired
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const user = auth.getCurrentUser();
+      setCurrentUser(user);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  const updateUser = (updatedUserData) => {
+    const updatedUser = auth.updateUser(updatedUserData);
+    setCurrentUser(updatedUser);
+    return updatedUser;
   };
+
+  const login = (user) => {
+    auth.setCurrentUser(user);
+    setCurrentUser(user);
+  };
+
+  const logout = () => {
+    auth.logout();
+    setCurrentUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      currentUser,
+      isAuthenticated: !!currentUser,
+      login,
+      logout,
+      updateUser,
+      clearCurrentUser: logout,
+      getToken: auth.getToken,
+      hasRole: auth.hasRole,
+      isTokenExpired: auth.isTokenExpired
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
 };
 
 export const validatePassword = (password) => {

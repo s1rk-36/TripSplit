@@ -12,10 +12,12 @@ import Groups from './pages/Groups';
 // import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import ProfileSettings from './pages/ProfileSettings';
+import { AuthProvider } from './utils/auth';
 
 
 function App() {
     return (
+        <AuthProvider>
         <Router>
             <Navbar />
             <main className="main-content">
@@ -37,6 +39,7 @@ function App() {
                 </Routes>
             </main>
         </Router>
+        </AuthProvider>
     );
 }
 

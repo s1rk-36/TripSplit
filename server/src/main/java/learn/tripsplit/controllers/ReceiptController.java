@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -73,5 +75,72 @@ public class ReceiptController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @PostMapping("/expense/{expenseId}/upload")
+    public ResponseEntity<Object> createReceiptWithFile(
+            @PathVariable int expenseId,
+            @RequestPart("file") MultipartFile multipartFile) {
+
+        Receipt receipt = new Receipt();
+        receipt.setExpenseId(expenseId);
+        receipt.setImageUrl("N/A");
+        receipt.setUploadedAt(LocalDateTime.now());
+
+        Result<Receipt> createResult = receiptService.add(receipt);
+        if (!createResult.isSuccess()) {
+            return new ResponseEntity<>(createResult.getMessages(), HttpStatus.BAD_REQUEST);
+        }
+
+        Receipt createdReceipt = createResult.getPayload();
+
+        // Upload file
+        Result<Receipt> uploadResult = receiptService.uploadFile(createdReceipt, multipartFile);
+        if (!uploadResult.isSuccess()) {
+            receiptService.deleteById(createdReceipt.getReceiptId());
+            return new ResponseEntity<>(uploadResult.getMessages(), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(uploadResult.getPayload(), HttpStatus.OK);
+    }
+
+    @PostMapping("/{receiptId}/uploadFile")
+    public ResponseEntity<Object> uploadFile(
+            @PathVariable int receiptId,
+            @RequestPart("file") MultipartFile multipartFile) {
+
+        Receipt receipt = receiptService.findById(receiptId);
+        if (receipt == null) {
+            return new ResponseEntity<>("Receipt not found", HttpStatus.NOT_FOUND);
+        }
+
+        receiptService.deleteFile(receipt);
+
+        Result<Receipt> result = receiptService.uploadFile(receipt, multipartFile);
+
+        if (!result.isSuccess()) {
+            if (result.getType() == ResultType.NOT_FOUND) {
+                return new ResponseEntity<>(result.getMessages(), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>("Uploaded successfully", HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{receiptId}/deleteFile")
+    public ResponseEntity<Object> deleteFile(@PathVariable int receiptId) {
+        Receipt receipt = receiptService.findById(receiptId);
+        if (receipt == null) {
+            return new ResponseEntity<>("Receipt not found", HttpStatus.NOT_FOUND);
+        }
+
+        Result<Receipt> result = receiptService.deleteFile(receipt);
+
+        if (!result.isSuccess()) {
+            return new ResponseEntity<>(result.getMessages(), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>("File deleted successfully", HttpStatus.OK);
     }
 }

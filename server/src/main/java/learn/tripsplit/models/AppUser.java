@@ -140,4 +140,5 @@ public class AppUser {
     public int hashCode() {
         return Objects.hash(appUserId, firstName, lastName, email, username, passwordHash, disabled);
     }
+
 }

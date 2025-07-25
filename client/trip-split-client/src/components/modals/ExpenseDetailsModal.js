@@ -9,14 +9,32 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
   const { currentUser } = useAuth();
   const [userExpenseDetails, setUserExpenseDetails] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [receipts, setReceipts] = useState([]);
+  const [receiptLoading, setReceiptLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentAmounts, setPaymentAmounts] = useState({});
 
   useEffect(() => {
     if (expense && show) {
       loadUserExpenseDetails();
+      if (expense.hasReceipt || expense.expenseId) {
+        loadReceipts();
+      }
     }
   }, [expense, show]);
+
+  const loadReceipts = async () => {
+    try {
+      setReceiptLoading(true);
+      const receiptsData = await apiService.getExpenseReceipts(expense.expenseId);
+      setReceipts(receiptsData || []);
+    } catch (err) {
+      console.error('Failed to load receipts:', err);
+      setReceipts([]);
+    } finally {
+      setReceiptLoading(false);
+    }
+  };
 
   const loadUserExpenseDetails = async () => {
     if (!expense || !expense.userExpenses) return;
@@ -89,7 +107,6 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
         amountOwed: currentUserExpense.amountOwed,
         amountPaid: (currentUserExpense.amountPaid || 0) + amount
       };
-
       
       await apiService.updateUserExpense(updatedUserExpense);
       
@@ -211,19 +228,74 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
               </div>
             </div>
 
-            {/* Receipt */}
-            {expense.hasReceipt && (
+            {/* Receipts */}
+            {(expense.hasReceipt || receipts.length > 0) && (
               <div className="mb-4">
-                <h6>Receipt</h6>
-                <div className="border rounded p-3 d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center">
-                    <FaFileImage className="text-info me-2" size={20} />
-                    <span>Receipt image available</span>
+                <h6>Receipts</h6>
+                {receiptLoading ? (
+                  <div className="border rounded p-3">
+                    <div className="text-center">
+                      <div className="spinner-border spinner-border-sm me-2"></div>
+                      Loading receipts...
+                    </div>
                   </div>
-                  <Button variant="outline-primary" size="sm">
-                    <FaDownload className="me-1" /> Download
-                  </Button>
-                </div>
+                ) : receipts.length > 0 ? (
+                  <div className="border rounded p-3">
+                    {receipts.map(receipt => (
+                      <div key={receipt.receiptId} className="mb-3 last:mb-0">
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <div className="d-flex align-items-center">
+                            <FaFileImage className="text-info me-2" size={20} />
+                            <div>
+                              <span>Receipt #{receipt.receiptId}</span>
+                              <br />
+                              <small className="text-muted">
+                                Uploaded: {new Date(receipt.uploadedAt).toLocaleDateString()}
+                              </small>
+                            </div>
+                          </div>
+                          <div className="btn-group">
+                            {receipt.imageUrl && (
+                              <>
+                                <a
+                                  href={receipt.imageUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-outline-primary btn-sm"
+                                >
+                                  <FaDownload className="me-1" /> View
+                                </a>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {/* Optional: Show thumbnail */}
+                        {receipt.imageUrl && (
+                          <div className="mt-2">
+                            <img
+                              src={receipt.imageUrl}
+                              alt={`Receipt #${receipt.receiptId}`}
+                              style={{
+                                maxWidth: '100%',
+                                maxHeight: '200px',
+                                objectFit: 'contain',
+                                border: '1px solid #dee2e6',
+                                borderRadius: '4px'
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border rounded p-3 text-muted">
+                    No receipts could be loaded
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -239,7 +311,7 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                   <div className="d-flex justify-content-between mb-2">
                     <span>You owe:</span>
                     <span className="fw-bold text-warning">
-                      {formatCurrency(currentUserExpense.amountOwed || 0)}
+                      {formatCurrency(currentUserExpense.amountOwed - currentUserExpense.amountPaid || 0)}
                     </span>
                   </div>
                   <div className="d-flex justify-content-between mb-2">
@@ -374,7 +446,6 @@ function ExpenseDetailsModal({ show, onHide, expense, groups, onEdit, onDelete, 
                             <span className="text-muted">
                               {sharePercentage.toFixed(1)}%
                             </span>
-                            
                             
                             {/* Paid Status */}
                             {userExpense.userId === currentUser?.userId && balance >= 0 && (

@@ -1,28 +1,56 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {FaUser, FaCog, FaSignOutAlt, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
-import { useAuth } from '../../utils/auth';
+import { useAuth, auth } from '../../utils/auth'; // Import both useAuth and auth object
 
 function Navbar() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [displayUser, setDisplayUser] = useState(null);
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Get fresh user data from localStorage whenever component updates
+  useEffect(() => {
+    const freshUser = auth.getCurrentUser();
+    setDisplayUser(freshUser);
+  }, [currentUser, forceUpdate]);
+
+  // Listen for storage changes (when profile is updated)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const freshUser = auth.getCurrentUser();
+      setDisplayUser(freshUser);
+    };
+
+    // Listen for storage events
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for a custom event that we can trigger manually
+    window.addEventListener('userDataUpdated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userDataUpdated', handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = () => {
-  localStorage.removeItem('tripsplit_user');
-  
-  navigate('/login');
-  
-  window.location.reload();
+    localStorage.removeItem('tripsplit_user');
+    navigate('/login');
+    window.location.reload();
   };
 
   const isActive = (path) => {
     return location.pathname === path ? 'active' : '';
   };
 
+  const userToDisplay = displayUser || currentUser;
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
       <div className="container">
-        <Link className="navbar-brand fw-bold" to={currentUser ? "/groups" : "/"}>
+        <Link className="navbar-brand fw-bold" to={userToDisplay ? "/groups" : "/"}>
           TripSplit
         </Link>
         
@@ -36,7 +64,7 @@ function Navbar() {
         </button>
         
         <div className="collapse navbar-collapse" id="navbarNav">
-          {currentUser ? (
+          {userToDisplay ? (
             // Authenticated user navigation
             <>
               <ul className="navbar-nav me-auto">
@@ -57,14 +85,14 @@ function Navbar() {
                       <FaUser size={16} />
                     </div>
                     <span className="d-none d-md-inline">
-                      {currentUser?.firstName} {currentUser?.lastName}
+                      {userToDisplay?.firstName} {userToDisplay?.lastName}
                     </span>
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end shadow" aria-labelledby="profileDropdown">
                     <li>
                       <div className="dropdown-header">
-                        <div className="fw-bold">{currentUser?.firstName} {currentUser?.lastName}</div>
-                        <small className="text-muted">{currentUser?.email}</small>
+                        <div className="fw-bold">{userToDisplay?.firstName} {userToDisplay?.lastName}</div>
+                        <small className="text-muted">{userToDisplay?.email}</small>
                       </div>
                     </li>
                     <li><hr className="dropdown-divider" /></li>

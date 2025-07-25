@@ -1,0 +1,49 @@
+@url = http://localhost:8080/api/receipts
+
+### Token (This is unique to everyone)
+@token = eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0cmlwLXNwbGl0Iiwic3ViIjoidGVzdEV4YW1wbGUiLCJhdXRob3JpdGllcyI6IlJPTEVfVVNFUiIsImV4cCI6MTc1MzQ2Mjg5OX0.0FOcLMjHy2fyDxHqU-51q_CIv7HSEfvo9ppBupaNXow
+
+### FIND ALL RECEIPTS
+GET {{url}} HTTP/1.1
+Authorization: Bearer {{token}}
+
+### FIND BY EXPENSEID
+GET {{url}}/expense/1 HTTP/1.1
+Authorization: Bearer {{token}}
+
+### FINDBY RECEIPT ID
+GET {{url}}/1 HTTP/1.1
+Content-Type: application/json
+
+### ADD RECEIPT
+POST {{url}}/ HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "imageUrl": "N/A",
+  "uploadedAt": "2025-07-02T20:00:00",
+  "expenseId": 2
+}
+
+### UPDATE RECEIPT
+PUT {{url}}/1 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "receiptId": 1,
+  "imageUrl": "N/A",
+  "uploadedAt": "2025-07-02T20:00:00",
+  "expenseId": 2
+}
+
+### DELETE RECEIPT BY ITS ID
+DELETE {{url}}/1 HTTP/1.1
+Authorization: Bearer {{token}}
+
+### UPLOAD FILE TO RECEIPT 
+
+### DELETE FILE FROM RECEIPT 
+DELETE {{url}}/1/deleteFile HTTP/1.1
+Authorization: Bearer {{token}}

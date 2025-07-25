@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
-import { FaReceipt, FaEquals, FaDollarSign, FaEdit } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaDownload, FaFileImage } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
 import { apiService } from '../../services/apiService';
 
@@ -16,10 +16,10 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
     receipt: null
   });
   
-  const [groupMembers, setGroupMembers] = useState([]);
-  const [userExpenses, setUserExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [receipts, setReceipts] = useState([]);
+  const [receiptLoading, setReceiptLoading] = useState(false);
 
   useEffect(() => {
     if (expense && show) {
@@ -34,58 +34,25 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
         receipt: null // Don't pre-populate file input
       });
 
-      // Load group members first, then set userExpenses
-      if (expense.groupId) {
-        loadGroupMembers(expense.groupId);
+      // Load existing receipts if available
+      if (expense.hasReceipt || expense.expenseId) {
+        loadReceipts();
+      } else {
+        setReceipts([]);
       }
     }
   }, [expense, show]);
 
-  useEffect(() => {
-    if (groupMembers.length > 0 && formData.totalCost) {
-      updatePayerInUserExpenses();
-    }
-  }, [groupMembers, formData.totalCost]);
-
-  const loadGroupMembers = async (groupId) => {
+  const loadReceipts = async () => {
     try {
-      const userGroups = await apiService.getGroupMembers(groupId);
-      const members = userGroups.map(userGroup => ({
-        id: userGroup.user.appUserId,
-        name: `${userGroup.user.firstName} ${userGroup.user.lastName}`,
-        email: userGroup.user.email,
-        isAdmin: userGroup.admin
-      }));
-      
-      setGroupMembers(members);
-
-      if (expense && expense.userExpenses) {
-        const userExpensesWithNames = expense.userExpenses.map(ue => {
-          const member = members.find(m => m.id === ue.userId);
-          return {
-            userId: ue.userId,
-            name: member ? member.name : 'Unknown User',
-            amountOwed: ue.amountOwed || 0,
-            amountPaid: ue.amountPaid || 0,
-            included: true
-          };
-        });
-        setUserExpenses(userExpensesWithNames);
-      }
+      setReceiptLoading(true);
+      const receiptsData = await apiService.getExpenseReceipts(expense.expenseId);
+      setReceipts(receiptsData || []);
     } catch (err) {
-      console.error('Failed to load group members:', err);
-    }
-  };
-
-  const updatePayerInUserExpenses = () => {
-    const totalCost = parseFloat(formData.totalCost) || 0;
-    const currentPayer = userExpenses.find(ue => ue.amountPaid > 0);
-    
-    if (currentPayer) {
-      setUserExpenses(userExpenses.map(ue => ({
-        ...ue,
-        amountPaid: ue.userId === currentPayer.userId ? totalCost : 0
-      })));
+      console.error('Failed to load receipts:', err);
+      setReceipts([]);
+    } finally {
+      setReceiptLoading(false);
     }
   };
 
@@ -99,58 +66,21 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
     setFormData(prev => ({ ...prev, receipt: file }));
   };
 
-  const handleAmountOwedChange = (userId, value) => {
-    const updatedUserExpenses = userExpenses.map(ue => {
-      if (ue.userId === userId) {
-        return { ...ue, amountOwed: parseFloat(value) || 0 };
-      }
-      return ue;
-    });
-    setUserExpenses(updatedUserExpenses);
-  };
-
-  const handlePayerChange = (newPayerId) => {
-    const totalCost = parseFloat(formData.totalCost) || 0;
-    const updatedUserExpenses = userExpenses.map(ue => ({
-      ...ue,
-      amountPaid: ue.userId === parseInt(newPayerId) ? totalCost : 0
-    }));
-    setUserExpenses(updatedUserExpenses);
-  };
-
-  const toggleMemberInclusion = (userId) => {
-    const updatedUserExpenses = userExpenses.map(ue => {
-      if (ue.userId === userId) {
-        return { 
-          ...ue, 
-          included: !ue.included,
-          amountOwed: !ue.included ? ue.amountOwed : 0
-        };
-      }
-      return ue;
-    });
-    setUserExpenses(updatedUserExpenses);
-    
-    // Recalculate equal splits for included members
-    const includedMembers = updatedUserExpenses.filter(ue => ue.included);
-    if (includedMembers.length > 0) {
-      const totalCost = parseFloat(formData.totalCost) || 0;
-      const equalShare = totalCost / includedMembers.length;
-      
-      setUserExpenses(updatedUserExpenses.map(ue => ({
-        ...ue,
-        amountOwed: ue.included ? equalShare : 0
-      })));
+  const handleDeleteReceipt = async (receiptId) => {
+    if (!window.confirm('Are you sure you want to delete this receipt?')) {
+      return;
     }
-  };
 
-  const validateUserExpenses = () => {
-    const includedUserExpenses = userExpenses.filter(ue => ue.included);
-    const totalOwed = includedUserExpenses.reduce((sum, ue) => sum + (ue.amountOwed || 0), 0);
-    const totalPaid = userExpenses.reduce((sum, ue) => sum + (ue.amountPaid || 0), 0);
-    const expenseAmount = parseFloat(formData.totalCost) || 0;
-    
-    return Math.abs(totalOwed - expenseAmount) < 0.01 && Math.abs(totalPaid - expenseAmount) < 0.01;
+    try {
+      setReceiptLoading(true);
+      await apiService.deleteExpenseReceipt(receiptId);
+      await loadReceipts(); // Reload receipts after deletion
+    } catch (err) {
+      console.error('Failed to delete receipt:', err);
+      setError('Failed to delete receipt');
+    } finally {
+      setReceiptLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -161,20 +91,8 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
       setError('Name is required');
       return;
     }
-    if (!formData.totalCost || parseFloat(formData.totalCost) <= 0) {
-      setError('Total cost must be greater than 0');
-      return;
-    }
-    if (!formData.groupId) {
-      setError('Please select a group');
-      return;
-    }
     if (!formData.category) {
       setError('Please select a category');
-      return;
-    }
-    if (!validateUserExpenses()) {
-      setError('Split amounts do not match the total expense amount or payment amount is incorrect');
       return;
     }
 
@@ -185,23 +103,28 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
       const expenseData = {
         expenseId: expense.expenseId,
         name: formData.name.trim(),
-        totalCost: parseFloat(formData.totalCost),
-        groupId: parseInt(formData.groupId),
+        totalCost: expense.totalCost, 
+        groupId: expense.groupId,
         category: formData.category,
         description: formData.description.trim() || null,
         createdBy: expense.createdBy,
-        createdAt: formData.date ? `${formData.date}T00:00:00` : expense.createdAt, // Convert to LocalDateTime format
-        // Send userExpenses for the user_expense table
-        userExpenses: userExpenses
-          .filter(ue => ue.included)
-          .map(ue => ({
-            userId: ue.userId,
-            amountOwed: ue.amountOwed,
-            amountPaid: ue.amountPaid
-          }))
+        createdAt: formData.date ? `${formData.date}T00:00:00` : expense.createdAt,
+        userExpenses: expense.userExpenses
       };
       
       await onSubmit(expense.expenseId, expenseData);
+      
+      // Handle receipt upload if new file selected
+      if (formData.receipt) {
+        try {
+          await apiService.uploadExpenseReceipt(expense.expenseId, formData.receipt);
+          // Reload receipts after upload
+          await loadReceipts();
+        } catch (receiptError) {
+          console.error('Failed to upload receipt:', receiptError);
+          setError('Expense updated but receipt upload failed');
+        }
+      }
       
     } catch (err) {
       setError(err.message || 'Failed to update expense');
@@ -220,20 +143,15 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
       date: '',
       receipt: null
     });
-    setUserExpenses([]);
+    setReceipts([]);
     setError('');
     onHide();
   };
 
   if (!expense) return null;
 
-  const totalOwed = userExpenses.reduce((sum, ue) => sum + (ue.included ? ue.amountOwed || 0 : 0), 0);
-  const totalPaid = userExpenses.reduce((sum, ue) => sum + (ue.amountPaid || 0), 0);
-  const expenseAmount = parseFloat(formData.totalCost) || 0;
-  const currentPayer = userExpenses.find(ue => ue.amountPaid > 0);
-
   return (
-    <Modal show={show} onHide={handleClose} size="xl">
+    <Modal show={show} onHide={handleClose} size="lg">
       <Modal.Header closeButton>
         <Modal.Title>
           <FaEdit className="me-2" />
@@ -248,7 +166,7 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
           )}
 
           <div className="row">
-            <div className="col-md-6">
+            <div className="col-md-12">
               {/* Basic Info */}
               <div className="mb-3">
                 <label className="form-label">Name *</label>
@@ -266,33 +184,29 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
               <div className="row">
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Total Cost *</label>
+                    <label className="form-label">Total Cost (Read Only)</label>
                     <div className="input-group">
                       <span className="input-group-text">$</span>
                       <input
-                        type="number"
+                        type="text"
                         className="form-control"
-                        name="totalCost"
-                        value={formData.totalCost}
-                        onChange={handleChange}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        required
+                        value={expense?.totalCost?.toFixed(2) || '0.00'}
+                        disabled
+                        style={{ backgroundColor: '#f8f9fa' }}
                       />
                     </div>
+                    <small className="text-muted">Total cost cannot be changed after creation</small>
                   </div>
                 </div>
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Date *</label>
+                    <label className="form-label">Date</label>
                     <input
                       type="date"
                       className="form-control"
                       name="date"
                       value={formData.date}
                       onChange={handleChange}
-                      required
                     />
                   </div>
                 </div>
@@ -301,21 +215,15 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
               <div className="row">
                 <div className="col-md-6">
                   <div className="mb-3">
-                    <label className="form-label">Group *</label>
-                    <select
-                      className="form-select"
-                      name="groupId"
-                      value={formData.groupId}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="">Select a group</option>
-                      {groups.map(group => (
-                        <option key={group.id || group.groupId} value={group.id || group.groupId}>
-                          {group.name}
-                        </option>
-                      ))}
-                    </select>
+                    <label className="form-label">Group (Read Only)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={groups?.find(g => (g.id || g.groupId) === expense?.groupId)?.name || 'Unknown Group'}
+                      disabled
+                      style={{ backgroundColor: '#f8f9fa' }}
+                    />
+                    <small className="text-muted">Group cannot be changed after creation</small>
                   </div>
                 </div>
                 <div className="col-md-6">
@@ -352,156 +260,96 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Receipt</label>
-                <input
-                  type="file"
-                  className="form-control"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
-                <small className="text-muted">Upload a new receipt image (optional)</small>
-              </div>
-            </div>
-
-            <div className="col-md-6">
-              {/* Split Configuration */}
-              <div className="mb-3">
-                <label className="form-label">Split Among Members</label>
-                <small className="text-muted d-block">Choose who owes what amount</small>
-              </div>
-
-              {/* User Expenses Details */}
-              {userExpenses.length > 0 && (
-                <div className="mb-3">
-                  <label className="form-label">Who Owes What</label>
-                  <div className="border rounded p-3">
-                    <div className="row mb-2 fw-bold">
-                      <div className="col-1"></div>
-                      <div className="col-4">Member</div>
-                      <div className="col-3">Amount Owed</div>
-                      <div className="col-2">Paid</div>
-                      <div className="col-2">%</div>
-                    </div>
-                    <hr className="my-2" />
-                    
-                    {userExpenses.map(userExpense => (
-                      <div key={userExpense.userId} className="row align-items-center mb-2">
-                        <div className="col-1">
-                          <input
-                            type="checkbox"
-                            className="form-check-input"
-                            checked={userExpense.included}
-                            onChange={() => toggleMemberInclusion(userExpense.userId)}
-                          />
-                        </div>
-                        <div className="col-4">
-                          <span className={userExpense.included ? '' : 'text-muted'}>
-                            {userExpense.name}
-                            {userExpense.userId === currentUser?.userId && ' (You)'}
-                          </span>
-                        </div>
-                        <div className="col-3">
-                          <div className="input-group input-group-sm">
-                            <span className="input-group-text">$</span>
-                            <input
-                              type="number"
-                              className="form-control"
-                              value={userExpense.amountOwed || ''}
-                              onChange={(e) => handleAmountOwedChange(userExpense.userId, e.target.value)}
-                              disabled={!userExpense.included}
-                              min="0"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
+                <label className="form-label">Receipts</label>
+                
+                {/* Show existing receipts */}
+                {receipts.length > 0 && (
+                  <div className="mb-3">
+                    <h6>Current Receipts</h6>
+                    {receipts.map(receipt => (
+                      <div key={receipt.receiptId} className="p-3 border rounded mb-2">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div className="d-flex align-items-center">
+                            <FaFileImage className="text-info me-2" />
+                            <div>
+                              <span className="text-success">Receipt #{receipt.receiptId}</span>
+                              <br />
+                              <small className="text-muted">
+                                Uploaded: {new Date(receipt.uploadedAt).toLocaleDateString()}
+                              </small>
+                            </div>
                           </div>
-                        </div>
-                        <div className="col-2 text-center">
-                          {userExpense.amountPaid > 0 ? (
-                            <span className="badge bg-success">
-                              ${userExpense.amountPaid.toFixed(2)}
-                            </span>
-                          ) : (
-                            <span className="text-muted">$0.00</span>
-                          )}
-                        </div>
-                        <div className="col-2 text-end">
-                          <small className="text-muted">
-                            {userExpense.included && expenseAmount > 0 
-                              ? `${((userExpense.amountOwed / expenseAmount) * 100).toFixed(1)}%`
-                              : '0%'
-                            }
-                          </small>
+                          <div className="btn-group">
+                            {receipt.imageUrl && (
+                              <a
+                                href={receipt.imageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-outline-primary btn-sm"
+                                disabled={receiptLoading}
+                              >
+                                <FaDownload className="me-1" /> View
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => handleDeleteReceipt(receipt.receiptId)}
+                              disabled={receiptLoading}
+                            >
+                              <FaTrash className="me-1" /> Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
-                    
-                    <hr />
-                    <div className="row">
-                      <div className="col-5">
-                        <strong>Total Owed:</strong>
-                      </div>
-                      <div className="col-3 text-end">
-                        <strong className={Math.abs(totalOwed - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
-                          ${totalOwed.toFixed(2)}
-                        </strong>
-                      </div>
-                      <div className="col-2 text-end">
-                        <strong className={Math.abs(totalPaid - expenseAmount) < 0.01 ? 'text-success' : 'text-danger'}>
-                          ${totalPaid.toFixed(2)}
-                        </strong>
-                      </div>
-                      <div className="col-2"></div>
-                    </div>
-                    <div className="row">
-                      <div className="col-5">
-                        <small className="text-muted">Expense Total:</small>
-                      </div>
-                      <div className="col-3 text-end">
-                        <small className="text-muted">${expenseAmount.toFixed(2)}</small>
-                      </div>
-                      <div className="col-2 text-end">
-                        <small className="text-muted">${expenseAmount.toFixed(2)}</small>
-                      </div>
-                      <div className="col-2"></div>
-                    </div>
-                    
-                    {(Math.abs(totalOwed - expenseAmount) >= 0.01 || Math.abs(totalPaid - expenseAmount) >= 0.01) && (
-                      <div className="row mt-2">
-                        <div className="col-12">
-                          <small className="text-danger">
-                            {Math.abs(totalOwed - expenseAmount) >= 0.01 && 
-                              `Owed difference: ${Math.abs(totalOwed - expenseAmount).toFixed(2)}`
-                            }
-                            {Math.abs(totalOwed - expenseAmount) >= 0.01 && Math.abs(totalPaid - expenseAmount) >= 0.01 && ' | '}
-                            {Math.abs(totalPaid - expenseAmount) >= 0.01 && 
-                              `Paid difference: ${Math.abs(totalPaid - expenseAmount).toFixed(2)}`
-                            }
-                          </small>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="mt-2">
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary btn-sm"
-                        onClick={() => {
-                          const includedMembers = userExpenses.filter(ue => ue.included);
-                          if (includedMembers.length > 0) {
-                            const equalShare = expenseAmount / includedMembers.length;
-                            setUserExpenses(userExpenses.map(ue => ({
-                              ...ue,
-                              amountOwed: ue.included ? equalShare : 0
-                            })));
-                          }
-                        }}
-                      >
-                        <FaEquals className="me-1" /> Split Equally
-                      </button>
-                    </div>
                   </div>
+                )}
+                
+                {receiptLoading && (
+                  <div className="mb-2">
+                    <small className="text-muted">
+                      <div className="spinner-border spinner-border-sm me-2"></div>
+                      Loading receipts...
+                    </small>
+                  </div>
+                )}
+                
+                {/* Upload new receipt */}
+                <div>
+                  <label className="form-label">Add New Receipt</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                  <small className="text-muted">
+                    Upload a new receipt image (optional)
+                  </small>
+                  {formData.receipt && (
+                    <div className="mt-2 p-2 border rounded bg-light">
+                      <small className="text-success d-block mb-2">
+                        ✓ New file selected: {formData.receipt.name}
+                      </small>
+                      <img
+                        src={URL.createObjectURL(formData.receipt)}
+                        alt="Receipt preview"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '200px',
+                          objectFit: 'contain',
+                          border: '1px solid #dee2e6',
+                          borderRadius: '4px'
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </Modal.Body>
@@ -513,7 +361,7 @@ function EditExpenseModal({ show, onHide, expense, onSubmit, groups, categories 
           <Button 
             variant="primary" 
             type="submit"
-            disabled={loading || !validateUserExpenses()}
+            disabled={loading}
           >
             {loading ? (
               <>
