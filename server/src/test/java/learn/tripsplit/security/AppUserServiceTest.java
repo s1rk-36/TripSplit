@@ -235,10 +235,16 @@ class AppUserServiceTest {
     @Test
     void shouldNotUpdateWhenEmailIsDuplicate() {
         AppUser appUser = makeUser();
+        appUser.setAppUserId(1);
+
         AppUser mockOut = makeUser();
+        mockOut.setAppUserId(2);
 
         when(repository.findByEmail(appUser.getEmail())).thenReturn(mockOut);
+        when(repository.update(appUser)).thenReturn(true);
+
         Result<AppUser> actual = service.update(appUser);
+
         assertEquals(ResultType.INVALID, actual.getType());
     }
 
@@ -249,7 +255,7 @@ class AppUserServiceTest {
                 "Grace",
                 "Wong",
                 "grace.wong@example.com",
-                null, // null username
+                null,
                 "hash_6_example",
                 false,
                 List.of("USER")
@@ -262,7 +268,7 @@ class AppUserServiceTest {
                 "Grace",
                 "Wong",
                 "grace.wong@example.com",
-                "\t", // blank username
+                "\t",
                 "hash_6_example",
                 false,
                 List.of("USER")
