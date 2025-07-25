@@ -217,7 +217,7 @@ public class GroupController {
 
             // Get current user
             String username = authentication.getName();
-            AppUser currentUser = appUserService.findByUsername(username);
+            AppUser currentUser = appUserService.findById(userId);
             if (currentUser == null) {
                 currentUser = appUserService.findByEmail(username);
             }
