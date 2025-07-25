@@ -71,8 +71,9 @@ public class AuthController {
         }
         catch (AuthenticationException ex) {
             System.out.println("Authentication failed: " + ex.getMessage());
-            List<String> errors = Arrays.asList("Invalid email or password");
-            return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Invalid email or password");
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
 
         return new ResponseEntity<>(HttpStatus.FORBIDDEN);
