@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FaDollarSign, FaUsers, FaReceipt, FaCalculator, FaArrowRight, FaCheck } from 'react-icons/fa';
+import { FaUsers, FaReceipt, FaCalculator, FaArrowRight, FaCheck } from 'react-icons/fa';
 
 
 function Home() {
@@ -191,27 +191,6 @@ function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-4 bg-dark text-white-50">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-6">
-              <div className="d-flex align-items-center mb-2">
-                <FaDollarSign className="me-2" />
-                <strong className="text-white">TripSplit</strong>
-              </div>
-              <p className="small">Kristian, Guillermo, Louie</p>
-            </div>
-            <div className="col-md-6 text-md-end">
-              <div className="d-flex justify-content-md-end gap-3">
-                <Link to="/login" className="text-white-50 text-decoration-none">Login</Link>
-                <Link to="/register" className="text-white-50 text-decoration-none">Sign Up</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
