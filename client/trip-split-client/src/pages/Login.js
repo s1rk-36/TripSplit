@@ -12,6 +12,7 @@ function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,7 +25,7 @@ function Login() {
 
     try {
       setError('');
-      console.log(formData);
+      setIsLoading(true);
       // Call login API
       const response = await apiService.login({
         email: formData.email,
@@ -46,19 +47,17 @@ function Login() {
       };
       
       auth.setCurrentUser(userData);
-      
-      if (formData.email === 'admin@example.com' && formData.password === 'admin1.') {
-        console.log('Admin login detected, redirecting to admin dashboard');
-        navigate('/admin')
+
+      // Redirect based on the user's actual role from the JWT, not hardcoded creds.
+      if (auth.hasRole('ROLE_ADMIN')) {
+        navigate('/admin');
       } else {
-        console.log('Regular user login, redirecting to groups');
-        // Redirect to dashboard
         navigate('/groups');
       }
 
-      
     } catch (err) {
       console.error('Login error:', err);
+      setIsLoading(false);
       setError(err.message || 'Login failed. Please check your credentials.');
     }
   };
@@ -129,8 +128,16 @@ function Login() {
                   <button
                     type="submit"
                     className="btn btn-primary w-100 py-2 mb-3"
+                    disabled={isLoading}
                   >
-                    Sign In
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Signing in...
+                      </>
+                    ) : (
+                      'Sign In'
+                    )}
                   </button>
                 </form>
               </div>

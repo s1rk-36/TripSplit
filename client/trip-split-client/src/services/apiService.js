@@ -1,3 +1,5 @@
+import { auth } from '../utils/auth';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 const handleResponse = async (response) => {
@@ -35,24 +37,11 @@ const getToken = () => {
   return user.token || null;
 };
 
-const isTokenExpired = (token) => {
-  if (!token) return true;
-
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const now = Math.floor(Date.now() / 1000);
-    return payload.exp < now;
-  } catch (e) {
-    return true;
-  }
-};
-
-
 const makeAuthenticatedRequest = async (url, options = {}) => {
   const token = getToken();
 
   // Check if token is expired before making request
-  if (isTokenExpired(token)) {
+  if (auth.isTokenExpired(token)) {
     localStorage.removeItem('tripsplit_user');
     window.location.href = '/login';
     throw new Error('Session expired. Please login again.');
@@ -88,8 +77,6 @@ const makePublicRequest = async (url, options = {}) => {
       ...options.headers,
     },
   };
-
-  console.log(defaultOptions);
 
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...defaultOptions,

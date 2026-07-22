@@ -119,8 +119,6 @@ export const AuthProvider = ({ children }) => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    
-    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);

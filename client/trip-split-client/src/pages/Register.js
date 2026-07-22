@@ -17,6 +17,7 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,7 +35,8 @@ function Register() {
         setError('Passwords do not match');
         return;
       }
-      
+
+      setIsLoading(true);
       // All other validation happens on backend
       const response = await apiService.register({
         firstName: formData.firstName,
@@ -64,7 +66,8 @@ function Register() {
       
     } catch (err) {
       console.error('Registration error:', err);
-      
+      setIsLoading(false);
+
       // Handle different error formats
       if (err.response && err.response.data) {
         // Backend returned validation errors array
@@ -242,8 +245,16 @@ function Register() {
                   <button
                     type="submit"
                     className="btn btn-primary w-100 py-2 mb-3"
+                    disabled={isLoading}
                   >
-                    Create Account
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Creating account...
+                      </>
+                    ) : (
+                      'Create Account'
+                    )}
                   </button>
                 </form>
               </div>

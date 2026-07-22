@@ -10,6 +10,7 @@ import NotFound from './pages/NotFound';
 import ProfileSettings from './pages/ProfileSettings';
 import { AuthProvider } from './utils/auth';
 import AdminDashboard from './pages/AdminDashboard';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 
 function App() {
@@ -24,11 +25,11 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
         
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/groups" element={<Groups />} />
-                    <Route path="/profile" element={<ProfileSettings />} />
-                    <Route path="/expenses" element={<Expenses />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+                    <Route path="/profile" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
+                    <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+                    <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
 
                     {/*
                     <Route path="/expenses/:id" element={<ExpenseDetails />} />
