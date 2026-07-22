@@ -1,8 +1,16 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaUsers, FaReceipt, FaCalculator, FaArrowRight, FaCheck } from 'react-icons/fa';
+import { startDemo } from '../services/demoData';
 
 
 function Home() {
+  const navigate = useNavigate();
+
+  const handleDemo = () => {
+    startDemo();
+    navigate('/dashboard');
+  };
+
   return (
     <div>
       {/* Main Section */}
@@ -21,6 +29,9 @@ function Home() {
                 <Link to="/register" className="btn btn-light btn-lg px-4">
                   Get Started Free <FaArrowRight className="ms-2" />
                 </Link>
+                <button onClick={handleDemo} className="btn btn-warning btn-lg px-4">
+                  View Live Demo
+                </button>
                 <Link to="/login" className="btn btn-outline-light btn-lg px-4">
                   Sign In
                 </Link>

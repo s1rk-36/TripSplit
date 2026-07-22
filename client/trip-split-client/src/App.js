@@ -11,6 +11,7 @@ import ProfileSettings from './pages/ProfileSettings';
 import { AuthProvider } from './utils/auth';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import DemoBanner from './components/common/DemoBanner';
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <AuthProvider>
         <Router>
             <Navbar />
+            <DemoBanner />
             <main className="main-content">
                 <Routes>
 

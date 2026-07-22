@@ -1,4 +1,5 @@
 import { auth } from '../utils/auth';
+import { isDemoMode, resolveDemoRequest } from './demoData';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
@@ -38,6 +39,11 @@ const getToken = () => {
 };
 
 const makeAuthenticatedRequest = async (url, options = {}) => {
+  // In demo mode, serve mock data instead of hitting the backend.
+  if (isDemoMode()) {
+    return resolveDemoRequest(url, options);
+  }
+
   const token = getToken();
 
   // Check if token is expired before making request
@@ -338,7 +344,7 @@ export const apiService = {
   // Utility methods
   isTokenValid() {
     const token = getToken();
-    return !isTokenExpired(token);
+    return !auth.isTokenExpired(token);
   },
 
   getAuthToken() {
