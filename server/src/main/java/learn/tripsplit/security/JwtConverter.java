@@ -3,11 +3,13 @@ package learn.tripsplit.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import learn.tripsplit.models.AppUser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Arrays;
 import java.util.Date;
@@ -16,8 +18,15 @@ import java.util.stream.Collectors;
 
 @Component
 public class JwtConverter {
-    // 1. Signing key
-    private Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // 1. Signing key. Loaded from JWT_SECRET so tokens survive restarts;
+    // falls back to a random per-run key for local dev.
+    private final Key key;
+
+    public JwtConverter(@Value("${jwt.secret:}") String secret) {
+        this.key = secret.isBlank()
+                ? Keys.secretKeyFor(SignatureAlgorithm.HS256)
+                : Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
     // 2. "Configurable" constants
     private final String ISSUER = "trip-split";
     private final int EXPIRATION_MINUTES = 1440; // 24 hours

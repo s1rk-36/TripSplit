@@ -4,6 +4,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
@@ -34,6 +35,12 @@ public class AmazonClient {
     @Value("${amazonProperties.region}")
     private String region;
 
+    @Value("${amazonProperties.endpointUrl}")
+    private String endpointUrl;
+
+    @Value("${amazonProperties.publicUrl:}")
+    private String publicBaseUrl;
+
     @Value("${amazonProperties.acl:Private}")
     private CannedAccessControlList acl;
 
@@ -41,9 +48,13 @@ public class AmazonClient {
     private void initializeAmazon() {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
 
+        // Endpoint-based config lets this same S3 SDK talk to any S3-compatible store
+        // (Cloudflare R2, etc.), not just AWS. R2 requires path-style access.
         s3client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
-                .withRegion(region)
+                .withEndpointConfiguration(
+                        new AwsClientBuilder.EndpointConfiguration(endpointUrl, region))
+                .withPathStyleAccessEnabled(true)
                 .build();
     }
 
@@ -67,10 +78,23 @@ public class AmazonClient {
             s3client.putObject(
                     new PutObjectRequest(bucketName, fileName, file)
             );
-            return s3client.getUrl(bucketName, fileName).toString();
+            return publicUrlFor(fileName);
         } catch (Exception e) {
             throw new RuntimeException("S3 upload error: " + e.getMessage());
         }
+    }
+
+    // R2 (and most S3-compatible stores) don't serve objects at the S3 API endpoint,
+    // so build the browser-facing URL from the configured public base. Fall back to the
+    // S3 API URL when no public base is set (plain AWS).
+    private String publicUrlFor(String fileName) {
+        if (publicBaseUrl == null || publicBaseUrl.isEmpty()) {
+            return s3client.getUrl(bucketName, fileName).toString();
+        }
+        String base = publicBaseUrl.endsWith("/")
+                ? publicBaseUrl.substring(0, publicBaseUrl.length() - 1)
+                : publicBaseUrl;
+        return base + "/" + fileName;
     }
 
     public void deleteFileFromS3Bucket(String fileUrl) {

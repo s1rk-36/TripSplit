@@ -1,0 +1,67 @@
+# Render Blueprint for TripSplit.
+# Deploy order matters (public URLs aren't known until each service exists):
+#   1. Create the MySQL DB (Aiven) and load server/sql/trip-split-schema-prod.sql
+#   2. Deploy this blueprint. Fill the `sync: false` vars in the Render dashboard.
+#   3. Backend deploys first -> copy its URL into the frontend's REACT_APP_API_URL.
+#   4. Once the frontend URL exists, set the backend's CORS_ALLOWED_ORIGINS to it.
+# See DEPLOY.md for the full walkthrough.
+
+services:
+  # ---- Spring Boot API (Docker) ----
+  - name: tripsplit-api
+    type: web
+    runtime: docker
+    plan: free
+    rootDir: server
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    # No healthCheckPath: every route requires auth (returns 401), so a health check
+    # on "/" would fail the deploy. Render marks the service live once it binds the port.
+    envVars:
+      # From your Aiven MySQL service. URL must keep SSL on, e.g.
+      # jdbc:mysql://HOST:PORT/DBNAME?sslMode=REQUIRED
+      - key: TRIP_SPLIT_DB_URL
+        sync: false
+      - key: TRIP_SPLIT_DB_USERNAME
+        sync: false
+      - key: TRIP_SPLIT_DB_PASSWORD
+        sync: false
+      # Render generates a strong value once; keep it stable so sessions survive restarts.
+      - key: JWT_SECRET
+        generateValue: true
+      # Set to the frontend's public URL after step 3 (e.g. https://tripsplit-web.onrender.com)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      # Cloudflare R2 storage for receipt images (see DEPLOY.md step 6).
+      - key: S3_ENDPOINT_URL          # https://<accountid>.r2.cloudflarestorage.com
+        sync: false
+      - key: S3_REGION                # auto
+        sync: false
+      - key: S3_PUBLIC_URL            # https://pub-xxxx.r2.dev (or your custom domain)
+        sync: false
+      - key: S3_BUCKET_NAME           # the R2 bucket name you create
+        sync: false
+      - key: YOUR_ACCESS_KEY          # R2 Access Key ID
+        sync: false
+      - key: YOUR_SECRET_KEY          # R2 Secret Access Key
+        sync: false
+
+  # ---- React (Create React App) static site ----
+  - name: tripsplit-web
+    type: web
+    runtime: static
+    rootDir: client/trip-split-client
+    # CI=false stops CRA from treating lint warnings as build errors.
+    buildCommand: npm ci && CI=false npm run build
+    staticPublishPath: ./build
+    envVars:
+      # Baked in at build time. Set to the backend's public URL PLUS the /api path
+      # (e.g. https://tripsplit-api.onrender.com/api), then trigger a deploy.
+      # The /api suffix is required — the client appends routes directly to this value.
+      - key: REACT_APP_API_URL
+        sync: false
+    routes:
+      # SPA fallback so react-router deep links resolve to index.html.
+      - type: rewrite
+        source: /*
+        destination: /index.html
