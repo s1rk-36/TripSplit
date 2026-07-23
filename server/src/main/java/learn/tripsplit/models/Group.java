@@ -9,6 +9,7 @@ public class Group {
     private int groupId;
     private String name;
     private String description;
+    private String inviteCode;
     private int createdBy;
     private List<UserGroup> users = new ArrayList<>();
 
@@ -46,6 +47,14 @@ public class Group {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getInviteCode() {
+        return inviteCode;
+    }
+
+    public void setInviteCode(String inviteCode) {
+        this.inviteCode = inviteCode;
     }
 
     public int getCreatedBy() {

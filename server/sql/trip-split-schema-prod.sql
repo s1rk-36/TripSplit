@@ -37,6 +37,7 @@ create table `group` (
 	group_id int primary key auto_increment,
     `name` varchar(100) not null,
     `description` text null,
+    invite_code varchar(12) not null unique,
     created_by int not null,
     constraint fk_group_created_by
 		foreign key (created_by)

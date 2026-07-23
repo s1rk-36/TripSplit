@@ -9,6 +9,7 @@ import EditGroupModal from '../components/modals/EditGroupModal';
 import GroupDetailsModal from '../components/modals/GroupDetailsModal';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
+import { isDemoMode, showDemoNotice } from '../services/demoData';
 import JoinGroupModal from '../components/modals/JoinGroupModal';
 
 function Groups() {
@@ -47,23 +48,24 @@ function Groups() {
     }
   };
 
-  const copyGroupId = async (groupId) => {
+  const copyInviteCode = async (group) => {
+    const code = group.inviteCode || '';
     try {
-      await navigator.clipboard.writeText(groupId.toString());
-      setCopiedGroupId(groupId);
+      await navigator.clipboard.writeText(code);
+      setCopiedGroupId(group.groupId);
       // Reset the copied state after 2 seconds
       setTimeout(() => setCopiedGroupId(null), 2000);
     } catch (err) {
-      console.error('Failed to copy group ID:', err);
+      console.error('Failed to copy invite code:', err);
       // Fallback for browsers that don't support clipboard API
       const textArea = document.createElement('textarea');
-      textArea.value = groupId.toString();
+      textArea.value = code;
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
       try {
         document.execCommand('copy');
-        setCopiedGroupId(groupId);
+        setCopiedGroupId(group.groupId);
         setTimeout(() => setCopiedGroupId(null), 2000);
       } catch (fallbackErr) {
         console.error('Fallback copy failed:', fallbackErr);
@@ -83,9 +85,9 @@ function Groups() {
     }
   };
 
-  const handleJoinGroup = async (groupId) => {
+  const handleJoinGroup = async (inviteCode) => {
     try {
-      const joinedGroup = await apiService.joinGroup({ groupId });
+      const joinedGroup = await apiService.joinGroup({ inviteCode });
       setGroups([...groups, joinedGroup]);
       setShowJoinModal(false);
     } catch (err) {
@@ -118,6 +120,15 @@ function Groups() {
       console.error('Failed to delete group:', err);
       setError(err.message || 'Failed to delete group');
     }
+  };
+
+  // In demo mode, block mutating actions up front with a notice instead of opening a modal.
+  const demoGuard = (action) => () => {
+    if (isDemoMode()) {
+      showDemoNotice();
+      return;
+    }
+    action();
   };
 
   // Filter and sort groups
@@ -183,15 +194,15 @@ function Groups() {
           <p className="text-muted">Manage your expense sharing groups</p>
         </div>
         <div className="btn-group">
-          <button 
+          <button
             className="btn btn-outline-primary"
-            onClick={() => setShowJoinModal(true)}
+            onClick={demoGuard(() => setShowJoinModal(true))}
           >
             <FaUserPlus className="me-1" /> Join Group
           </button>
-          <button 
+          <button
             className="btn btn-primary"
-            onClick={() => setShowCreateModal(true)}
+            onClick={demoGuard(() => setShowCreateModal(true))}
           >
             <FaPlus className="me-1" /> Create Group
           </button>
@@ -322,16 +333,18 @@ function Groups() {
                       <p className="card-text text-muted small mb-3">{group.description}</p>
                     )}
                     
-                    {/* Group ID with copy button */}
+                    {/* Invite code with copy button */}
                     <div className="d-flex align-items-center mb-2">
+                      <span className="text-muted small me-2">Invite code:</span>
+                      <code className="me-2">{group.inviteCode || '—'}</code>
                       <button
-                        className={`btn btn-sm ${copiedGroupId === (group.groupId ) ? 'btn-success' : 'btn-outline-secondary'}`}
-                        onClick={() => copyGroupId(group.groupId)}
-                        title={copiedGroupId === (group.groupId) ? 'Copied!' : 'Copy Group ID'}
+                        className={`btn btn-sm ${copiedGroupId === group.groupId ? 'btn-success' : 'btn-outline-secondary'}`}
+                        onClick={() => copyInviteCode(group)}
+                        title={copiedGroupId === group.groupId ? 'Copied!' : 'Copy invite code'}
                         style={{ padding: '2px 6px' }}
                       >
-                        {copiedGroupId === (group.groupId) ? <FaCheck size={10} /> : <FaCopy size={10} />}
-                         <span>Copy Invite Code</span>
+                        {copiedGroupId === group.groupId ? <FaCheck size={10} /> : <FaCopy size={10} />}
+                        <span className="ms-1">{copiedGroupId === group.groupId ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
                     
@@ -361,16 +374,16 @@ function Groups() {
                         <>
                           <button
                             className="btn btn-outline-warning btn-sm"
-                            onClick={() => {
+                            onClick={demoGuard(() => {
                               setSelectedGroup(group);
                               setShowEditModal(true);
-                            }}
+                            })}
                           >
                             <FaEdit className="me-1" /> Edit
                           </button>
                           <button
                             className="btn btn-outline-danger btn-sm"
-                            onClick={() => handleDeleteGroup(group.groupId)}
+                            onClick={demoGuard(() => handleDeleteGroup(group.groupId))}
                           >
                             <FaTrash className="me-1" /> Delete
                           </button>

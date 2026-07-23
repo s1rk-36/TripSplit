@@ -186,7 +186,9 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
           .map(ue => ({
             userId: ue.userId,
             amountOwed: ue.amountOwed,
-            amountPaid: 0
+            // Preserve who actually paid — this was hardcoded to 0, which discarded
+            // the payment and left every balance showing "owes" with nobody credited.
+            amountPaid: ue.amountPaid || 0
           }))
       };
 

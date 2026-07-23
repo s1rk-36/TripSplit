@@ -10,6 +10,10 @@ public interface GroupRepository {
 
     Group findById(int groupId);
 
+    Group findByInviteCode(String inviteCode);
+
+    boolean inviteCodeExists(String inviteCode);
+
     Group add(Group group);
 
     boolean update(Group group);

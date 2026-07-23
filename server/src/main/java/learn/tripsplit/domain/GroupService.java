@@ -5,6 +5,7 @@ import learn.tripsplit.models.Group;
 import learn.tripsplit.models.UserGroup;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,10 +13,27 @@ import java.util.Set;
 @Service
 public class GroupService {
 
+    // Unambiguous alphabet (no 0/O/1/I) for shareable invite codes.
+    private static final String INVITE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    private static final int INVITE_LENGTH = 8;
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final GroupRepository repository;
 
     public GroupService(GroupRepository repository) {
         this.repository = repository;
+    }
+
+    private String generateUniqueInviteCode() {
+        String code;
+        do {
+            StringBuilder sb = new StringBuilder(INVITE_LENGTH);
+            for (int i = 0; i < INVITE_LENGTH; i++) {
+                sb.append(INVITE_ALPHABET.charAt(RANDOM.nextInt(INVITE_ALPHABET.length())));
+            }
+            code = sb.toString();
+        } while (repository.inviteCodeExists(code));
+        return code;
     }
 
     public List<Group> findAll() {
@@ -44,6 +62,9 @@ public class GroupService {
             result.addMessage("groupId should not be set for `add` operation", ResultType.INVALID);
             return result;
         }
+
+        // Assign a unique, non-guessable invite code (server-generated, never client-supplied).
+        group.setInviteCode(generateUniqueInviteCode());
 
         group = repository.add(group);
 
@@ -90,6 +111,35 @@ public class GroupService {
 
     public List<Group> findGroupsByUserId(int userId) {
         return repository.findGroupsByUserId(userId);
+    }
+
+    public Result<Group> joinByInviteCode(String inviteCode, int userId) {
+        Result<Group> result = new Result<>();
+
+        if (inviteCode == null || inviteCode.isBlank()) {
+            result.addMessage("Invite code is required", ResultType.INVALID);
+            return result;
+        }
+
+        Group group = repository.findByInviteCode(inviteCode.trim().toUpperCase());
+        if (group == null) {
+            result.addMessage("Invalid invite code", ResultType.NOT_FOUND);
+            return result;
+        }
+
+        if (repository.isUserMember(group.getGroupId(), userId)) {
+            result.addMessage("You are already a member of this group", ResultType.INVALID);
+            return result;
+        }
+
+        boolean success = repository.addUserToGroup(group.getGroupId(), userId, false);
+        if (!success) {
+            result.addMessage("Failed to join group", ResultType.INVALID);
+            return result;
+        }
+
+        result.setPayload(repository.findById(group.getGroupId()));
+        return result;
     }
 
     public Result<Group> joinGroup(int groupId, int userId) {

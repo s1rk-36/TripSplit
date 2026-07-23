@@ -13,15 +13,15 @@ export const DEMO_TOKEN = `x.${btoa(JSON.stringify(demoPayload))}.x`;
 
 export const demoUser = {
   userId: 1,
-  firstName: 'Alex',
-  lastName: 'Rivera',
+  firstName: 'Mock',
+  lastName: 'User',
   email: 'demo@tripsplit.app',
   username: 'demo',
   token: DEMO_TOKEN,
 };
 
 const members = [
-  { userId: 1, firstName: 'Alex', lastName: 'Rivera', username: 'demo', email: 'demo@tripsplit.app' },
+  { userId: 1, firstName: 'Mock', lastName: 'User', username: 'demo', email: 'demo@tripsplit.app' },
   { userId: 2, firstName: 'Sam', lastName: 'Chen', username: 'samc', email: 'sam@example.com' },
   { userId: 3, firstName: 'Jordan', lastName: 'Patel', username: 'jpatel', email: 'jordan@example.com' },
   { userId: 4, firstName: 'Taylor', lastName: 'Kim', username: 'tkim', email: 'taylor@example.com' },
@@ -41,11 +41,11 @@ const mem = (u, isGroupAdmin = false) => ({
 });
 
 const demoGroups = [
-  { groupId: 1, name: 'Japan Spring Trip', description: 'Cherry blossom tour across Tokyo and Kyoto.', createdBy: 1,
+  { groupId: 1, name: 'Japan Spring Trip', description: 'Cherry blossom tour across Tokyo and Kyoto.', createdBy: 1, inviteCode: 'K7M2QP9R',
     users: [mem(members[0], true), mem(members[1]), mem(members[2]), mem(members[3])] },
-  { groupId: 2, name: 'Iceland Road Adventure', description: 'Self-drive ring road trip around Iceland.', createdBy: 1,
+  { groupId: 2, name: 'Iceland Road Adventure', description: 'Self-drive ring road trip around Iceland.', createdBy: 1, inviteCode: 'H4TN8RJ2',
     users: [mem(members[0], true), mem(members[2]), mem(members[4])] },
-  { groupId: 3, name: 'Vegas Weekend', description: 'Weekend celebration with the crew.', createdBy: 4,
+  { groupId: 3, name: 'Vegas Weekend', description: 'Weekend celebration with the crew.', createdBy: 4, inviteCode: 'VG9KMP3T',
     users: [mem(members[0]), mem(members[1]), mem(members[3], true), mem(members[4])] },
 ];
 
@@ -92,6 +92,14 @@ export const startDemo = () => {
 export const endDemo = () => {
   localStorage.removeItem(DEMO_FLAG);
   auth.clearCurrentUser();
+};
+
+// Fires a transient notice rendered by <DemoToast/>. Used to block mutating actions
+// in demo mode up front (so a modal/form the demo can't submit never opens).
+export const showDemoNotice = (
+  message = 'This is a read-only demo. Sign up to create your own groups and expenses.'
+) => {
+  window.dispatchEvent(new CustomEvent('demo-notice', { detail: message }));
 };
 
 const lastSegment = (url) => Number(url.split('?')[0].split('/').filter(Boolean).pop());

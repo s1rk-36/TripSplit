@@ -88,18 +88,12 @@ public class GroupController {
                 return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
             }
 
-            // Get group ID from request
-            Object groupIdObj = requestBody.get("groupId");
-            if (groupIdObj == null) {
-                return new ResponseEntity<>("Group ID is required", HttpStatus.BAD_REQUEST);
+            // Get invite code from request
+            Object inviteCodeObj = requestBody.get("inviteCode");
+            if (inviteCodeObj == null || inviteCodeObj.toString().isBlank()) {
+                return new ResponseEntity<>("Invite code is required", HttpStatus.BAD_REQUEST);
             }
-
-            int groupId;
-            try {
-                groupId = Integer.parseInt(groupIdObj.toString());
-            } catch (NumberFormatException e) {
-                return new ResponseEntity<>("Invalid group ID format", HttpStatus.BAD_REQUEST);
-            }
+            String inviteCode = inviteCodeObj.toString();
 
             // Get current user
             String username = authentication.getName();
@@ -112,7 +106,7 @@ public class GroupController {
                 return new ResponseEntity<>("User not found", HttpStatus.UNAUTHORIZED);
             }
 
-            Result<Group> result = service.joinGroup(groupId, currentUser.getAppUserId());
+            Result<Group> result = service.joinByInviteCode(inviteCode, currentUser.getAppUserId());
 
             if (result.isSuccess()) {
                 return new ResponseEntity<>(result.getPayload(), HttpStatus.OK);

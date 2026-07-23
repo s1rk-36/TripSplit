@@ -26,7 +26,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
 
     @Override
     public List<Group> findAll() {
-        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.invite_code, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "
@@ -46,7 +46,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
     @Override
     @Transactional
     public Group findById(int groupId) {
-        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.created_by, "
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.invite_code, g.created_by, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "
@@ -70,15 +70,16 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
             return null;
         }
 
-        final String sql = "insert into `group` (`name`, `description`, created_by) "
-                + "values (?, ?, ?);";
+        final String sql = "insert into `group` (`name`, `description`, invite_code, created_by) "
+                + "values (?, ?, ?, ?);";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         int rowsAffected = jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, group.getName());
             ps.setString(2, group.getDescription());
-            ps.setInt(3, group.getCreatedBy());
+            ps.setString(3, group.getInviteCode());
+            ps.setInt(4, group.getCreatedBy());
             return ps;
         }, keyHolder);
 
@@ -89,6 +90,34 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
         group.setGroupId(keyHolder.getKey().intValue());
 
         return group;
+    }
+
+    @Override
+    @Transactional
+    public Group findByInviteCode(String inviteCode) {
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.invite_code, g.created_by, "
+                + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
+                + "from `group` as g "
+                + "inner join user as u on g.created_by = u.user_id "
+                + "where g.invite_code = ?;";
+
+        Group group = jdbcTemplate.query(sql, new GroupMapper(this), inviteCode)
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        if (group != null) {
+            addUsers(group);
+        }
+
+        return group;
+    }
+
+    @Override
+    public boolean inviteCodeExists(String inviteCode) {
+        Integer count = jdbcTemplate.queryForObject(
+                "select count(*) from `group` where invite_code = ?;", Integer.class, inviteCode);
+        return count != null && count > 0;
     }
 
     @Override
@@ -150,6 +179,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
                 + "g.group_id, "
                 + "g.`name` as group_name, "
                 + "g.`description` as group_description, "
+                + "g.invite_code, "
 
                 + "gcb.user_id as gcb_user_id, "
                 + "gcb.first_name as gcb_first_name, "
@@ -218,6 +248,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
                 + "g.group_id, "
                 + "g.`name` as group_name, "
                 + "g.`description` as group_description, "
+                + "g.invite_code, "
 
                 + "gcb.user_id as gcb_user_id, "
                 + "gcb.first_name as gcb_first_name, "
@@ -271,7 +302,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
 
     @Override
     public List<Group> findGroupsByUserId(int userId) {
-        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, "
+        final String sql = "select g.group_id, g.`name` as group_name, g.`description` as group_description, g.invite_code, "
                 + "u.user_id, u.first_name, u.last_name, u.email, u.username, u.password_hash, u.disabled "
                 + "from `group` as g "
                 + "inner join user as u on g.created_by = u.user_id "

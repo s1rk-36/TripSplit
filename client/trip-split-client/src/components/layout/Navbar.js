@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {FaUser, FaCog, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaUserShield } from 'react-icons/fa';
 import { useAuth, auth } from '../../utils/auth'
+import { isDemoMode } from '../../services/demoData'
 
 function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -43,6 +44,9 @@ function Navbar() {
 
   const userToDisplay = displayUser || currentUser;
   const isAdmin = userToDisplay?.email === 'admin@example.com';
+  // In demo mode, show the logged-out nav (Sign In / Sign Up) so visitors can convert,
+  // even though a demo session is active behind the scenes.
+  const showAccountNav = userToDisplay && !isDemoMode();
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
@@ -61,7 +65,7 @@ function Navbar() {
         </button>
         
         <div className="collapse navbar-collapse" id="navbarNav">
-          {userToDisplay ? (
+          {showAccountNav ? (
             // Authenticated user navigation
             <>
               <ul className="navbar-nav me-auto">

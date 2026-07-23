@@ -8,7 +8,7 @@ function Home() {
 
   const handleDemo = () => {
     startDemo();
-    navigate('/dashboard');
+    navigate('/groups');
   };
 
   return (

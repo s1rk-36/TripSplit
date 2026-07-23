@@ -9,7 +9,8 @@ import EditExpenseModal from '../components/modals/EditExpenseModal';
 import ExpenseDetailsModal from '../components/modals/ExpenseDetailsModal';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
-import { formatCurrency } from '../utils/helpers';
+import { isDemoMode, showDemoNotice } from '../services/demoData';
+import { formatCurrency, getBalanceColor, getBalanceText } from '../utils/helpers';
 
 function Expenses() {
   const { currentUser } = useAuth();
@@ -168,6 +169,15 @@ function Expenses() {
     return group ? group.name : 'Unknown Group';
   };
 
+  // In demo mode, block mutating actions up front with a notice instead of opening a modal.
+  const demoGuard = (action) => () => {
+    if (isDemoMode()) {
+      showDemoNotice();
+      return;
+    }
+    action();
+  };
+
   // Filter and sort expenses
   const filteredExpenses = expenses.filter(expense => {
     // Handle search - check name and description
@@ -244,6 +254,8 @@ function Expenses() {
     const userExpense = expense.userExpenses?.find(ue => ue.userId === currentUser?.userId);
     return sum + (userExpense?.amountOwed || 0);
   }, 0);
+  // Net position: what you paid minus your share. Positive = you're owed, negative = you owe.
+  const userBalance = userPaidTotal - userOwedTotal;
 
   if (loading) {
     return (
@@ -261,9 +273,9 @@ function Expenses() {
           <h2>Expenses</h2>
           <p className="text-muted">Track and manage your shared expenses</p>
         </div>
-        <button 
+        <button
           className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
+          onClick={demoGuard(() => setShowCreateModal(true))}
         >
           <FaPlus className="me-1" /> Add Expense
         </button>
@@ -274,14 +286,6 @@ function Expenses() {
       {/* Summary Cards */}
       {filteredExpenses.length > 0 && (
         <div className="row mb-4">
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-primary">{filteredExpenses.length}</h4>
-                <p className="card-text small">Total Expenses</p>
-              </div>
-            </div>
-          </div>
           <div className="col-md-3">
             <div className="card text-center">
               <div className="card-body">
@@ -301,8 +305,16 @@ function Expenses() {
           <div className="col-md-3">
             <div className="card text-center">
               <div className="card-body">
-                <h4 className="text-warning">{formatCurrency(userOwedTotal - userPaidTotal)}</h4>
-                <p className="card-text small">You Owe</p>
+                <h4 className="text-primary">{formatCurrency(userOwedTotal)}</h4>
+                <p className="card-text small">Your Share</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card text-center">
+              <div className="card-body">
+                <h4 className={getBalanceColor(userBalance)}>{formatCurrency(Math.abs(userBalance))}</h4>
+                <p className="card-text small">{getBalanceText(userBalance)}</p>
               </div>
             </div>
           </div>
@@ -422,9 +434,9 @@ function Expenses() {
             }
           </p>
           {(!searchTerm && filterGroup === 'all' && filterCategory === 'all' && filterDateRange === 'all') && (
-            <button 
+            <button
               className="btn btn-primary btn-lg"
-              onClick={() => setShowCreateModal(true)}
+              onClick={demoGuard(() => setShowCreateModal(true))}
             >
               <FaPlus className="me-2" /> Add Your First Expense
             </button>
@@ -529,21 +541,21 @@ function Expenses() {
                               {isCreatedByUser && (
                                 <>
                                   <li>
-                                    <button 
+                                    <button
                                       className="dropdown-item"
-                                      onClick={() => {
+                                      onClick={demoGuard(() => {
                                         setSelectedExpense(expense);
                                         setShowEditModal(true);
-                                      }}
+                                      })}
                                     >
                                       <FaEdit className="me-2" /> Edit
                                     </button>
                                   </li>
                                   <li><hr className="dropdown-divider" /></li>
                                   <li>
-                                    <button 
+                                    <button
                                       className="dropdown-item text-danger"
-                                      onClick={() => handleDeleteExpense(expense.expenseId)}
+                                      onClick={demoGuard(() => handleDeleteExpense(expense.expenseId))}
                                     >
                                       <FaTrash className="me-2" /> Delete
                                     </button>

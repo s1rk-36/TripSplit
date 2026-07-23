@@ -12,6 +12,7 @@ import { AuthProvider } from './utils/auth';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DemoBanner from './components/common/DemoBanner';
+import DemoToast from './components/common/DemoToast';
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Router>
             <Navbar />
             <DemoBanner />
+            <DemoToast />
             <main className="main-content">
                 <Routes>
 
