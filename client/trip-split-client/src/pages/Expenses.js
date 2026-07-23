@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FaPlus, FaReceipt, FaDollarSign, FaCalendar, FaEdit, FaTrash, FaEye, FaFilter, FaSearch, FaUsers, FaUser, FaFileImage } from 'react-icons/fa';
+import { FaPlus, FaReceipt, FaDollarSign, FaCalendar, FaEdit, FaTrash, FaEye, FaFilter, FaSearch, FaUsers, FaUser, FaFileImage, FaArrowLeft } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
@@ -267,12 +267,24 @@ function Expenses() {
 
   return (
     <Layout>
+      {/* Breadcrumb back to the groups view */}
+      <Link to="/groups" className="ts-back-link mb-3">
+        <FaArrowLeft size={11} />
+        Back to groups
+      </Link>
+
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
           <div className="ts-eyebrow">The ledger</div>
-          <h2 className="ts-page-title">Expenses</h2>
-          <p className="ts-page-sub">Every entry, who paid, and how it splits</p>
+          <h2 className="ts-page-title">
+            {filterGroup !== 'all' && groups.length > 0 ? getGroupName(Number(filterGroup)) : 'Expenses'}
+          </h2>
+          <p className="ts-page-sub">
+            {filterGroup !== 'all'
+              ? "This group's expenses, who paid, and how they split"
+              : 'Every entry, who paid, and how it splits'}
+          </p>
         </div>
         <button
           className="btn btn-primary"

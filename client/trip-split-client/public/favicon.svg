@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- TripSplit favicon: tilted ticket stub on ticket-office green -->
+  <rect width="64" height="64" rx="14" fill="#2E5E4E"/>
+  <g transform="rotate(-10 32 32)">
+    <rect x="12" y="19" width="40" height="26" rx="4" fill="#FFFDF8"/>
+    <path d="M16 19h32a4 4 0 0 1 4 4v3H12v-3a4 4 0 0 1 4-4z" fill="#D9A441"/>
+    <line x1="40.5" y1="28" x2="40.5" y2="43" stroke="#C9C2B2" stroke-width="1.6" stroke-dasharray="2.4 2.4"/>
+    <circle cx="40.5" cy="19" r="2.4" fill="#2E5E4E"/>
+    <circle cx="40.5" cy="45" r="2.4" fill="#2E5E4E"/>
+    <rect x="17" y="31" width="17" height="3" rx="1.5" fill="#26312B" opacity="0.75"/>
+    <rect x="17" y="37" width="11" height="3" rx="1.5" fill="#26312B" opacity="0.45"/>
+  </g>
+</svg>

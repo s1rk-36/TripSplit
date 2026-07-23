@@ -717,6 +717,25 @@ code {
 .ts-page-title { font-weight: 600; margin-bottom: 0.1rem; }
 .ts-page-sub { color: var(--ts-ink-soft); margin-bottom: 0; }
 
+/* Breadcrumb-style back link above page headers */
+.ts-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--ts-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--ts-ink-soft);
+  transition: color 0.15s ease, gap 0.15s ease;
+}
+.ts-back-link:hover {
+  color: var(--ts-pine);
+  gap: 0.55rem;
+}
+
 /* Spinner ------------------------------------------------------------------- */
 
 .spinner-border.text-primary { color: var(--ts-pine) !important; }

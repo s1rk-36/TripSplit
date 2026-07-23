@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaCog, FaSignOutAlt, FaUserShield, FaPlane } from 'react-icons/fa';
+import { FaCog, FaSignOutAlt, FaUserShield, FaPlane, FaUsers, FaReceipt } from 'react-icons/fa';
 import { useAuth, auth } from '../../utils/auth'
 import { isDemoMode } from '../../services/demoData'
 
@@ -70,12 +70,30 @@ function Navbar() {
         </button>
         
         <div className="collapse navbar-collapse" id="navbarNav">
+          {/* App navigation: shown for any active session, including demo mode,
+              so visitors can move between Groups and Expenses. */}
+          {userToDisplay && !isAdmin ? (
+            <ul className="navbar-nav me-auto">
+              <li className="nav-item">
+                <Link className={`nav-link ${isActive('/groups')}`} to="/groups">
+                  <FaUsers className="me-1" size={14} />
+                  Groups
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className={`nav-link ${isActive('/expenses')}`} to="/expenses">
+                  <FaReceipt className="me-1" size={14} />
+                  Expenses
+                </Link>
+              </li>
+            </ul>
+          ) : (
+            <ul className="navbar-nav me-auto"></ul>
+          )}
+
           {showAccountNav ? (
             // Authenticated user navigation
             <>
-              <ul className="navbar-nav me-auto">
-              </ul>
-
               <ul className="navbar-nav">
                 {/* Profile Dropdown */}
                 <li className="nav-item dropdown">
@@ -133,9 +151,6 @@ function Navbar() {
           ) : (
             // Non-authenticated user navigation
             <>
-              <ul className="navbar-nav me-auto">
-              </ul>
-              
               <ul className="navbar-nav">
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/login')}`} to="/login">
