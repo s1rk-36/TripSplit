@@ -188,10 +188,11 @@ function Groups() {
   return (
     <Layout>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-          <h2>Groups</h2>
-          <p className="text-muted">Manage your expense sharing groups</p>
+          <div className="ts-eyebrow">Your ledgers</div>
+          <h2 className="ts-page-title">Groups</h2>
+          <p className="ts-page-sub">Every trip keeps its own tab</p>
         </div>
         <div className="btn-group">
           <button
@@ -300,16 +301,16 @@ function Groups() {
         </div>
       ) : (
         <div className="row">
-          {filteredGroups.map(group => {
+          {filteredGroups.map((group, index) => {
             // Check if current user is admin
-            const currentUserMembership = group.users?.find(userGroup => 
+            const currentUserMembership = group.users?.find(userGroup =>
               userGroup.user.appUserId === currentUser?.userId
             );
             const isCurrentUserAdmin = currentUserMembership?.isGroupAdmin || false;
 
             return (
-              <div key={group.groupId} className="col-md-6 col-lg-4 mb-4">
-                <div className="card h-100">
+              <div key={group.groupId} className={`col-md-6 col-lg-4 mb-4 ts-reveal ts-reveal-d${index % 3}`}>
+                <div className={`card h-100 ts-group-card ts-tab-${index % 4}`}>
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start mb-2">
                       <h5 className="card-title mb-0">{group.name}</h5>
@@ -330,62 +331,66 @@ function Groups() {
                     </div>
                     
                     {group.description && (
-                      <p className="card-text text-muted small mb-3">{group.description}</p>
+                      <p className="card-text text-muted small mb-0">{group.description}</p>
                     )}
-                    
-                    {/* Invite code with copy button */}
-                    <div className="d-flex align-items-center mb-2">
-                      <span className="text-muted small me-2">Invite code:</span>
-                      <code className="me-2">{group.inviteCode || '—'}</code>
+
+                    {/* Signature element: invite code as a perforated ticket stub */}
+                    <div className="ts-stub">
+                      <div>
+                        <span className="ts-eyebrow">Invite code</span>
+                        <span className="ts-stub-code">{group.inviteCode || '····'}</span>
+                      </div>
                       <button
                         className={`btn btn-sm ${copiedGroupId === group.groupId ? 'btn-success' : 'btn-outline-secondary'}`}
                         onClick={() => copyInviteCode(group)}
                         title={copiedGroupId === group.groupId ? 'Copied!' : 'Copy invite code'}
-                        style={{ padding: '2px 6px' }}
                       >
                         {copiedGroupId === group.groupId ? <FaCheck size={10} /> : <FaCopy size={10} />}
                         <span className="ms-1">{copiedGroupId === group.groupId ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
-                    
+
                   </div>
                   
                   <div className="card-footer d-flex justify-content-between align-items-center">
-                    <Link 
+                    <Link
                       to={`/expenses?group=${group.groupId}`}
-                      className="btn btn-outline-primary btn-sm"
+                      className="btn btn-primary btn-sm"
                     >
-                      <FaEye className="me-1" /> View Expenses
+                      <FaEye className="me-1" /> View expenses
                     </Link>
-                    
-                    <div className="btn-group">
+
+                    <div className="d-flex gap-1">
                       <button
-                        className="btn btn-outline-info btn-sm"
+                        className="btn btn-outline-secondary btn-sm"
                         onClick={() => {
                           setSelectedGroup(group);
                           setShowDetailsModal(true);
                         }}
+                        title="Group details"
                       >
-                        <FaUsers className="me-1" /> Details
+                        <FaUsers />
                       </button>
-                      
+
                       {/* Only show Edit/Delete for admins */}
                       {isCurrentUserAdmin && (
                         <>
                           <button
-                            className="btn btn-outline-warning btn-sm"
+                            className="btn btn-outline-secondary btn-sm"
                             onClick={demoGuard(() => {
                               setSelectedGroup(group);
                               setShowEditModal(true);
                             })}
+                            title="Edit group"
                           >
-                            <FaEdit className="me-1" /> Edit
+                            <FaEdit />
                           </button>
                           <button
                             className="btn btn-outline-danger btn-sm"
                             onClick={demoGuard(() => handleDeleteGroup(group.groupId))}
+                            title="Delete group"
                           >
-                            <FaTrash className="me-1" /> Delete
+                            <FaTrash />
                           </button>
                         </>
                       )}

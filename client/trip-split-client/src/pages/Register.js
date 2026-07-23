@@ -86,15 +86,16 @@ function Register() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center bg-light py-5">
+    <div className="ts-auth py-5">
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-md-8 col-lg-6">
-            <div className="card shadow-lg border-0">
+            <div className="card">
               <div className="card-body p-5">
                 <div className="text-center mb-4">
-                  <h4 className="fw-bold text-dark">Create Account</h4>
-                  <p className="text-muted">Join thousands of users splitting expenses</p>
+                  <div className="ts-eyebrow mb-2">New traveler</div>
+                  <h4 className="fw-bold">Create your account</h4>
+                  <p className="text-muted mb-0">Open a ledger, invite your group, split fairly</p>
                 </div>
 
                 {error && (

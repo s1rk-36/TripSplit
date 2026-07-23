@@ -16,8 +16,8 @@ function DemoBanner() {
   };
 
   return (
-    <div className="bg-warning text-dark text-center py-2 px-3 small">
-      <strong>Demo Mode</strong> — exploring TripSplit with sample data. Changes aren&apos;t saved.
+    <div className="ts-demo-banner text-center py-2 px-3 small">
+      <strong>Demo mode:</strong> exploring TripSplit with sample data. Changes aren&apos;t saved.
       <button onClick={exit} className="btn btn-sm btn-dark ms-2 py-0 px-2">Exit demo</button>
     </div>
   );

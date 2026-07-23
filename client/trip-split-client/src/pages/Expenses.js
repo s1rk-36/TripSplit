@@ -268,10 +268,11 @@ function Expenses() {
   return (
     <Layout>
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-          <h2>Expenses</h2>
-          <p className="text-muted">Track and manage your shared expenses</p>
+          <div className="ts-eyebrow">The ledger</div>
+          <h2 className="ts-page-title">Expenses</h2>
+          <p className="ts-page-sub">Every entry, who paid, and how it splits</p>
         </div>
         <button
           className="btn btn-primary"
@@ -285,38 +286,26 @@ function Expenses() {
 
       {/* Summary Cards */}
       {filteredExpenses.length > 0 && (
-        <div className="row mb-4">
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-success">{formatCurrency(totalExpenses)}</h4>
-                <p className="card-text small">Total Amount</p>
-              </div>
-            </div>
+        <div className="ts-ledger-strip mb-4 ts-reveal">
+          <div className="ts-stat">
+            <div className="ts-eyebrow">Group total</div>
+            <div className="ts-stat-value">{formatCurrency(totalExpenses)}</div>
+            <p className="ts-stat-label">across {filteredExpenses.length} expense{filteredExpenses.length === 1 ? '' : 's'}</p>
           </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-info">{formatCurrency(userPaidTotal)}</h4>
-                <p className="card-text small">You Paid</p>
-              </div>
-            </div>
+          <div className="ts-stat">
+            <div className="ts-eyebrow">You paid</div>
+            <div className="ts-stat-value">{formatCurrency(userPaidTotal)}</div>
+            <p className="ts-stat-label">out of your own pocket</p>
           </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className="text-primary">{formatCurrency(userOwedTotal)}</h4>
-                <p className="card-text small">Your Share</p>
-              </div>
-            </div>
+          <div className="ts-stat">
+            <div className="ts-eyebrow">Your share</div>
+            <div className="ts-stat-value">{formatCurrency(userOwedTotal)}</div>
+            <p className="ts-stat-label">your part of the total</p>
           </div>
-          <div className="col-md-3">
-            <div className="card text-center">
-              <div className="card-body">
-                <h4 className={getBalanceColor(userBalance)}>{formatCurrency(Math.abs(userBalance))}</h4>
-                <p className="card-text small">{getBalanceText(userBalance)}</p>
-              </div>
-            </div>
+          <div className="ts-stat">
+            <div className="ts-eyebrow">Balance</div>
+            <div className={`ts-stat-value ${getBalanceColor(userBalance)}`}>{formatCurrency(Math.abs(userBalance))}</div>
+            <p className="ts-stat-label">{getBalanceText(userBalance)}</p>
           </div>
         </div>
       )}
@@ -443,7 +432,7 @@ function Expenses() {
           )}
         </div>
       ) : (
-        <div className="card">
+        <div className="card ts-reveal ts-reveal-d1">
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table table-hover mb-0">
@@ -485,7 +474,7 @@ function Expenses() {
                           </div>
                         </td>
                         <td>
-                          <span className="fw-bold">{formatCurrency(expense.totalCost)}</span>
+                          <span className="ts-amount">{formatCurrency(expense.totalCost)}</span>
                         </td>
                         <td>
                           <span className="badge bg-light text-dark">
@@ -494,7 +483,7 @@ function Expenses() {
                         </td>
                         <td>
                           {expense.category && (
-                            <span className="badge bg-secondary">{expense.category}</span>
+                            <span className="ts-stamp">{expense.category}</span>
                           )}
                         </td>
                         <td>
@@ -505,15 +494,15 @@ function Expenses() {
                           </div>
                         </td>
                         <td>
-                          <small>{new Date(expense.createdAt).toLocaleDateString()}</small>
+                          <small className="ts-mono">{new Date(expense.createdAt).toLocaleDateString()}</small>
                         </td>
                         <td>
-                          <span className={userExpense?.amountOwed ? 'fw-medium' : 'text-muted'}>
+                          <span className={`ts-amount ${userExpense?.amountOwed ? '' : 'text-muted'}`}>
                             {formatCurrency(userExpense?.amountOwed || 0)}
                           </span>
                           {userExpense?.amountPaid > 0 && (
                             <div>
-                              <small className="text-success">
+                              <small className="text-success ts-mono">
                                 Paid: {formatCurrency(userExpense.amountPaid)}
                               </small>
                             </div>

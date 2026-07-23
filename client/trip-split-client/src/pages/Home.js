@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUsers, FaReceipt, FaCalculator, FaArrowRight, FaCheck } from 'react-icons/fa';
+import { FaUsers, FaReceipt, FaBalanceScale } from 'react-icons/fa';
 import { startDemo } from '../services/demoData';
 
 
@@ -13,60 +13,70 @@ function Home() {
 
   return (
     <div>
-      {/* Main Section */}
-      <section className="bg-primary text-white py-5">
-        <div className="container">
+      {/* Hero */}
+      <section className="ts-hero py-5">
+        <div className="container py-lg-4">
           <div className="row align-items-center min-vh-75">
-            <div className="col-lg-6">
-              <h1 className="display-4 fw-bold mb-4">
-                Split Travel Expenses with Friends
+            <div className="col-lg-6 ts-rise">
+              <div className="ts-eyebrow ts-eyebrow--paper mb-3">
+                Shared travel ledger
+              </div>
+              <h1 className="display-4 mb-4">
+                One trip. One tab.<br /><span className="ts-underline">No spreadsheets.</span>
               </h1>
-              <p className="lead mb-4">
-                Track shared expenses, split bills fairly, and settle up easily. 
-                Perfect for group trips, roommates, and shared adventures.
+              <p className="ts-hero-lead mb-4">
+                TripSplit keeps a running ledger for your group: who paid,
+                who owes, and exactly how to settle up when the trip ends.
               </p>
-              <div className="d-flex gap-3 flex-wrap">
-                <Link to="/register" className="btn btn-light btn-lg px-4">
-                  Get Started Free <FaArrowRight className="ms-2" />
-                </Link>
+              <div className="d-flex gap-3 flex-wrap align-items-center">
                 <button onClick={handleDemo} className="btn btn-warning btn-lg px-4">
-                  View Live Demo
+                  Try the live demo
                 </button>
-                <Link to="/login" className="btn btn-outline-light btn-lg px-4">
-                  Sign In
+                <Link to="/register" className="btn btn-outline-paper btn-lg px-4">
+                  Create free account
                 </Link>
               </div>
+              <p className="ts-hero-note mt-3 mb-0">
+                Already keeping a tab? <Link to="/login">Sign in</Link>
+              </p>
             </div>
-            <div className="col-lg-6 text-center">
-              {/* App Screenshots */}
-              <div className="position-relative">
-                <div className="row g-4">
-                  <div className="col-12 mb-4">
-                    <div className="bg-white rounded-3 p-4 shadow-lg">
-                      <img 
-                        src="/group_demo.png"
-                        alt="TripSplit Groups Dashboard showing various travel groups and expense sharing options"
-                        className="img-fluid rounded-2"
-                        style={{ maxHeight: '700px', objectFit: 'cover', width: '100%' }}
-                      />
-                      <div className="mt-3 text-center">
-                        <h6 className="text-primary fw-bold mb-0">Groups Overview</h6>
-                      </div>
-                    </div>
+
+            {/* Signature: boarding-pass sample split */}
+            <div className="col-lg-6 mt-5 mt-lg-0 ts-rise ts-rise-delay-1">
+              <div className="ts-ticket" aria-hidden="true">
+                <div className="ts-ticket-head">
+                  <span className="ts-eyebrow ts-eyebrow--paper">TripSplit · Group ledger</span>
+                  <span className="ts-mono small">NO. 0042</span>
+                </div>
+                <div className="ts-ticket-body position-relative">
+                  <div className="ts-ticket-row">
+                    <strong>Japan Spring Trip</strong>
+                    <span className="ts-mono small text-muted">4 travelers</span>
                   </div>
-                  <div className="col-12">
-                    <div className="bg-white rounded-3 p-4 shadow-lg">
-                      <img 
-                        src="/expense_demo.png"
-                        alt="Expense splitting interface showing how to divide costs among group members"
-                        className="img-fluid rounded-2"
-                        style={{ maxHeight: '700px', objectFit: 'cover', width: '100%' }}
-                      />
-                      <div className="mt-3 text-center">
-                        <h6 className="text-primary fw-bold mb-0">Expense Splitting</h6>
-                      </div>
-                    </div>
+                  <div className="ts-ticket-row">
+                    <span>Flight tickets · Sam paid</span>
+                    <span className="ts-amount">$1,200.00</span>
                   </div>
+                  <div className="ts-ticket-row">
+                    <span>Ryokan, Kyoto · Jordan paid</span>
+                    <span className="ts-amount">$800.00</span>
+                  </div>
+                  <div className="ts-ticket-row">
+                    <span>Sushi dinner, Ginza · you paid</span>
+                    <span className="ts-amount">$240.00</span>
+                  </div>
+                  <div className="ts-ticket-row ts-ticket-total">
+                    <span>Your share</span>
+                    <span className="ts-amount">$560.00</span>
+                  </div>
+                  <span className="ts-settled-stamp">Settled</span>
+                </div>
+                <div className="ts-ticket-stub">
+                  <div>
+                    <span className="ts-eyebrow">Invite code</span>
+                    <div className="ts-stub-code">K7M2·QP9R</div>
+                  </div>
+                  <span className="ts-mono small text-muted">Share with your group</span>
                 </div>
               </div>
             </div>
@@ -74,130 +84,104 @@ function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* What it does */}
       <section className="py-5">
-        <div className="container">
-          <div className="row text-center mb-5">
-            <div className="col">
-              <h2 className="display-5 fw-bold mb-3">Why Choose TripSplit?</h2>
-              <p className="lead text-muted">
-                Make group expense management simple and stress-free
-              </p>
-            </div>
+        <div className="container py-4">
+          <div className="text-center mb-5 ts-reveal">
+            <h2 className="ts-section-title display-6">Everything on one tab</h2>
+            <hr className="ts-rule" />
+            <p className="ts-page-sub">
+              The whole trip's money, kept straight without anyone playing accountant.
+            </p>
           </div>
-          
+
           <div className="row g-4">
-            <div className="col-md-4">
-              <div className="card h-100 border-0 shadow-sm">
-                <div className="card-body text-center p-4">
-                  <FaUsers className="text-primary mb-3" size={48} />
-                  <h5 className="card-title">Group Management</h5>
-                  <p className="card-text">
-                    Create groups for trips, events, or shared living. 
-                    Add friends and track expenses together.
-                  </p>
-                </div>
+            <div className="col-md-4 ts-reveal">
+              <div className="ts-feature">
+                <FaUsers className="ts-feature-icon" size={28} />
+                <h5>Groups</h5>
+                <p>
+                  Open a group for the trip and hand friends an invite code.
+                  No emails to chase, no accounts to link.
+                </p>
               </div>
             </div>
-            
-            <div className="col-md-4">
-              <div className="card h-100 border-0 shadow-sm">
-                <div className="card-body text-center p-4">
-                  <FaReceipt className="text-success mb-3" size={48} />
-                  <h5 className="card-title">Smart Expense Tracking</h5>
-                  <p className="card-text">
-                    Add expenses, upload receipts, and split costs fairly. 
-                    Track who paid what and who owes whom.
-                  </p>
-                </div>
+
+            <div className="col-md-4 ts-reveal ts-reveal-d1">
+              <div className="ts-feature">
+                <FaReceipt className="ts-feature-icon" size={28} />
+                <h5>Receipts</h5>
+                <p>
+                  Log expenses as they happen and attach the receipt photo.
+                  Every entry shows who paid and how it splits.
+                </p>
               </div>
             </div>
-            
-            <div className="col-md-4">
-              <div className="card h-100 border-0 shadow-sm">
-                <div className="card-body text-center p-4">
-                  <FaCalculator className="text-warning mb-3" size={48} />
-                  <h5 className="card-title">Automatic Calculations</h5>
-                  <p className="card-text">
-                    No more manual math! We calculate who owes what 
-                    and provide clear settlement recommendations.
-                  </p>
-                </div>
+
+            <div className="col-md-4 ts-reveal ts-reveal-d2">
+              <div className="ts-feature">
+                <FaBalanceScale className="ts-feature-icon" size={28} />
+                <h5>Settling</h5>
+                <p>
+                  The ledger nets it all out: what you paid, what your share
+                  is, and the one number that squares you with the group.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-5 bg-light">
-        <div className="container">
-          <div className="row text-center mb-5">
-            <div className="col">
-              <h2 className="display-5 fw-bold mb-3">How It Works</h2>
-              <p className="lead text-muted">Get started in just 3 simple steps</p>
-            </div>
+      {/* How it works: a real sequence, so numbered steps earn their place */}
+      <section className="py-5" style={{ background: 'var(--ts-paper-raised)', borderTop: '1px solid var(--ts-line)', borderBottom: '1px solid var(--ts-line)' }}>
+        <div className="container py-4">
+          <div className="text-center mb-5 ts-reveal">
+            <h2 className="ts-section-title display-6">From takeoff to settled</h2>
+            <hr className="ts-rule" />
           </div>
-          
-          <div className="row g-4">
-            <div className="col-md-4 text-center">
-              <div className="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{width: '60px', height: '60px'}}>
-                <span className="fw-bold fs-4">1</span>
-              </div>
-              <h5>Create a Group</h5>
-              <p className="text-muted">
-                Start by creating a group for your trip or shared expenses. 
-                Invite friends via group code.
+
+          <div className="row g-4 text-center">
+            <div className="col-md-4 ts-reveal">
+              <span className="ts-step-num mb-3">01</span>
+              <h5>Open a group</h5>
+              <p className="ts-page-sub">
+                Name the trip, then share the invite code with everyone coming along.
               </p>
             </div>
-            
-            <div className="col-md-4 text-center">
-              <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{width: '60px', height: '60px'}}>
-                <span className="fw-bold fs-4">2</span>
-              </div>
-              <h5>Add Expenses</h5>
-              <p className="text-muted">
-                Record expenses as they happen. Add receipts, 
-                choose who to split with, and let us do the math.
+
+            <div className="col-md-4 ts-reveal ts-reveal-d1">
+              <span className="ts-step-num mb-3">02</span>
+              <h5>Log expenses</h5>
+              <p className="ts-page-sub">
+                Add costs as they happen: dinner, the rental car, the ryokan.
+                Attach receipts, pick who's in on the split.
               </p>
             </div>
-            
-            <div className="col-md-4 text-center">
-              <div className="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{width: '60px', height: '60px'}}>
-                <span className="fw-bold fs-4">3</span>
-              </div>
-              <h5>Settle Up</h5>
-              <p className="text-muted">
-                See who owes what at a glance.
+
+            <div className="col-md-4 ts-reveal ts-reveal-d2">
+              <span className="ts-step-num mb-3">03</span>
+              <h5>Settle up</h5>
+              <p className="ts-page-sub">
+                At the end, everyone sees one clear balance. Pay it, stamp it settled.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
+      {/* Closing CTA */}
       <section className="py-5">
-        <div className="container">
-          <div className="row align-items-center">
-            <div className="col-lg-6">
-              <h2 className="display-5 fw-bold mb-4">Perfect for Every Occasion</h2>
-              <div className="mb-3">
-                <FaCheck className="text-success me-2" />
-                <strong>Group Travel:</strong> Vacations, weekend trips, business travel
-              </div>
-              <div className="mb-3">
-                <FaCheck className="text-success me-2" />
-                <strong>Shared Living:</strong> Roommate expenses, utilities, groceries
-              </div>
-              <div className="mb-3">
-                <FaCheck className="text-success me-2" />
-                <strong>Events:</strong> Parties, dinners, group activities
-              </div>
-              <div className="mt-4">
-                <Link to="/register" className="btn btn-primary btn-lg">
-                  Start Splitting Expenses
-                </Link>
-              </div>
+        <div className="container py-3">
+          <div className="ts-cta-band text-center p-5 ts-reveal">
+            <div className="ts-eyebrow ts-eyebrow--paper mb-2">Boarding now</div>
+            <h2 className="display-6 mb-3">Keep the trip. Lose the math.</h2>
+            <div className="d-flex gap-3 justify-content-center flex-wrap">
+              <Link to="/register" className="btn btn-warning btn-lg px-4">
+                Start your first group
+              </Link>
+              <button onClick={handleDemo} className="btn btn-outline-paper btn-lg px-4">
+                Try the demo first
+              </button>
             </div>
           </div>
         </div>

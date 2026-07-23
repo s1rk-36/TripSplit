@@ -63,15 +63,15 @@ function Login() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center bg-light">
+    <div className="ts-auth py-5">
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-md-6 col-lg-4">
-            <div className="card shadow-lg border-0">
+            <div className="card">
               <div className="card-body p-5">
                 <div className="text-center mb-4">
-                  <h4 className="fw-bold text-dark">Welcome Back</h4>
-                  <p className="text-muted">Sign in to your account</p>
+                  <div className="ts-eyebrow mb-2">Welcome back</div>
+                  <h4 className="fw-bold">Sign in to your ledger</h4>
                 </div>
 
                 {error && (
@@ -136,7 +136,7 @@ function Login() {
                         Signing in...
                       </>
                     ) : (
-                      'Sign In'
+                      'Sign in'
                     )}
                   </button>
                 </form>

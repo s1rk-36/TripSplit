@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {FaUser, FaCog, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaUserShield } from 'react-icons/fa';
+import { FaCog, FaSignOutAlt, FaUserShield, FaPlane } from 'react-icons/fa';
 import { useAuth, auth } from '../../utils/auth'
 import { isDemoMode } from '../../services/demoData'
 
@@ -48,10 +48,15 @@ function Navbar() {
   // even though a demo session is active behind the scenes.
   const showAccountNav = userToDisplay && !isDemoMode();
 
+  const initials = userToDisplay
+    ? `${userToDisplay.firstName?.[0] || ''}${userToDisplay.lastName?.[0] || ''}`.toUpperCase()
+    : '';
+
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav className="navbar navbar-expand-lg ts-nav">
       <div className="container">
-        <Link className="navbar-brand fw-bold" to={userToDisplay ? (isAdmin ? "/admin" : "/groups") : "/"}>
+        <Link className="navbar-brand" to={userToDisplay ? (isAdmin ? "/admin" : "/groups") : "/"}>
+          <FaPlane className="ts-brand-mark" size={18} />
           TripSplit
         </Link>
         
@@ -82,9 +87,9 @@ function Navbar() {
                     data-bs-toggle="dropdown" 
                     aria-expanded="false"
                   >
-                    <div className={`text-white rounded-circle d-flex align-items-center justify-content-center me-2 ${isAdmin ? 'bg-danger' : 'text-primary'}`} style={{width: '32px', height: '32px'}}>
-                      {isAdmin ? <FaUserShield size={16} /> : <FaUser size={16} />}
-                    </div>
+                    <span className={`ts-avatar me-2 ${isAdmin ? 'ts-avatar--admin' : ''}`}>
+                      {isAdmin ? <FaUserShield size={14} /> : (initials || '·')}
+                    </span>
                     <span className="d-none d-md-inline">
                       {isAdmin ? 'Admin' : `${userToDisplay?.firstName} ${userToDisplay?.lastName}`}
                     </span>
@@ -134,17 +139,15 @@ function Navbar() {
               <ul className="navbar-nav">
                 <li className="nav-item">
                   <Link className={`nav-link ${isActive('/login')}`} to="/login">
-                    <FaSignInAlt className="me-1" />
-                    Sign In
+                    Sign in
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link 
-                    className={`btn btn-outline-light ms-2 ${isActive('/register')}`} 
+                  <Link
+                    className={`btn btn-primary ms-lg-2 ${isActive('/register')}`}
                     to="/register"
                   >
-                    <FaUserPlus className="me-1" />
-                    Sign Up
+                    Sign up
                   </Link>
                 </li>
               </ul>

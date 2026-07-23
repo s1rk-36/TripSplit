@@ -1,110 +1,804 @@
+/* ==========================================================================
+   TripSplit: "Travel Ledger" theme
+   Identity: vintage ticket office / shared travel ledger.
+   Paper + ink + railway-ticket green; slab display type; mono for money.
+   Signature: the perforated ticket stub (invite codes, hero boarding pass).
+   ========================================================================== */
+
+:root {
+  /* Palette */
+  --ts-paper: #f6f3ec;      /* warm paper background */
+  --ts-paper-raised: #fffdf8; /* card surface */
+  --ts-ink: #26312b;        /* near-black green ink */
+  --ts-ink-soft: #5c6660;   /* secondary text */
+  --ts-line: #d9d3c5;       /* hairline rules */
+  --ts-pine: #2e5e4e;       /* primary: old railway-ticket green */
+  --ts-pine-deep: #22453a;  /* hero / pressed states */
+  --ts-marigold: #d9a441;   /* accent: stamps, demo, highlights */
+  --ts-rust: #a94438;       /* owes / danger */
+  --ts-leaf: #3e7a4e;       /* owed / success */
+  --ts-dusk: #5b7e96;       /* info */
+
+  /* Type */
+  --ts-display: 'Zilla Slab', 'Georgia', serif;
+  --ts-body: 'Karla', 'Helvetica Neue', sans-serif;
+  --ts-mono: 'IBM Plex Mono', 'Menlo', monospace;
+
+  /* Re-point Bootstrap's palette so the text and bg utilities inherit the theme */
+  --bs-primary: var(--ts-pine);
+  --bs-primary-rgb: 46, 94, 78;
+  --bs-success: var(--ts-leaf);
+  --bs-success-rgb: 62, 122, 78;
+  --bs-danger: var(--ts-rust);
+  --bs-danger-rgb: 169, 68, 56;
+  --bs-warning: var(--ts-marigold);
+  --bs-warning-rgb: 217, 164, 65;
+  --bs-info: var(--ts-dusk);
+  --bs-info-rgb: 91, 126, 150;
+  --bs-light: #efebe1;
+  --bs-light-rgb: 239, 235, 225;
+  --bs-dark: var(--ts-ink);
+  --bs-dark-rgb: 38, 49, 43;
+  --bs-secondary: var(--ts-ink-soft);
+  --bs-secondary-rgb: 92, 102, 96;
+  --bs-secondary-color: var(--ts-ink-soft);
+  --bs-body-bg: var(--ts-paper);
+  --bs-body-color: var(--ts-ink);
+  --bs-body-font-family: var(--ts-body);
+  --bs-border-color: var(--ts-line);
+  --bs-link-color-rgb: 46, 94, 78;
+  --bs-link-hover-color-rgb: 34, 69, 58;
+  --bs-border-radius: 6px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--ts-body);
+  background-color: var(--ts-paper);
+  color: var(--ts-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
+}
+
+h1, h2, h3, h4, h5, .modal-title, .navbar-brand, .card-title {
+  font-family: var(--ts-display);
+  color: var(--ts-ink);
+  letter-spacing: -0.01em;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: var(--ts-mono);
+  color: var(--ts-pine);
 }
 
-.navbar-brand {
-  font-weight: bold;
-  font-size: 1.5rem;
-  color: white !important;
+::selection {
+  background: rgba(217, 164, 65, 0.4);
 }
 
-.navbar {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+/* Shared small pieces ------------------------------------------------------ */
+
+/* Uppercase eyebrow label, used above headings and on ledger stats */
+.ts-eyebrow {
+  font-family: var(--ts-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ts-pine);
 }
 
-.nav-link {
-  font-weight: 500;
-  transition: color 0.15s ease-in-out;
-  color: rgba(255, 255, 255, 0.85) !important;
+.ts-eyebrow--paper { color: rgba(246, 243, 236, 0.75); }
+
+/* Monospace money / codes */
+.ts-mono {
+  font-family: var(--ts-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-.nav-link:hover {
-  color: rgba(255, 255, 255, 1) !important;
+/* Passport-stamp chip for categories */
+.ts-stamp {
+  display: inline-block;
+  font-family: var(--ts-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ts-ink-soft);
+  border: 1px solid var(--ts-line);
+  border-radius: 3px;
+  padding: 0.15rem 0.45rem;
+  background: transparent;
+  white-space: nowrap;
 }
 
-.card {
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  border: 1px solid rgba(0, 0, 0, 0.125);
-  transition: box-shadow 0.15s ease-in-out;
+/* Section heading with a short rule underneath */
+.ts-section-title {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
 }
+.ts-rule {
+  width: 44px;
+  height: 3px;
+  background: var(--ts-marigold);
+  border: none;
+  opacity: 1;
+  margin: 0.5rem auto 1rem;
+}
+.ts-rule--left { margin-left: 0; margin-right: auto; }
 
-.card:hover {
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-}
+/* Buttons ------------------------------------------------------------------ */
 
 .btn {
-  border-radius: 0.375rem;
-  font-weight: 500;
-  transition: all 0.15s ease-in-out;
+  border-radius: 6px;
+  font-weight: 600;
+  font-family: var(--ts-body);
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, transform 0.1s ease;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--ts-marigold);
+  outline-offset: 2px;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(1px); }
+.btn-primary:hover,
+.btn-warning:hover {
+  box-shadow: 0 6px 16px rgba(38, 49, 43, 0.22);
 }
 
-.btn-group .btn:not(:last-child) {
-  margin-right: 0.25rem;
+.btn-primary {
+  --bs-btn-bg: var(--ts-pine);
+  --bs-btn-border-color: var(--ts-pine);
+  --bs-btn-hover-bg: var(--ts-pine-deep);
+  --bs-btn-hover-border-color: var(--ts-pine-deep);
+  --bs-btn-active-bg: var(--ts-pine-deep);
+  --bs-btn-active-border-color: var(--ts-pine-deep);
+  --bs-btn-disabled-bg: #8ea89e;
+  --bs-btn-disabled-border-color: #8ea89e;
+  --bs-btn-focus-shadow-rgb: 217, 164, 65;
 }
+
+.btn-outline-primary {
+  --bs-btn-color: var(--ts-pine);
+  --bs-btn-border-color: var(--ts-pine);
+  --bs-btn-hover-bg: var(--ts-pine);
+  --bs-btn-hover-border-color: var(--ts-pine);
+  --bs-btn-active-bg: var(--ts-pine-deep);
+  --bs-btn-active-border-color: var(--ts-pine-deep);
+  --bs-btn-focus-shadow-rgb: 46, 94, 78;
+}
+
+.btn-warning {
+  --bs-btn-bg: var(--ts-marigold);
+  --bs-btn-border-color: var(--ts-marigold);
+  --bs-btn-color: var(--ts-ink);
+  --bs-btn-hover-bg: #c8942f;
+  --bs-btn-hover-border-color: #c8942f;
+  --bs-btn-hover-color: var(--ts-ink);
+  --bs-btn-active-bg: #b8872a;
+  --bs-btn-active-border-color: #b8872a;
+  --bs-btn-active-color: var(--ts-ink);
+}
+
+.btn-danger,
+.btn-outline-danger {
+  --bs-btn-border-color: var(--ts-rust);
+}
+.btn-danger {
+  --bs-btn-bg: var(--ts-rust);
+  --bs-btn-hover-bg: #8f382e;
+  --bs-btn-hover-border-color: #8f382e;
+}
+.btn-outline-danger {
+  --bs-btn-color: var(--ts-rust);
+  --bs-btn-hover-bg: var(--ts-rust);
+  --bs-btn-hover-border-color: var(--ts-rust);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--ts-ink-soft);
+  --bs-btn-border-color: #b8b1a2;
+  --bs-btn-hover-bg: #e9e4d8;
+  --bs-btn-hover-border-color: #b8b1a2;
+  --bs-btn-hover-color: var(--ts-ink);
+  --bs-btn-active-bg: #e0dacb;
+  --bs-btn-active-border-color: #b8b1a2;
+  --bs-btn-active-color: var(--ts-ink);
+}
+
+.btn-outline-warning {
+  --bs-btn-color: #a5791f;
+  --bs-btn-border-color: var(--ts-marigold);
+  --bs-btn-hover-bg: var(--ts-marigold);
+  --bs-btn-hover-border-color: var(--ts-marigold);
+  --bs-btn-hover-color: var(--ts-ink);
+}
+
+.btn-outline-info {
+  --bs-btn-color: var(--ts-dusk);
+  --bs-btn-border-color: var(--ts-dusk);
+  --bs-btn-hover-bg: var(--ts-dusk);
+  --bs-btn-hover-border-color: var(--ts-dusk);
+}
+
+.btn-success {
+  --bs-btn-bg: var(--ts-leaf);
+  --bs-btn-border-color: var(--ts-leaf);
+  --bs-btn-hover-bg: #346642;
+  --bs-btn-hover-border-color: #346642;
+}
+
+/* Paper-outline button for use on the pine hero */
+.btn-outline-paper {
+  --bs-btn-color: var(--ts-paper);
+  --bs-btn-border-color: rgba(246, 243, 236, 0.6);
+  --bs-btn-hover-bg: rgba(246, 243, 236, 0.12);
+  --bs-btn-hover-border-color: var(--ts-paper);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-active-bg: rgba(246, 243, 236, 0.2);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-border-color: var(--ts-paper);
+}
+
+/* Navbar ------------------------------------------------------------------- */
+
+.ts-nav {
+  background: var(--ts-paper-raised);
+  border-bottom: 2px solid var(--ts-ink);
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  transition: box-shadow 0.25s ease;
+}
+.ts-nav--scrolled {
+  box-shadow: 0 6px 20px rgba(38, 49, 43, 0.14);
+}
+
+.ts-nav .navbar-brand {
+  font-family: var(--ts-display);
+  font-weight: 700;
+  font-size: 1.45rem;
+  color: var(--ts-ink);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.ts-nav .navbar-brand:hover { color: var(--ts-pine); }
+.ts-nav .navbar-brand .ts-brand-mark {
+  color: var(--ts-pine);
+  transform: rotate(-8deg);
+}
+
+.ts-nav .nav-link {
+  color: var(--ts-ink);
+  font-weight: 600;
+}
+.ts-nav .nav-link:hover,
+.ts-nav .nav-link.active { color: var(--ts-pine); }
+
+.ts-nav .navbar-toggler {
+  border-color: var(--ts-line);
+  color: var(--ts-ink);
+}
+.ts-nav .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%2326312b' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Avatar circle in the account dropdown */
+.ts-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ts-pine);
+  color: var(--ts-paper);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ts-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.ts-avatar--admin { background: var(--ts-rust); }
+
+/* Cards / panels ----------------------------------------------------------- */
+
+.card {
+  background: var(--ts-paper-raised);
+  border: 1px solid var(--ts-line);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(38, 49, 43, 0.06);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.card:hover {
+  box-shadow: 0 4px 14px rgba(38, 49, 43, 0.1);
+}
+.card-footer {
+  background: transparent;
+  border-top: 1px solid var(--ts-line);
+}
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid var(--ts-line);
+  font-family: var(--ts-display);
+  font-weight: 600;
+}
+
+/* Group card: travel-document card with a colored spine and a ticket stub */
+.ts-group-card {
+  position: relative;
+  overflow: hidden;
+  border-top: none;
+}
+.ts-group-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+}
+.ts-group-card.ts-tab-0::before { background: var(--ts-pine); }
+.ts-group-card.ts-tab-1::before { background: var(--ts-marigold); }
+.ts-group-card.ts-tab-2::before { background: var(--ts-dusk); }
+.ts-group-card.ts-tab-3::before { background: var(--ts-rust); }
+.ts-group-card:hover { transform: translateY(-2px); }
+
+/* The signature: a perforated ticket stub holding the invite code */
+.ts-stub {
+  position: relative;
+  margin: 0.85rem -1rem -1rem;
+  padding: 0.7rem 1rem 0.8rem 1.6rem;
+  border-top: 2px dashed var(--ts-line);
+  background: var(--ts-paper);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+/* punch hole on the tear line */
+.ts-stub::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ts-paper-raised);
+  border: 1.5px solid var(--ts-line);
+}
+.ts-stub-code {
+  font-family: var(--ts-mono);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.18em;
+  color: var(--ts-ink);
+}
+.ts-stub .ts-eyebrow { display: block; margin-bottom: 0.1rem; }
+
+/* Ledger stat strip (Expenses summary) ------------------------------------- */
+
+.ts-ledger-strip {
+  background: var(--ts-paper-raised);
+  border: 1px solid var(--ts-line);
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  overflow: hidden;
+}
+.ts-ledger-strip .ts-stat {
+  padding: 1rem 1.25rem;
+  border-left: 1px dashed var(--ts-line);
+}
+.ts-ledger-strip .ts-stat:first-child { border-left: none; }
+.ts-stat .ts-stat-value {
+  font-family: var(--ts-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.ts-stat .ts-stat-label {
+  font-size: 0.78rem;
+  color: var(--ts-ink-soft);
+  margin: 0;
+}
+@media (max-width: 768px) {
+  .ts-ledger-strip { grid-template-columns: repeat(2, 1fr); }
+  .ts-ledger-strip .ts-stat:nth-child(odd) { border-left: none; }
+  .ts-ledger-strip .ts-stat:nth-child(n + 3) { border-top: 1px dashed var(--ts-line); }
+}
+
+/* Tables: ruled ledger ---------------------------------------------------- */
 
 .table {
-  background-color: white;
+  --bs-table-bg: var(--ts-paper-raised);
+  --bs-table-color: var(--ts-ink);
+  --bs-table-border-color: var(--ts-line);
+  --bs-table-hover-bg: #f1ecdf;
+  --bs-table-hover-color: var(--ts-ink);
+}
+.table thead th {
+  font-family: var(--ts-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ts-ink-soft);
+  border-bottom: 2px solid var(--ts-ink);
+  background: var(--ts-paper-raised);
+}
+.table-light {
+  --bs-table-bg: var(--ts-paper-raised);
+  --bs-table-color: var(--ts-ink-soft);
+}
+.ts-amount {
+  font-family: var(--ts-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
-.table-hover tbody tr:hover {
-  background-color: rgba(0, 0, 0, 0.075);
+/* Forms -------------------------------------------------------------------- */
+
+.form-control,
+.form-select {
+  background-color: var(--ts-paper-raised);
+  border-color: #c4bdae;
+  color: var(--ts-ink);
+  border-radius: 6px;
+}
+.form-control:focus,
+.form-select:focus {
+  background-color: #ffffff;
+  border-color: var(--ts-pine);
+  box-shadow: 0 0 0 0.2rem rgba(46, 94, 78, 0.18);
+  color: var(--ts-ink);
+}
+.form-control::placeholder { color: #9aa39d; }
+.input-group-text {
+  background: var(--ts-paper);
+  border-color: #c4bdae;
+  color: var(--ts-ink-soft);
+}
+.form-label { font-weight: 600; font-size: 0.9rem; }
+
+/* Modals ------------------------------------------------------------------- */
+
+.modal-content {
+  background: var(--ts-paper-raised);
+  border: 1px solid var(--ts-line);
+  border-radius: 8px;
+  box-shadow: 0 18px 50px rgba(38, 49, 43, 0.28);
+}
+.modal-header {
+  border-bottom: 2px solid var(--ts-ink);
+  padding: 1rem 1.5rem;
+}
+.modal-footer { border-top: 1px solid var(--ts-line); }
+.modal-title { font-weight: 600; }
+.modal-backdrop.show { opacity: 0.4; }
+
+/* Dropdowns ---------------------------------------------------------------- */
+
+.dropdown-menu {
+  background: var(--ts-paper-raised);
+  border: 1px solid var(--ts-line);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(38, 49, 43, 0.16);
+}
+.dropdown-item { color: var(--ts-ink); font-weight: 500; }
+.dropdown-item:hover, .dropdown-item:focus {
+  background: var(--ts-paper);
+  color: var(--ts-pine);
+}
+.dropdown-item.text-danger:hover { color: var(--ts-rust) !important; }
+.dropdown-divider { border-color: var(--ts-line); }
+
+/* Alerts ------------------------------------------------------------------- */
+
+.alert { border-radius: 6px; }
+.alert-danger {
+  background: #f6e4e1;
+  border-color: #e0b7b0;
+  color: #7c3128;
+}
+.alert-warning {
+  background: #f8eed8;
+  border-color: #e3cb96;
+  color: #6d5115;
 }
 
-.form-control:focus {
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-  border-color: #86b7fe;
+/* Badges ------------------------------------------------------------------- */
+
+.badge { font-weight: 600; border-radius: 4px; }
+.badge.bg-light {
+  background: var(--ts-paper) !important;
+  border: 1px solid var(--ts-line);
+  color: var(--ts-ink-soft) !important;
+}
+.badge.bg-secondary {
+  background: transparent !important;
+  border: 1px solid var(--ts-line);
+  color: var(--ts-ink-soft) !important;
+  font-family: var(--ts-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
 }
 
-.min-vh-100 {
+/* Hero (landing) ----------------------------------------------------------- */
+
+.ts-hero {
+  background-color: var(--ts-pine-deep);
+  /* faint dot grid, like security-pattern paper */
+  background-image: radial-gradient(rgba(246, 243, 236, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ts-paper);
+  overflow: hidden;
+}
+.ts-hero h1 {
+  font-family: var(--ts-display);
+  color: #fffdf8;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.ts-hero .ts-hero-lead {
+  color: rgba(246, 243, 236, 0.85);
+  font-size: 1.15rem;
+  max-width: 34rem;
+}
+.ts-hero .ts-hero-note {
+  color: rgba(246, 243, 236, 0.6);
+  font-size: 0.9rem;
+}
+.ts-hero .ts-hero-note a {
+  color: var(--ts-paper);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Boarding-pass sample card in the hero */
+.ts-ticket {
+  background: var(--ts-paper-raised);
+  color: var(--ts-ink);
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  position: relative;
+  transform: rotate(1.2deg);
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ts-ticket-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.25rem;
+  background: var(--ts-pine);
+  color: var(--ts-paper);
+}
+.ts-ticket-head .ts-eyebrow { color: rgba(246, 243, 236, 0.8); }
+.ts-ticket-body { padding: 1.1rem 1.25rem 1.25rem; }
+.ts-ticket-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--ts-line);
+  font-size: 0.95rem;
+}
+.ts-ticket-row:last-child { border-bottom: none; }
+.ts-ticket-row .ts-amount { font-size: 0.95rem; }
+.ts-ticket-total {
+  border-bottom: none;
+  border-top: 2px solid var(--ts-ink);
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
+  font-weight: 700;
+}
+/* perforated tear between body and stub */
+.ts-ticket-stub {
+  border-top: 2px dashed var(--ts-line);
+  background: var(--ts-paper);
+  padding: 0.8rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+.ts-ticket-stub::before,
+.ts-ticket-stub::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ts-pine-deep);
+}
+.ts-ticket-stub::before { left: -8px; }
+.ts-ticket-stub::after { right: -8px; }
+/* rubber stamp */
+.ts-settled-stamp {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  font-family: var(--ts-mono);
+  font-weight: 600;
+  font-size: 1.6rem;
+  letter-spacing: 0.35em;
+  text-indent: 0.35em; /* balance the tracking */
+  text-transform: uppercase;
+  color: var(--ts-rust);
+  border: 3px solid var(--ts-rust);
+  border-radius: 6px;
+  padding: 0.3rem 0.9rem;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+/* Landing sections ---------------------------------------------------------- */
+
+.ts-feature {
+  border-top: 2px solid var(--ts-ink);
+  padding-top: 1rem;
+  height: 100%;
+}
+.ts-feature h5 { font-weight: 600; margin: 0.5rem 0; }
+.ts-feature p { color: var(--ts-ink-soft); margin-bottom: 0; }
+.ts-feature .ts-feature-icon { color: var(--ts-pine); }
+
+.ts-step-num {
+  font-family: var(--ts-mono);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--ts-paper);
+  background: var(--ts-pine);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ts-cta-band {
+  background: var(--ts-pine-deep);
+  background-image: radial-gradient(rgba(246, 243, 236, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ts-paper);
+  border-radius: 10px;
+}
+.ts-cta-band h2 { color: #fffdf8; }
+
+/* Demo banner / toast ------------------------------------------------------- */
+
+.ts-demo-banner {
+  background: var(--ts-marigold);
+  color: var(--ts-ink);
+  border-bottom: 1px solid #b8872a;
+}
+.ts-demo-toast {
+  background: var(--ts-paper-raised);
+  border: 1px solid var(--ts-line);
+  border-left: 4px solid var(--ts-marigold);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(38, 49, 43, 0.2);
+  color: var(--ts-ink);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Auth pages ---------------------------------------------------------------- */
+
+.ts-auth {
   min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background-color: var(--ts-paper);
+  background-image: radial-gradient(rgba(38, 49, 43, 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.ts-auth .card { border-top: 5px solid var(--ts-pine); }
+
+/* Page headers -------------------------------------------------------------- */
+
+.ts-page-title { font-weight: 600; margin-bottom: 0.1rem; }
+.ts-page-sub { color: var(--ts-ink-soft); margin-bottom: 0; }
+
+/* Spinner ------------------------------------------------------------------- */
+
+.spinner-border.text-primary { color: var(--ts-pine) !important; }
+
+/* Motion + a11y floor ------------------------------------------------------- */
+
+.ts-rise {
+  animation: ts-rise 0.5s ease-out both;
+}
+@keyframes ts-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.ts-rise-delay-1 { animation-delay: 0.08s; }
+.ts-rise-delay-2 { animation-delay: 0.16s; }
+
+/* Scroll reveal: .ts-reveal starts hidden, .is-visible (added by utils/reveal.js
+   when the element scrolls into view) fades it up. Delay helpers stagger rows. */
+.ts-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.2, 0.7, 0.3, 1);
+  will-change: opacity, transform;
+}
+.ts-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+.ts-reveal-d1 { transition-delay: 0.1s; }
+.ts-reveal-d2 { transition-delay: 0.2s; }
+.ts-reveal-d3 { transition-delay: 0.3s; }
+
+/* Hero ticket: slow drift, like a stub on a desk. Pauses on hover for reading. */
+.ts-ticket {
+  animation: ts-float 7s ease-in-out infinite;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.ts-ticket:hover {
+  animation-play-state: paused;
+  transform: rotate(0deg) translateY(-4px);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4);
+}
+@keyframes ts-float {
+  0%, 100% { transform: rotate(1.2deg) translateY(0); }
+  50% { transform: rotate(1.2deg) translateY(-8px); }
 }
 
-.min-vh-75 {
-  min-height: 75vh;
+/* Marigold highlighter sweep under a key phrase in the hero */
+.ts-underline {
+  background-image: linear-gradient(
+    rgba(217, 164, 65, 0.55),
+    rgba(217, 164, 65, 0.55)
+  );
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: 0% 0.22em;
+  animation: ts-sweep 0.7s ease-out 0.7s forwards;
+}
+@keyframes ts-sweep {
+  to { background-size: 100% 0.22em; }
 }
 
-.gap-2 {
-  gap: 0.5rem !important;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .ts-ticket { transform: none; animation: none; }
+  .ts-reveal { opacity: 1; transform: none; }
+  .ts-underline { background-size: 100% 0.22em; animation: none; }
 }
 
-.gap-3 {
-  gap: 1rem !important;
-}
+/* Legacy utility kept from the old sheet ------------------------------------ */
 
-.table-responsive {
-  overflow: visible !important;
-}
-
-.nav-tabs .nav-link {
-  color: black !important;
-}
-
-.nav-tabs .nav-link.active {
-  color: black !important;
-}
+.min-vh-100 { min-height: 100vh; }
+.min-vh-75 { min-height: 75vh; }
+.table-responsive { overflow: visible !important; }
 
 @media (max-width: 768px) {
-  .btn-group {
-    flex-direction: column;
-  }
-  
-  .btn-group .btn {
-    margin-right: 0;
-    margin-bottom: 0.25rem;
-  }
-  
-  .navbar-brand {
-    font-size: 1.25rem;
-  }
+  .btn-group { flex-direction: column; }
+  .btn-group .btn { margin-right: 0; margin-bottom: 0.25rem; }
+  .ts-nav .navbar-brand { font-size: 1.25rem; }
+  .ts-ticket { transform: none; animation: none; margin-top: 2rem; }
 }

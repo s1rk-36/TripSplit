@@ -66,7 +66,7 @@ const expense = (expenseId, name, description, totalCost, category, createdAt, g
 
 const demoExpenses = [
   expense(1, 'Flight Tickets', 'Round-trip flights to Tokyo', 1200, 'Travel', '2026-06-15T10:00:00', 1, 1),
-  expense(2, 'Ryokan — Kyoto', '3 nights, traditional inn', 800, 'Lodging', '2026-06-16T09:00:00', 1, 2),
+  expense(2, 'Ryokan, Kyoto', '3 nights, traditional inn', 800, 'Lodging', '2026-06-16T09:00:00', 1, 2),
   expense(3, 'Sushi Dinner', 'Group dinner in Ginza', 240, 'Food', '2026-06-17T20:00:00', 1, 1),
   expense(4, 'Rental Car', '4x4 for the ring road', 600, 'Travel', '2026-05-02T08:00:00', 2, 3),
   expense(5, 'Blue Lagoon Tickets', 'Spa entry for the group', 180, 'Activities', '2026-05-03T14:00:00', 2, 1),
@@ -109,7 +109,7 @@ const lastSegment = (url) => Number(url.split('?')[0].split('/').filter(Boolean)
 export const resolveDemoRequest = (url, options = {}) => {
   const method = (options.method || 'GET').toUpperCase();
   if (method !== 'GET') {
-    return Promise.reject(new Error('This is a read-only demo — sign up to create your own groups and expenses.'));
+    return Promise.reject(new Error('This is a read-only demo. Sign up to create your own groups and expenses.'));
   }
 
   const path = url.split('?')[0];

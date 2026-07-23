@@ -28,8 +28,8 @@ function DemoToast() {
       style={{ top: '1rem', zIndex: 2000, maxWidth: '90%' }}
       role="status"
     >
-      <div className="alert alert-warning shadow d-flex align-items-center mb-0">
-        <FaLock className="me-2 flex-shrink-0" />
+      <div className="ts-demo-toast">
+        <FaLock className="me-2 flex-shrink-0" style={{ color: 'var(--ts-marigold)' }} />
         <span>{message}</span>
       </div>
     </div>

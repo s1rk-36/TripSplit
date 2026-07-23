@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Navbar from './components/layout/Navbar';
 import Login from './pages/Login';
@@ -13,9 +14,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DemoBanner from './components/common/DemoBanner';
 import DemoToast from './components/common/DemoToast';
+import { initReveal } from './utils/reveal';
 
 
 function App() {
+    useEffect(() => {
+        initReveal();
+    }, []);
+
     return (
         <AuthProvider>
         <Router>
