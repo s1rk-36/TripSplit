@@ -34,6 +34,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // TODO add antMatchers here to configure access to specific API endpoints
                 // allows unauthenticated users to access /authenticate and /register.
                 .antMatchers("/api/auth/authenticate", "/api/auth/register").permitAll()
+                // Liveness probe for Render's health check and the keep-alive pinger.
+                .antMatchers(HttpMethod.GET, "/api/health").permitAll()
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.DELETE, "/api/user/**", "/api/group/**").hasRole("ADMIN")
                 // require authentication for any request...

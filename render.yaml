@@ -16,8 +16,10 @@ services:
     # paths relative to rootDir, which would double the prefix (server/server) and fail.
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
-    # No healthCheckPath: every route requires auth (returns 401), so a health check
-    # on "/" would fail the deploy. Render marks the service live once it binds the port.
+    # /api/health is the one unauthenticated route. It answers 200 whenever the app
+    # is up (database state is reported in the body, not the status code) so a
+    # database blip doesn't make Render restart an otherwise healthy service.
+    healthCheckPath: /api/health
     envVars:
       # From your Aiven MySQL service. URL must keep SSL on, e.g.
       # jdbc:mysql://HOST:PORT/DBNAME?sslMode=REQUIRED
