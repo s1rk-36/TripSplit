@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FaPlus, FaReceipt, FaDollarSign, FaCalendar, FaEdit, FaTrash, FaEye, FaFilter, FaSearch, FaUsers, FaUser, FaFileImage, FaArrowLeft } from 'react-icons/fa';
+import { FaPlus, FaReceipt, FaDollarSign, FaCalendar, FaEdit, FaTrash, FaEye, FaFilter, FaSearch, FaUsers, FaUser, FaFileImage, FaArrowLeft, FaBalanceScale, FaExchangeAlt } from 'react-icons/fa';
 import Layout from '../components/layout/Layout';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorAlert from '../components/common/ErrorAlert';
 import CreateExpenseModal from '../components/modals/CreateExpenseModal';
+import SettleUpModal from '../components/modals/SettleUpModal';
 import EditExpenseModal from '../components/modals/EditExpenseModal';
 import ExpenseDetailsModal from '../components/modals/ExpenseDetailsModal';
 import { apiService } from '../services/apiService';
@@ -33,12 +34,33 @@ function Expenses() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
+  const [showSettleModal, setShowSettleModal] = useState(false);
+  const [activity, setActivity] = useState([]);
 
   useEffect(() => {
     loadExpenses();
     loadGroups();
     loadCategories();
   }, []);
+
+  // Activity feed exists per group, so load it only when one group is in view.
+  useEffect(() => {
+    if (filterGroup === 'all' || !filterGroup) {
+      setActivity([]);
+      return;
+    }
+    loadActivity(filterGroup);
+  }, [filterGroup]);
+
+  const loadActivity = async (groupId) => {
+    try {
+      const items = await apiService.getGroupActivity(groupId);
+      setActivity(items || []);
+    } catch (err) {
+      console.error('Failed to load activity:', err);
+      setActivity([]);
+    }
+  };
 
   const loadExpenses = async () => {
     try {
@@ -286,12 +308,22 @@ function Expenses() {
               : 'Every entry, who paid, and how it splits'}
           </p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={demoGuard(() => setShowCreateModal(true))}
-        >
-          <FaPlus className="me-1" /> Add Expense
-        </button>
+        <div className="d-flex gap-2 flex-wrap">
+          {filterGroup !== 'all' && (
+            <button
+              className="btn btn-outline-primary"
+              onClick={() => setShowSettleModal(true)}
+            >
+              <FaBalanceScale className="me-1" /> Settle up
+            </button>
+          )}
+          <button
+            className="btn btn-primary"
+            onClick={demoGuard(() => setShowCreateModal(true))}
+          >
+            <FaPlus className="me-1" /> Add Expense
+          </button>
+        </div>
       </div>
 
       {error && <ErrorAlert error={error} onRetry={loadExpenses} />}
@@ -576,7 +608,50 @@ function Expenses() {
         </div>
       )}
 
+      {/* Activity feed: the group's recent history, ledger-style */}
+      {filterGroup !== 'all' && activity.length > 0 && (
+        <div className="card mt-4 ts-reveal">
+          <div className="card-header d-flex align-items-center gap-2">
+            <FaExchangeAlt size={13} className="text-muted" />
+            Activity
+          </div>
+          <div className="card-body p-0">
+            <ul className="ts-activity">
+              {activity.map((item, i) => (
+                <li key={i} className="ts-activity-row">
+                  <span className="ts-activity-date ts-mono">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </span>
+                  <span className="ts-activity-text">
+                    {item.type === 'SETTLEMENT' ? (
+                      <>
+                        <strong>{item.actorName}</strong> paid <strong>{item.targetName}</strong>
+                        <span className="ts-stamp ms-2">settled</span>
+                      </>
+                    ) : (
+                      <>
+                        <strong>{item.actorName}</strong> added {item.title}
+                      </>
+                    )}
+                  </span>
+                  <span className={`ts-amount ${item.type === 'SETTLEMENT' ? 'text-success' : ''}`}>
+                    {formatCurrency(item.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
+      <SettleUpModal
+        show={showSettleModal}
+        onHide={() => setShowSettleModal(false)}
+        group={groups.find(g => g.groupId === Number(filterGroup)) || null}
+        onSettlementRecorded={() => loadActivity(filterGroup)}
+      />
+
       <CreateExpenseModal
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}

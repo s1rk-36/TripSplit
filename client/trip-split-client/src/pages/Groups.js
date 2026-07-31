@@ -22,6 +22,7 @@ function Groups() {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [copiedGroupId, setCopiedGroupId] = useState(null);
+  const [settledMap, setSettledMap] = useState({});
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -40,12 +41,28 @@ function Groups() {
       setError('');
       const groupsData = await apiService.getGroups();
       setGroups(groupsData || []);
+      loadSettledStates(groupsData || []);
     } catch (err) {
       console.error('Failed to load groups:', err);
       setError(err.message || 'Failed to load groups');
     } finally {
       setLoading(false);
     }
+  };
+
+  // A group whose ledger nets to zero gets the SETTLED stamp on its card.
+  // Fetched after the cards render so a slow plan never blocks the page.
+  const loadSettledStates = async (groupsData) => {
+    const results = await Promise.allSettled(
+      groupsData.map((g) => apiService.getSettlePlan(g.groupId))
+    );
+    const map = {};
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled' && r.value?.settled) {
+        map[groupsData[i].groupId] = true;
+      }
+    });
+    setSettledMap(map);
   };
 
   const copyInviteCode = async (group) => {
@@ -311,6 +328,9 @@ function Groups() {
             return (
               <div key={group.groupId} className={`col-md-6 col-lg-4 mb-4 ts-reveal ts-reveal-d${index % 3}`}>
                 <div className={`card h-100 ts-group-card ts-tab-${index % 4}`}>
+                  {settledMap[group.groupId] && (
+                    <span className="ts-card-stamp" title="All balances are square">Settled</span>
+                  )}
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start mb-2">
                       <h5 className="card-title mb-0">{group.name}</h5>

@@ -216,6 +216,24 @@ export const apiService = {
     return makeAuthenticatedRequest(`/groups/${groupId}/members`);
   },
 
+  // Settle up: net balances + minimal payments, and recorded settlements
+  async getSettlePlan(groupId) {
+    return makeAuthenticatedRequest(`/groups/${groupId}/settle-plan`);
+  },
+  async getGroupActivity(groupId) {
+    return makeAuthenticatedRequest(`/groups/${groupId}/activity`);
+  },
+  async getGroupSettlements(groupId) {
+    return makeAuthenticatedRequest(`/settlements/group/${groupId}`);
+  },
+  async recordSettlement(data) {
+    // { groupId, payeeId, amount, payerId? } — payer defaults to the current user
+    return makeAuthenticatedRequest('/settlements', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
   async removeGroupMember(groupId, userId) {
     return makeAuthenticatedRequest(`/groups/${groupId}/members/${userId}`, {
       method: 'DELETE'

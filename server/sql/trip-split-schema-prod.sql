@@ -124,6 +124,27 @@ create table `comment` (
         on delete cascade
 );
 
+create table settlement (
+	settlement_id int primary key auto_increment,
+    group_id int not null,
+    payer_id int not null,
+    payee_id int not null,
+    amount decimal(10, 2) not null,
+    created_at datetime not null,
+	constraint fk_settlement_group_id
+		foreign key (group_id)
+        references `group`(group_id)
+        on delete cascade,
+	constraint fk_settlement_payer
+		foreign key (payer_id)
+        references `user`(user_id)
+        on delete cascade,
+	constraint fk_settlement_payee
+		foreign key (payee_id)
+        references `user`(user_id)
+        on delete cascade
+);
+
 -- data
 insert into `role`(role_id, `name`) values
 (1, 'ADMIN'),

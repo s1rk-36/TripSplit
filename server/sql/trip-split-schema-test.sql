@@ -123,6 +123,27 @@ create table `comment` (
         on delete cascade
 );
 
+create table settlement (
+	settlement_id int primary key auto_increment,
+    group_id int not null,
+    payer_id int not null,
+    payee_id int not null,
+    amount decimal(10, 2) not null,
+    created_at datetime not null,
+	constraint fk_settlement_group_id
+		foreign key (group_id)
+        references `group`(group_id)
+        on delete cascade,
+	constraint fk_settlement_payer
+		foreign key (payer_id)
+        references `user`(user_id)
+        on delete cascade,
+	constraint fk_settlement_payee
+		foreign key (payee_id)
+        references `user`(user_id)
+        on delete cascade
+);
+
 delimiter //
 create procedure set_known_good_state()
 begin
@@ -130,6 +151,7 @@ begin
 	set sql_safe_updates = 0;
 
 	-- clear existing data
+    delete from settlement;
     delete from `comment`;
     delete from receipt;
     delete from user_expense;
@@ -141,6 +163,7 @@ begin
     delete from `role`;
 
     -- reset auto-increments
+    alter table settlement auto_increment = 1;
     alter table `comment` auto_increment = 1;
     alter table receipt auto_increment = 1;
     alter table expense auto_increment = 1;

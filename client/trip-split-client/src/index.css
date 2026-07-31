@@ -384,6 +384,97 @@ code {
 }
 .ts-stub .ts-eyebrow { display: block; margin-bottom: 0.1rem; }
 
+/* Settle up ----------------------------------------------------------------- */
+
+.ts-balance-list,
+.ts-transfer-list {
+  border: 1px solid var(--ts-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.ts-balance-row,
+.ts-transfer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--ts-line);
+  background: var(--ts-paper-raised);
+}
+.ts-balance-row:first-child,
+.ts-transfer-row:first-child { border-top: none; }
+.ts-transfer-row { background: var(--ts-paper); }
+.ts-transfer-who { display: inline-flex; align-items: center; flex-wrap: wrap; }
+
+/* Full-size stamp shown in the settle modal when the group is square */
+.ts-settled-badge {
+  display: inline-block;
+  transform: rotate(-8deg);
+  font-family: var(--ts-mono);
+  font-weight: 600;
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  color: var(--ts-leaf);
+  border: 3px solid var(--ts-leaf);
+  border-radius: 6px;
+  padding: 0.35rem 1rem;
+  opacity: 0.85;
+}
+
+/* Small stamp pinned to a squared group's card (below the badge row — the card
+   clips overflow, so it must sit fully inside) */
+.ts-card-stamp {
+  position: absolute;
+  top: 42px;
+  right: 12px;
+  z-index: 1;
+  transform: rotate(8deg);
+  font-family: var(--ts-mono);
+  font-weight: 600;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ts-leaf);
+  border: 2px solid var(--ts-leaf);
+  border-radius: 4px;
+  padding: 0.12rem 0.45rem;
+  background: var(--ts-paper-raised);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* Activity feed ------------------------------------------------------------- */
+
+.ts-activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ts-activity-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--ts-line);
+}
+.ts-activity-row:first-child { border-top: none; }
+.ts-activity-date {
+  flex-shrink: 0;
+  width: 6rem;
+  font-size: 0.75rem;
+  color: var(--ts-ink-soft);
+}
+.ts-activity-text { flex: 1; min-width: 0; }
+.ts-activity-row .ts-amount { flex-shrink: 0; }
+
+@media (max-width: 576px) {
+  .ts-activity-date { width: auto; }
+  .ts-activity-row { flex-wrap: wrap; }
+}
+
 /* Ledger stat strip (Expenses summary) ------------------------------------- */
 
 .ts-ledger-strip {

@@ -76,6 +76,95 @@ const demoExpenses = [
 // Net for the demo user (id 1): paid 1620 (expenses 1,3,5) − owed 870 (share of all 6) = +750.
 const DEMO_BALANCE = 750.0;
 
+const nameOf = (userId) => {
+  const m = members.find((x) => x.userId === userId);
+  return m ? `${m.firstName} ${m.lastName}` : `Member ${userId}`;
+};
+
+// Recorded cash payments. Vegas (group 3) is fully squared by these, so the demo
+// shows a settled group with the stamp alongside two groups that still owe.
+const demoSettlements = [
+  { settlementId: 1, groupId: 3, payerId: 1, payeeId: 4, amount: 50, createdAt: '2026-04-22T12:00:00' },
+  { settlementId: 2, groupId: 3, payerId: 2, payeeId: 4, amount: 50, createdAt: '2026-04-22T15:30:00' },
+  { settlementId: 3, groupId: 3, payerId: 5, payeeId: 4, amount: 50, createdAt: '2026-04-23T09:15:00' },
+].map((s) => ({ ...s, payerName: nameOf(s.payerId), payeeName: nameOf(s.payeeId) }));
+
+// Mirrors SettleUpService on the backend: net = paid − owed, adjusted by
+// settlements, then greedy largest-debtor → largest-creditor pairing.
+const computeSettlePlan = (groupId) => {
+  const nets = {};
+  groupMemberIds[groupId]?.forEach((id) => { nets[id] = 0; });
+
+  const groupExpenses = demoExpenses.filter((e) => e.groupId === groupId);
+  groupExpenses.forEach((e) => {
+    e.userExpenses.forEach((ue) => {
+      nets[ue.userId] = (nets[ue.userId] || 0) + ue.amountPaid - ue.amountOwed;
+    });
+  });
+  demoSettlements.filter((s) => s.groupId === groupId).forEach((s) => {
+    nets[s.payerId] = (nets[s.payerId] || 0) + s.amount;
+    nets[s.payeeId] = (nets[s.payeeId] || 0) - s.amount;
+  });
+
+  const balances = Object.entries(nets).map(([userId, net]) => ({
+    userId: Number(userId),
+    name: nameOf(Number(userId)),
+    net: Math.round(net * 100) / 100,
+  }));
+
+  const debtors = balances.filter((b) => b.net < -0.01)
+    .map((b) => ({ ...b, left: -b.net })).sort((a, b) => b.left - a.left);
+  const creditors = balances.filter((b) => b.net > 0.01)
+    .map((b) => ({ ...b, left: b.net })).sort((a, b) => b.left - a.left);
+
+  const transfers = [];
+  let d = 0; let c = 0;
+  while (d < debtors.length && c < creditors.length) {
+    const amount = Math.min(debtors[d].left, creditors[c].left);
+    if (amount > 0.01) {
+      transfers.push({
+        fromUserId: debtors[d].userId, fromName: debtors[d].name,
+        toUserId: creditors[c].userId, toName: creditors[c].name,
+        amount: Math.round(amount * 100) / 100,
+      });
+    }
+    debtors[d].left -= amount;
+    creditors[c].left -= amount;
+    if (debtors[d].left <= 0.01) d += 1;
+    if (creditors[c].left <= 0.01) c += 1;
+  }
+
+  return {
+    balances,
+    transfers,
+    hasExpenses: groupExpenses.length > 0,
+    settled: groupExpenses.length > 0 && transfers.length === 0,
+  };
+};
+
+// Newest-first feed of expenses added and settlements recorded, like the backend.
+const computeActivity = (groupId) => {
+  const items = [
+    ...demoExpenses.filter((e) => e.groupId === groupId).map((e) => ({
+      type: 'EXPENSE',
+      actorName: nameOf(e.createdBy),
+      targetName: null,
+      title: e.name,
+      amount: e.totalCost,
+      createdAt: e.createdAt,
+    })),
+    ...demoSettlements.filter((s) => s.groupId === groupId).map((s) => ({
+      type: 'SETTLEMENT',
+      actorName: s.payerName,
+      targetName: s.payeeName,
+      title: null,
+      amount: s.amount,
+      createdAt: s.createdAt,
+    })),
+  ];
+  return items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+};
+
 // True only when the demo flag is set AND the active session is the demo user.
 // The token check prevents a leftover flag from hijacking a real login with mock data.
 export const isDemoMode = () => {
@@ -135,6 +224,16 @@ export const resolveDemoRequest = (url, options = {}) => {
     const gid = Number(path.split('/')[2]);
     const g = demoGroups.find((x) => x.groupId === gid);
     return Promise.resolve(g ? g.users : []);
+  }
+  if (path.startsWith('/groups/') && path.endsWith('/settle-plan')) {
+    return Promise.resolve(computeSettlePlan(Number(path.split('/')[2])));
+  }
+  if (path.startsWith('/groups/') && path.endsWith('/activity')) {
+    return Promise.resolve(computeActivity(Number(path.split('/')[2])));
+  }
+  if (path.startsWith('/settlements/group/')) {
+    const gid = lastSegment(path);
+    return Promise.resolve(demoSettlements.filter((s) => s.groupId === gid));
   }
   if (path.startsWith('/groups/')) {
     const id = lastSegment(path);
