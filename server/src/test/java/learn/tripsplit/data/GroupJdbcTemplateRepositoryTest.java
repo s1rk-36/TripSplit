@@ -55,6 +55,9 @@ public class GroupJdbcTemplateRepositoryTest {
     void shouldAdd() throws DataAccessException {
         int appUserId = getUser1().getAppUserId();
         Group group = new Group(1, "Added Group Name", "Added Description", appUserId);
+        // invite_code is unique and not null, so the repository needs one. In the app
+        // GroupService generates it; a direct repository test supplies its own.
+        group.setInviteCode("TESTADD1");
 
         Group actual = repository.add(group);
 
@@ -74,6 +77,7 @@ public class GroupJdbcTemplateRepositoryTest {
     void shouldUpdate() throws DataAccessException {
         int appUserId = getUser1().getAppUserId();
         Group group = new Group(1, "To Be Updated", "", appUserId);
+        group.setInviteCode("TESTUPD1");
 
         Group toBeUpdated = repository.add(group);
 
@@ -81,6 +85,7 @@ public class GroupJdbcTemplateRepositoryTest {
         updated.setGroupId(toBeUpdated.getGroupId());
         updated.setName("Updated Group Name");
         updated.setDescription("Updated Description");
+        updated.setInviteCode("TESTUPD2");
 
         assertTrue(repository.update(updated));
     }
@@ -103,6 +108,7 @@ public class GroupJdbcTemplateRepositoryTest {
         Group group = new Group();
         group.setName("Group To Be Deleted");
         group.setDescription("Description To Be Deleted");
+        group.setInviteCode("TESTDEL1");
 
         int appUserId = getUser1().getAppUserId();
         group.setCreatedBy(appUserId);

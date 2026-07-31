@@ -1,8 +1,11 @@
 package learn.tripsplit.domain;
 
+import learn.tripsplit.data.ExpenseRepository;
 import learn.tripsplit.data.ReceiptRepository;
+import learn.tripsplit.models.Expense;
 import learn.tripsplit.models.Group;
 import learn.tripsplit.models.Receipt;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +25,20 @@ public class ReceiptServiceTest {
 
     @MockBean
     ReceiptRepository repository;
+
+    // ReceiptService.add checks that the parent expense exists. Without this mock the
+    // lookup hit the real database, so these tests passed or failed depending on what
+    // happened to be in it — green locally where earlier runs had left rows behind,
+    // NOT_FOUND on a freshly created CI database.
+    @MockBean
+    ExpenseRepository expenseRepository;
+
+    @BeforeEach
+    void expenseExists() {
+        // Only expense 1 exists. Leaving every other id unstubbed keeps
+        // shouldNotAddIfExpenseNotFound honest, since it looks up 9999.
+        when(expenseRepository.findById(1)).thenReturn(new Expense());
+    }
 
     @Test
     void shouldFindAll() {

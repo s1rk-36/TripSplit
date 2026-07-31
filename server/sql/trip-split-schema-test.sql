@@ -37,6 +37,7 @@ create table `group` (
 	group_id int primary key auto_increment,
     `name` varchar(100) not null,
     `description` text null,
+    invite_code varchar(12) not null unique,
     created_by int not null,
     constraint fk_group_created_by
 		foreign key (created_by)
@@ -189,12 +190,12 @@ begin
     (4, 2),
     (5, 2);
 
-	insert into `group` (`name`, `description`, created_by) values
-	('Japan Spring Trip', 'A cherry blossom tour across Tokyo and Kyoto.', 1),
-	('NYC Business Conference', 'Travel group for attending a tech conference in NYC.', 2),
-	('Iceland Road Adventure', 'Self-drive ring road trip around Iceland.', 3),
-	('Vegas Bachelor Party', 'Weekend celebration with the crew.', 4),
-	('Thailand Escape', 'Group trip to explore Bangkok and the islands.', 5);
+	insert into `group` (`name`, `description`, invite_code, created_by) values
+	('Japan Spring Trip', 'A cherry blossom tour across Tokyo and Kyoto.', 'TESTJPN1', 1),
+	('NYC Business Conference', 'Travel group for attending a tech conference in NYC.', 'TESTNYC2', 2),
+	('Iceland Road Adventure', 'Self-drive ring road trip around Iceland.', 'TESTICE3', 3),
+	('Vegas Bachelor Party', 'Weekend celebration with the crew.', 'TESTVEG4', 4),
+	('Thailand Escape', 'Group trip to explore Bangkok and the islands.', 'TESTTHA5', 5);
 
 	insert into user_group (user_id, group_id, is_admin) values
 	-- Group 1: Japan Spring Trip

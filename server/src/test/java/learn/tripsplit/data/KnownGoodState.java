@@ -10,12 +10,16 @@ public class KnownGoodState {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    static boolean hasRun = false;
-
+    /**
+     * Restores the seed data before a test.
+     *
+     * This used to run only once per JVM, so every test class after the first
+     * inherited whatever the previous ones had added, updated, or deleted. Results
+     * then depended on the order Surefire happened to pick: the same suite passed
+     * locally and failed in CI. Resetting each time costs a few milliseconds and
+     * makes every test start from the same state.
+     */
     void set() {
-        if (!hasRun) {
-            hasRun = true;
-            jdbcTemplate.update("call set_known_good_state();");
-        }
+        jdbcTemplate.update("call set_known_good_state();");
     }
 }
