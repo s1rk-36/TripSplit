@@ -164,6 +164,11 @@ public class SettleUpService {
         return settlementRepository.findByGroupId(groupId);
     }
 
+    /** Group ids the user belongs to whose balances are all square. */
+    public List<Integer> findSettledGroupIds(int userId) {
+        return settlementRepository.findSettledGroupIdsForUser(userId);
+    }
+
     /**
      * The group's recent history, newest first: expenses added and settlements
      * recorded. Derived from the ledger itself rather than a stored log, so it can

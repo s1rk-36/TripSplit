@@ -54,6 +54,10 @@ jobs:
       - name: Build and test
         working-directory: server
         env:
+          # MySQL 8 defaults to caching_sha2_password. Over a plaintext connection the
+          # 8.x connector refuses to fetch the server's public key unless asked, which
+          # fails every DB-backed test with "Public Key Retrieval is not allowed".
+          TRIP_SPLIT_TEST_DB_URL: jdbc:mysql://127.0.0.1:3306/trip_split_test?allowPublicKeyRetrieval=true&useSSL=false
           TRIP_SPLIT_DB_USERNAME: root
           TRIP_SPLIT_DB_PASSWORD: ci_root_password
           # The S3/R2 client is constructed at startup, so it needs values present.
@@ -61,6 +65,21 @@ jobs:
           YOUR_ACCESS_KEY: ci-not-a-real-key
           YOUR_SECRET_KEY: ci-not-a-real-secret
         run: mvn -B --no-transfer-progress verify
+
+      # Downloading raw job logs needs admin rights on the repo, so print the actual
+      # assertion output here where anyone can read it.
+      - name: Show failing tests
+        if: failure()
+        working-directory: server
+        run: |
+          for f in target/surefire-reports/*.txt; do
+            [ -e "$f" ] || continue
+            grep -q "FAILURE\|Errors: [1-9]\|Failures: [1-9]" "$f" && {
+              echo "::group::$(basename "$f")"
+              cat "$f"
+              echo "::endgroup::"
+            }
+          done
 
       - name: Publish test report
         if: always()

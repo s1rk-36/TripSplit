@@ -220,6 +220,12 @@ export const resolveDemoRequest = (url, options = {}) => {
     return Promise.resolve(demoExpenses.find((e) => e.expenseId === id) || null);
   }
 
+  // Must precede the generic /groups/ handlers below.
+  if (path === '/groups/settled') {
+    return Promise.resolve(
+      demoGroups.map((g) => g.groupId).filter((id) => computeSettlePlan(id).settled)
+    );
+  }
   if (path.startsWith('/groups/') && path.endsWith('/members')) {
     const gid = Number(path.split('/')[2]);
     const g = demoGroups.find((x) => x.groupId === gid);

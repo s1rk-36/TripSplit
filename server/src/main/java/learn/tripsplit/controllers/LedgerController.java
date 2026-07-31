@@ -38,6 +38,20 @@ public class LedgerController {
         this.appUserService = appUserService;
     }
 
+    /**
+     * Settled state for all of the user's groups at once. The groups page needs this
+     * for every card, and asking per group made the page issue a request each.
+     */
+    @GetMapping("/groups/settled")
+    public ResponseEntity<Object> getSettledGroupIds(Authentication authentication) {
+        AppUser currentUser = resolveUser(authentication);
+        if (currentUser == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        return new ResponseEntity<>(
+                settleUpService.findSettledGroupIds(currentUser.getAppUserId()), HttpStatus.OK);
+    }
+
     @GetMapping("/groups/{groupId}/settle-plan")
     public ResponseEntity<Object> getSettlePlan(@PathVariable int groupId, Authentication authentication) {
         AppUser currentUser = resolveUser(authentication);

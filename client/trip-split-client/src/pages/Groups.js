@@ -41,7 +41,7 @@ function Groups() {
       setError('');
       const groupsData = await apiService.getGroups();
       setGroups(groupsData || []);
-      loadSettledStates(groupsData || []);
+      loadSettledStates();
     } catch (err) {
       console.error('Failed to load groups:', err);
       setError(err.message || 'Failed to load groups');
@@ -50,19 +50,17 @@ function Groups() {
     }
   };
 
-  // A group whose ledger nets to zero gets the SETTLED stamp on its card.
-  // Fetched after the cards render so a slow plan never blocks the page.
-  const loadSettledStates = async (groupsData) => {
-    const results = await Promise.allSettled(
-      groupsData.map((g) => apiService.getSettlePlan(g.groupId))
-    );
-    const map = {};
-    results.forEach((r, i) => {
-      if (r.status === 'fulfilled' && r.value?.settled) {
-        map[groupsData[i].groupId] = true;
-      }
-    });
-    setSettledMap(map);
+  // A group whose ledger nets to zero gets the SETTLED stamp on its card. One
+  // request covers every group; asking per group meant a round trip each, which is
+  // slow against a hosted database.
+  const loadSettledStates = async () => {
+    try {
+      const settledIds = await apiService.getSettledGroupIds();
+      setSettledMap(Object.fromEntries((settledIds || []).map((id) => [id, true])));
+    } catch (err) {
+      // The stamp is decoration; never let it break the page.
+      console.error('Failed to load settled states:', err);
+    }
   };
 
   const copyInviteCode = async (group) => {

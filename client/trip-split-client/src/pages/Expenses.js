@@ -161,24 +161,28 @@ function Expenses() {
   };
 
   const loadUserData = async (expensesData) => {
-    // Get all unique user IDs from expenses
-    const userIds = [...new Set(expensesData.map(expense => expense.createdBy))];
     const newUserCache = { ...userCache };
-    
-    // Fetch user data for each unique user ID
-    for (const userId of userIds) {
-      if (!newUserCache[userId]) {
-        try {
-          const userData = await apiService.getUser(userId);
-          newUserCache[userId] = `${userData.firstName} ${userData.lastName}`;
-        } catch (err) {
-          console.error(`Failed to load user ${userId}:`, err);
-          newUserCache[userId] = 'Unknown User';
-        }
-      }
+
+    // Only the names not already cached, fetched concurrently. Awaiting these one
+    // at a time meant a full round trip per author before the table could render.
+    const missingIds = [...new Set(expensesData.map(expense => expense.createdBy))]
+      .filter(userId => !newUserCache[userId]);
+
+    if (missingIds.length === 0) {
+      return;
     }
-    
-    // Update the cache with all user data
+
+    const results = await Promise.all(missingIds.map(async (userId) => {
+      try {
+        const userData = await apiService.getUser(userId);
+        return [userId, `${userData.firstName} ${userData.lastName}`];
+      } catch (err) {
+        console.error(`Failed to load user ${userId}:`, err);
+        return [userId, 'Unknown User'];
+      }
+    }));
+
+    results.forEach(([userId, name]) => { newUserCache[userId] = name; });
     setUserCache(newUserCache);
   };
 

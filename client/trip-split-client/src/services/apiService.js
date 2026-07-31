@@ -217,6 +217,9 @@ export const apiService = {
   },
 
   // Settle up: net balances + minimal payments, and recorded settlements
+  async getSettledGroupIds() {
+    return makeAuthenticatedRequest('/groups/settled');
+  },
   async getSettlePlan(groupId) {
     return makeAuthenticatedRequest(`/groups/${groupId}/settle-plan`);
   },

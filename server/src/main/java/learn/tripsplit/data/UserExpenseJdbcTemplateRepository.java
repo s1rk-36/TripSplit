@@ -57,6 +57,29 @@ public class UserExpenseJdbcTemplateRepository implements UserExpenseRepository,
         }, expenseId);
     }
 
+    /**
+     * Every split for every expense in a group, in one round trip. Callers that need
+     * a whole group's ledger used to loop findByExpenseId per expense, which is fine
+     * locally but costly against a hosted database where each query is a few hundred
+     * milliseconds.
+     */
+    @Override
+    public List<UserExpense> findByGroupId(int groupId) {
+        final String sql = "select ue.user_id, ue.expense_id, ue.amount_owned, ue.amount_paid "
+                + "from user_expense ue "
+                + "inner join expense e on ue.expense_id = e.expense_id "
+                + "where e.group_id = ?;";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            UserExpense userExpense = new UserExpense();
+            userExpense.setUserId(rs.getInt("user_id"));
+            userExpense.setExpenseId(rs.getInt("expense_id"));
+            userExpense.setAmountOwed(rs.getBigDecimal("amount_owned"));
+            userExpense.setAmountPaid(rs.getBigDecimal("amount_paid"));
+            return userExpense;
+        }, groupId);
+    }
+
     @Override
     public UserExpense findByUserIdAndExpenseId(int userId, int expenseId) {
         final String sql = "select ue.user_id, ue.expense_id, ue.amount_owned, ue.amount_paid, "

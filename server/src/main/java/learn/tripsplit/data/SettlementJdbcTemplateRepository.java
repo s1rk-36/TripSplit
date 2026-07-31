@@ -48,6 +48,39 @@ public class SettlementJdbcTemplateRepository implements SettlementRepository {
         return jdbcTemplate.query(sql, mapper, groupId);
     }
 
+    /**
+     * Answers "which of this user's groups are square?" in one round trip.
+     *
+     * Every ledger movement is flattened into signed per-user deltas — an expense
+     * split contributes paid minus owed, a settlement credits its payer and debits
+     * its payee — then summed per member. A group is settled when it has at least
+     * one expense and no member is off by more than a cent.
+     *
+     * The page previously asked for a full settle plan per group, which meant a
+     * request and several queries each. That is slow anywhere and painful against a
+     * hosted database.
+     */
+    @Override
+    public List<Integer> findSettledGroupIdsForUser(int userId) {
+        final String sql = "select n.group_id from ( "
+                + "  select d.group_id, d.user_id, sum(d.delta) as net from ( "
+                + "    select e.group_id, ue.user_id, (ue.amount_paid - ue.amount_owned) as delta "
+                + "      from user_expense ue "
+                + "      inner join expense e on ue.expense_id = e.expense_id "
+                + "    union all "
+                + "    select s.group_id, s.payer_id, s.amount from settlement s "
+                + "    union all "
+                + "    select s.group_id, s.payee_id, -s.amount from settlement s "
+                + "  ) d group by d.group_id, d.user_id "
+                + ") n "
+                + "where n.group_id in (select ug.group_id from user_group ug where ug.user_id = ?) "
+                + "  and n.group_id in (select distinct e2.group_id from expense e2) "
+                + "group by n.group_id "
+                + "having max(abs(n.net)) <= 0.01;";
+
+        return jdbcTemplate.queryForList(sql, Integer.class, userId);
+    }
+
     @Override
     public Settlement add(Settlement settlement) {
         final String sql = "insert into settlement (group_id, payer_id, payee_id, amount, created_at) "

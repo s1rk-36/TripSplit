@@ -10,7 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ExpenseService {
@@ -77,9 +80,18 @@ public class ExpenseService {
 
     public List<Expense> findByGroupIdWithUserExpenses(int groupId) {
         List<Expense> expenses = expenseRepository.findByGroupId(groupId);
+
+        // Two queries total rather than one per expense. Against a hosted database
+        // each round trip costs a few hundred milliseconds, so the old loop made a
+        // group's ledger take seconds to load.
+        Map<Integer, List<UserExpense>> splitsByExpense = new HashMap<>();
+        for (UserExpense split : userExpenseRepository.findByGroupId(groupId)) {
+            splitsByExpense.computeIfAbsent(split.getExpenseId(), k -> new ArrayList<>()).add(split);
+        }
+
         for (Expense expense : expenses) {
-            List<UserExpense> userExpenses = userExpenseRepository.findByExpenseId(expense.getExpenseId());
-            expense.setUserExpenses(userExpenses);
+            expense.setUserExpenses(
+                    splitsByExpense.getOrDefault(expense.getExpenseId(), new ArrayList<>()));
         }
         return expenses;
     }
