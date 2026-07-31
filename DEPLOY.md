@@ -160,12 +160,25 @@ quiet window yields ~715 hours — still legal, but ~35 hours of headroom is thi
 Use a hosted scheduler, **not** a `cron` job on your Mac — a laptop cron only fires
 while the laptop is awake, which is exactly when it's not needed.
 
-1. Sign up at **cron-job.org** (or UptimeRobot). Free, no card.
-2. Create a job for `https://<your-api>.onrender.com/api/health`, method GET.
-3. Set it to run every 10 minutes, then **deselect the hours in your quiet window**
-   (cron-job.org exposes an hour-by-hour selector). Note the site schedules in the
-   timezone you set on your account — confirm it before assuming the window is right.
-4. Enable failure notifications so you hear about a genuinely down backend.
+This repo ships one: `.github/workflows/keep-alive.yml` runs the schedule above on
+GitHub Actions. The repo is public, so the minutes are free. It needs one setting:
+
+1. Copy the backend's URL from the Render dashboard. **Don't assume the subdomain** —
+   Render names are globally unique and appends a suffix when the name you picked is
+   taken, so the service may not be at the name in `render.yaml`.
+2. In GitHub: **Settings → Secrets and variables → Actions → Variables → New
+   repository variable**, named `HEALTH_URL`, set to that URL plus `/api/health`.
+3. Run it once by hand from the **Actions** tab (`Keep backend awake` →
+   *Run workflow*) to confirm it reports `{"status":"up","database":"up"}`.
+
+Two things to know about Actions as a scheduler: GitHub **delays scheduled runs
+under load**, occasionally past the 15-minute window, so the odd nap is expected; and
+it **disables scheduled workflows after 60 days with no repo activity**, emailing you
+first. If naps become common, tighten the cron to `3-59/5` (it costs no extra instance
+hours — the service is already awake) or move the schedule to **cron-job.org**, which
+fires far more punctually. There, create a GET job on the same URL every 10 minutes,
+deselect the quiet-window hours, confirm the account timezone, and turn on failure
+notifications.
 
 Verify by hand:
 
