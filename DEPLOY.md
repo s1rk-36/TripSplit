@@ -63,6 +63,11 @@ locally — push them (see the branch/PR your assistant prepared, or push to `ma
    ```
    **The `/api` suffix is required** (no trailing slash). Save → it rebuilds.
 
+   > Do not paste the keep-alive `HEALTH_URL` here. That one ends in `/api/health`
+   > and is a GitHub Actions repository variable, not a frontend one. Setting it as
+   > `REACT_APP_API_URL` makes every call resolve to `/api/health/<path>` and the
+   > app 404s on load.
+
 ---
 
 ## 5. Open CORS to the frontend

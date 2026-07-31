@@ -1,7 +1,26 @@
 import { auth } from '../utils/auth';
 import { isDemoMode, resolveDemoRequest } from './demoData';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+// REACT_APP_API_URL should be the API root, e.g. https://host/api. Deployment also
+// defines a HEALTH_URL ending in /api/health for the keep-alive ping, and pasting
+// that one here turns every call into /api/health/user/groups and 404s the whole
+// app. Recover from that rather than shipping a site that only fails at runtime.
+const normalizeBaseUrl = (raw) => {
+  let url = (raw || '').trim().replace(/\/+$/, '');
+  if (!url) {
+    return 'http://localhost:8080/api';
+  }
+  if (url.endsWith('/health')) {
+    url = url.slice(0, -'/health'.length);
+    console.warn(
+      'REACT_APP_API_URL ended in /health — that is the keep-alive URL, not the API root. ' +
+      `Using ${url} instead. Set it to the API root to silence this.`
+    );
+  }
+  return url;
+};
+
+const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL);
 
 const handleResponse = async (response) => {
   if (!response.ok) {
