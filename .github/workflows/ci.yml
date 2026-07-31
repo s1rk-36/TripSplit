@@ -72,14 +72,19 @@ jobs:
         if: failure()
         working-directory: server
         run: |
+          shopt -s nullglob
+          found=0
           for f in target/surefire-reports/*.txt; do
-            [ -e "$f" ] || continue
-            grep -q "FAILURE\|Errors: [1-9]\|Failures: [1-9]" "$f" && {
+            if grep -qE "Failures: [1-9]|Errors: [1-9]" "$f"; then
+              found=1
               echo "::group::$(basename "$f")"
               cat "$f"
               echo "::endgroup::"
-            }
+            fi
           done
+          [ "$found" = "1" ] || echo "No surefire failures recorded — the build failed before or after the tests."
+          # Never let this reporting step mask the real failure above.
+          exit 0
 
       - name: Publish test report
         if: always()
