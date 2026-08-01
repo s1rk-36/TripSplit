@@ -71,7 +71,9 @@ function Expenses() {
       if (filterGroup !== 'all' && filterGroup) {
         expensesData = await apiService.getGroupExpenses(filterGroup);
       } else {
-        expensesData = await apiService.getUserExpenses();
+        // This id was missing, so the request went to /user-expenses/user/undefined
+        // and the page 404d whenever no group filter was active.
+        expensesData = await apiService.getUserExpenses(currentUser?.userId);
       }
       
       setExpenses(expensesData || []);

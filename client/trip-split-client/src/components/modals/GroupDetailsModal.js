@@ -87,10 +87,16 @@ const handleRemoveMember = async (userId) => {
                 <p className="text-muted mb-2">{group.description}</p>
               )}
               <div className="d-flex gap-3 text-muted small">
-                <span>
-                  <FaCalendar className="me-1" />
-                  Created {new Date(group.createdAt || Date.now()).toLocaleDateString()}
-                </span>
+                {/* The group table has no created_at column, so this is only shown
+                    when the API actually sends one. It used to fall back to
+                    Date.now(), which displayed today's date for every group and
+                    changed daily. */}
+                {group.createdAt && (
+                  <span>
+                    <FaCalendar className="me-1" />
+                    Created {new Date(group.createdAt).toLocaleDateString()}
+                  </span>
+                )}
                 <span>
                   <FaUsers className="me-1" />
                   {members.length} member{members.length !== 1 ? 's' : ''}

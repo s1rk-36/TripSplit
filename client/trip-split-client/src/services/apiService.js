@@ -32,6 +32,16 @@ const normalizeBaseUrl = (raw) => {
 
 const API_BASE_URL = normalizeBaseUrl(process.env.REACT_APP_API_URL);
 
+// A missing id used to interpolate straight into the path, so the app requested
+// /user-expenses/user/undefined and showed the server's 404 instead of naming the
+// real problem. Fail here, where the caller is still in the stack trace.
+const requireId = (id, caller) => {
+  if (id === undefined || id === null || id === '') {
+    throw new Error(`${caller} called without an id — the current user may not be loaded yet.`);
+  }
+  return id;
+};
+
 const handleResponse = async (response) => {
   if (!response.ok) {
     if (response.status === 401) {
@@ -317,17 +327,19 @@ export const apiService = {
   },
 
 
-  // User Expenses endpoints 
+  // User Expenses endpoints
   async getUser(userId) {
-    return makeAuthenticatedRequest(`/user/${userId}`);
+    return makeAuthenticatedRequest(`/user/${requireId(userId, 'getUser')}`);
   },
 
   async getUserBalance(userId) {
-    return makeAuthenticatedRequest(`/user-expenses/user/${userId}/balance`);
+    return makeAuthenticatedRequest(
+      `/user-expenses/user/${requireId(userId, 'getUserBalance')}/balance`);
   },
 
   async getUserExpenses(userId) {
-    return makeAuthenticatedRequest(`/user-expenses/user/${userId}`);
+    return makeAuthenticatedRequest(
+      `/user-expenses/user/${requireId(userId, 'getUserExpenses')}`);
   },
 
   async getExpenseSplits(expenseId) {
