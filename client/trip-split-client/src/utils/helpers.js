@@ -1,3 +1,30 @@
+/**
+ * Splits an amount into `count` shares that sum back to it exactly.
+ *
+ * Dividing in floats and sending the result meant each share was rounded
+ * independently by the decimal(10,2) columns: $100 among 6 stored 16.67 six times,
+ * which is $100.02. The extra cents became debt with no matching creditor, so the
+ * group could never reach zero. Work in whole cents and hand the leftover cents to
+ * the first few members instead — 4 owe $16.67 and 2 owe $16.66.
+ */
+export const splitEvenly = (total, count) => {
+  if (!count || count < 1) return [];
+
+  const totalCents = Math.round((Number(total) || 0) * 100);
+  const base = Math.trunc(totalCents / count);
+  let remainder = totalCents - base * count;
+  const step = remainder < 0 ? -1 : 1; // keeps refunds (negative totals) exact too
+
+  return Array.from({ length: count }, () => {
+    let cents = base;
+    if (remainder !== 0) {
+      cents += step;
+      remainder -= step;
+    }
+    return cents / 100;
+  });
+};
+
 export const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

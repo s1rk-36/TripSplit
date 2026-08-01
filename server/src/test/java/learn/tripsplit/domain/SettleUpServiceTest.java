@@ -263,6 +263,55 @@ public class SettleUpServiceTest {
 
     // --- helpers ----------------------------------------------------------
 
+    @Test
+    void shouldNotClaimSettledWhenRoundingLeavesSomeoneOwing() {
+        // What an indivisible total used to produce: $100 among 6 stored as 16.67
+        // six times, so the shares total 100.02 and the nets sum to -0.02. The plan
+        // pairs off every creditor, leaving a debtor with nobody to pay. An empty
+        // transfer list must not be read as "everyone is square".
+        Expense expense = expense(1, "Dinner", "100.00",
+                split(1, "100.00", "16.67"),
+                split(2, "0.00", "16.67"),
+                split(3, "0.00", "16.67"),
+                split(4, "0.00", "16.67"),
+                split(5, "0.00", "16.67"),
+                split(6, "0.00", "16.67"));
+        // Everyone pays the creditor what the plan asked for.
+        List<Settlement> paid = List.of(
+                settlement(1, 2, 1, "16.67"), settlement(2, 3, 1, "16.67"),
+                settlement(3, 4, 1, "16.67"), settlement(4, 5, 1, "16.67"),
+                settlement(5, 6, 1, "16.67"));
+        arrange(members(1, 2, 3, 4, 5, 6), List.of(expense), paid);
+
+        SettlePlan plan = service.getSettlePlan(GROUP_ID);
+
+        assertTrue(plan.getTransfers().isEmpty(), "no creditor is left to pay");
+        assertEquals(new BigDecimal("-0.02"), netOf(plan, 1));
+        assertFalse(plan.isSettled(),
+                "a member is still 0.02 out, so the group is not square");
+    }
+
+    @Test
+    void shouldSettleWhenSharesAreSplitToExactCents() {
+        // The same $100 among 6, split the way the client now sends it: four owe
+        // 16.67 and two owe 16.66, summing to exactly 100.00.
+        Expense expense = expense(1, "Dinner", "100.00",
+                split(1, "100.00", "16.67"),
+                split(2, "0.00", "16.67"),
+                split(3, "0.00", "16.67"),
+                split(4, "0.00", "16.67"),
+                split(5, "0.00", "16.66"),
+                split(6, "0.00", "16.66"));
+        arrange(members(1, 2, 3, 4, 5, 6), List.of(expense), List.of());
+
+        SettlePlan plan = service.getSettlePlan(GROUP_ID);
+
+        assertBalancesSumToZero(plan);
+        assertEquals(new BigDecimal("83.33"), netOf(plan, 1));
+        assertFalse(plan.isSettled(), "nobody has paid yet");
+        assertTransfersSettleEveryone(plan);
+    }
+
     private void arrange(List<UserGroup> members, List<Expense> expenses, List<Settlement> settlements) {
         when(groupRepository.getGroupMembers(GROUP_ID)).thenReturn(members);
         when(expenseService.findByGroupIdWithUserExpenses(GROUP_ID)).thenReturn(expenses);

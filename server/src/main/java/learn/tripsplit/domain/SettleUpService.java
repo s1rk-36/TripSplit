@@ -118,7 +118,14 @@ public class SettleUpService {
             }
         }
 
-        plan.setSettled(plan.isHasExpenses() && plan.getTransfers().isEmpty());
+        // An empty transfer list only means the greedy pairing ran out of useful
+        // matches, which is not the same as everyone being square: a rounding
+        // remainder leaves a debtor with no creditor to pay, and the plan would then
+        // claim the group was settled while still showing that member owing a cent.
+        // Ask the balances directly, matching how the groups page decides.
+        boolean allSquare = plan.getBalances().stream()
+                .allMatch(b -> b.getNet().abs().compareTo(TOLERANCE) <= 0);
+        plan.setSettled(plan.isHasExpenses() && allSquare);
         return plan;
     }
 

@@ -3,6 +3,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { FaReceipt, FaEquals, FaDollarSign } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
 import { apiService } from '../../services/apiService';
+import { splitEvenly } from '../../utils/helpers';
 
 function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSelectedGroup }) {
   const { currentUser } = useAuth();
@@ -59,13 +60,13 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
     if (groupMembers.length === 0) return;
 
     const totalCost = parseFloat(formData.totalCost) || 0;
-    const equalShare = totalCost / groupMembers.length;
+    const shares = splitEvenly(totalCost, groupMembers.length);
 
     // Default: current user pays, everyone owes equal share
-    const newUserExpenses = groupMembers.map(member => ({
+    const newUserExpenses = groupMembers.map((member, i) => ({
       userId: member.id,
       name: member.name,
-      amountOwed: equalShare,
+      amountOwed: shares[i],
       amountPaid: member.id === currentUser?.userId ? totalCost : 0,
       included: true
     }));
@@ -119,11 +120,13 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
     const includedMembers = updatedUserExpenses.filter(ue => ue.included);
     if (includedMembers.length > 0) {
       const totalCost = parseFloat(formData.totalCost) || 0;
-      const equalShare = totalCost / includedMembers.length;
-      
+      const shares = splitEvenly(totalCost, includedMembers.length);
+
+      // Shares are positional, so walk the included members in order.
+      let next = 0;
       setUserExpenses(updatedUserExpenses.map(ue => ({
         ...ue,
-        amountOwed: ue.included ? equalShare : 0
+        amountOwed: ue.included ? shares[next++] : 0
       })));
     }
   };
