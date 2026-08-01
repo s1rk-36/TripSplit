@@ -13,12 +13,7 @@ function Dashboard() {
     totalExpenses: 0,
     activeGroups: 0
   });
-  const [recentActivities] = useState([
-    { title: 'New expense added', description: 'Flight Tickets - $1,200.00', time: '2 hours ago' },
-    { title: 'Payment received', description: 'Bob paid $400 for hotel', time: '5 hours ago' },
-    { title: 'Comment added', description: 'Carol commented on Taxi Fare', time: '1 day ago' },
-    { title: 'Receipt uploaded', description: 'Dinner bill receipt uploaded', time: '2 days ago' }
-  ]);
+  const [statsError, setStatsError] = useState('');
 
   useEffect(() => {
     loadDashboardData();
@@ -40,13 +35,11 @@ function Dashboard() {
         activeGroups: groups.length
       });
     } catch (err) {
+      // This used to substitute invented figures (a $382.00 balance, 10 expenses,
+      // 5 groups) whenever a call failed, so a brand-new account with nothing in it
+      // was shown someone else's numbers. Report the failure instead.
       console.error('Failed to load dashboard data:', err);
-      // Fallback to mock data
-      setStats({
-        userBalance: 382.00,
-        totalExpenses: 10,
-        activeGroups: 5
-      });
+      setStatsError(err.message || 'Could not load your dashboard.');
     }
   };
 
@@ -61,6 +54,10 @@ function Dashboard() {
           <FaPlus className="me-1" /> Add Expense
         </Link>
       </div>
+
+      {statsError && (
+        <div className="alert alert-danger">{statsError}</div>
+      )}
 
       {(
         <>
@@ -99,21 +96,16 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Recent Activity */}
+          {/* Activity is per group and derived from that group's ledger, so it lives
+              on the group's expenses view. This card used to render four invented
+              rows ("Bob paid $400 for hotel") that were the same for every account. */}
           <div className="card">
             <div className="card-header">
               <h5 className="mb-0">Recent Activity</h5>
             </div>
-            <div className="card-body">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                  <div>
-                    <strong>{activity.title}</strong>
-                    <div className="text-muted small">{activity.description}</div>
-                  </div>
-                  <small className="text-muted">{activity.time}</small>
-                </div>
-              ))}
+            <div className="card-body text-muted">
+              Activity is tracked per group.{' '}
+              <Link to="/groups">Open a group</Link> to see what has been added and settled.
             </div>
           </div>
         </>

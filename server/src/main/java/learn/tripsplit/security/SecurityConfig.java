@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,6 +15,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @EnableWebSecurity
+// Spring Boot does not turn method security on by itself, so the @PreAuthorize
+// annotations on the admin-only endpoints were silently doing nothing.
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final JwtConverter converter;
 
@@ -37,7 +41,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // Liveness probe for Render's health check and the keep-alive pinger.
                 .antMatchers(HttpMethod.GET, "/api/health").permitAll()
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
-                .antMatchers(HttpMethod.DELETE, "/api/user/**", "/api/group/**").hasRole("ADMIN")
+                // GroupController is mapped at /api/groups, so the old "/api/group/**"
+                // pattern never matched and delete-group was open to any signed-in user.
+                .antMatchers(HttpMethod.DELETE, "/api/user/**", "/api/groups/**").hasRole("ADMIN")
                 // require authentication for any request...
                 .anyRequest().authenticated()
                 .and()

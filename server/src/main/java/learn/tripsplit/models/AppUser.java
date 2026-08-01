@@ -1,5 +1,6 @@
 package learn.tripsplit.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -86,6 +87,11 @@ public class AppUser {
         this.username = username;
     }
 
+    // AppUser is returned directly by /api/user, /api/user/{id}, /api/user/current and
+    // inside every group's member list, so without this the bcrypt hash was handed to
+    // any authenticated caller. WRITE_ONLY still lets the field be read from a request
+    // body, which AppUserService.add relies on when it encodes a new password.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getPasswordHash() {
         return passwordHash;
     }

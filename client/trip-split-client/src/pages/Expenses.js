@@ -38,10 +38,18 @@ function Expenses() {
   const [activity, setActivity] = useState([]);
 
   useEffect(() => {
-    loadExpenses();
     loadGroups();
     loadCategories();
   }, []);
+
+  // The two branches of loadExpenses hit different endpoints, so the fetch has to
+  // follow the filter. It used to run once on mount: arriving from a group's "view
+  // expenses" link loaded only that group, and switching the dropdown then filtered
+  // an already-narrowed list, showing "No expenses found" for groups that had them.
+  useEffect(() => {
+    loadExpenses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterGroup, currentUser?.userId]);
 
   // Activity feed exists per group, so load it only when one group is in view.
   useEffect(() => {
@@ -71,9 +79,13 @@ function Expenses() {
       if (filterGroup !== 'all' && filterGroup) {
         expensesData = await apiService.getGroupExpenses(filterGroup);
       } else {
-        // This id was missing, so the request went to /user-expenses/user/undefined
+        // This id was missing, so the request went to /user_expenses/user/undefined
         // and the page 404d whenever no group filter was active.
-        expensesData = await apiService.getUserExpenses(currentUser?.userId);
+        if (!currentUser?.userId) {
+          setExpenses([]);
+          return;
+        }
+        expensesData = await apiService.getUserExpenses(currentUser.userId);
       }
       
       setExpenses(expensesData || []);

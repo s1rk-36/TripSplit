@@ -206,9 +206,9 @@ export const resolveDemoRequest = (url, options = {}) => {
   if (path === '/user/groups' || path === '/groups') return Promise.resolve(demoGroups);
   if (path === '/user' || path === '/user/current') return Promise.resolve(demoUser);
 
-  if (path.startsWith('/user-expenses/user/') && path.endsWith('/balance')) return Promise.resolve(DEMO_BALANCE);
-  if (path.startsWith('/user-expenses/user/')) return Promise.resolve(demoExpenses);
-  if (path.startsWith('/user-expenses/expense/')) return Promise.resolve([]);
+  if (path.startsWith('/user_expenses/user/') && path.endsWith('/balance')) return Promise.resolve(DEMO_BALANCE);
+  if (path.startsWith('/user_expenses/user/')) return Promise.resolve(demoExpenses);
+  if (path.startsWith('/user_expenses/expense/')) return Promise.resolve([]);
 
   if (path === '/expenses') return Promise.resolve(demoExpenses);
   if (path.startsWith('/expenses/group/')) {

@@ -334,16 +334,16 @@ export const apiService = {
 
   async getUserBalance(userId) {
     return makeAuthenticatedRequest(
-      `/user-expenses/user/${requireId(userId, 'getUserBalance')}/balance`);
+      `/user_expenses/user/${requireId(userId, 'getUserBalance')}/balance`);
   },
 
   async getUserExpenses(userId) {
     return makeAuthenticatedRequest(
-      `/user-expenses/user/${requireId(userId, 'getUserExpenses')}`);
+      `/user_expenses/user/${requireId(userId, 'getUserExpenses')}`);
   },
 
   async getExpenseSplits(expenseId) {
-    return makeAuthenticatedRequest(`/user-expenses/expense/${expenseId}`);
+    return makeAuthenticatedRequest(`/user_expenses/expense/${expenseId}`);
   },
   
   async deleteUser(id) {
