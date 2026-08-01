@@ -17,6 +17,16 @@ const normalizeBaseUrl = (raw) => {
       `Using ${url} instead. Set it to the API root to silence this.`
     );
   }
+  // The API is a separate service, so the base must carry a scheme and host. A bare
+  // path posts to whatever is serving the frontend, which answers "Cannot POST
+  // /api/...". Nothing can be inferred here, so say plainly what to fix.
+  if (!/^https?:\/\//i.test(url)) {
+    console.error(
+      `REACT_APP_API_URL is "${url}", which has no scheme or host, so requests go to ` +
+      'the site serving the frontend instead of the API. Set it to the full API root, ' +
+      'e.g. https://your-api.onrender.com/api'
+    );
+  }
   return url;
 };
 
