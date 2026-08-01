@@ -187,11 +187,20 @@ public class GroupController {
         }
     }
     @PutMapping("/{groupId}")
-    public ResponseEntity<Object> update(@PathVariable int groupId, @RequestBody Group group) {
-        System.out.println(groupId);
-        System.out.println(group.getGroupId());
+    public ResponseEntity<Object> update(@PathVariable int groupId, @RequestBody Group group,
+                                         Authentication authentication) {
         if (groupId != group.getGroupId()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST); // 400
+        }
+
+        // This route took no Authentication at all, so any signed-in user could rename
+        // or re-describe any group. The UI only offers editing to group admins.
+        AppUser currentUser = resolveCurrentUser(authentication);
+        if (currentUser == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if (!service.isUserAdmin(groupId, currentUser.getAppUserId())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
         Result<Group> result = service.update(group);
@@ -209,15 +218,17 @@ public class GroupController {
                 return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
             }
 
-            // Get current user
-            String username = authentication.getName();
-            AppUser currentUser = appUserService.findById(userId);
-            if (currentUser == null) {
-                currentUser = appUserService.findByEmail(username);
-            }
-
+            // This resolved the user named in the path, not the caller, so the check
+            // below could never fail and anyone could evict anyone from any group.
+            AppUser currentUser = resolveCurrentUser(authentication);
             if (currentUser == null) {
                 return new ResponseEntity<>("User not found", HttpStatus.UNAUTHORIZED);
+            }
+
+            // A group admin can remove anyone; anybody else may only remove themselves.
+            int actorId = currentUser.getAppUserId();
+            if (actorId != userId && !service.isUserAdmin(groupId, actorId)) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
 
             Result<Void> result = service.removeUserFromGroup(groupId, userId);
@@ -246,4 +257,16 @@ public class GroupController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND); // 404
     }
 
+    /** The signed-in caller, looked up by username and then email, as the JWT carries one or the other. */
+    private AppUser resolveCurrentUser(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        String username = authentication.getName();
+        AppUser user = appUserService.findByUsername(username);
+        if (user == null) {
+            user = appUserService.findByEmail(username);
+        }
+        return user;
+    }
 }

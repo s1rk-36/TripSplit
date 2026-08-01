@@ -28,6 +28,10 @@ public class UserController {
         this.groupService = groupService;
     }
 
+    // Lists every account, so it is administrative. The client's misleadingly named
+    // apiService.getCurrentUser points here but has no callers; sign-in reads
+    // /user/current, and the expenses table reads /user/{id} for author names.
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<AppUser> findAll() {
         return service.findAll();
@@ -90,10 +94,22 @@ public class UserController {
 //    }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<Object> update(@PathVariable int userId, @RequestBody AppUser appUser) {
+    public ResponseEntity<Object> update(@PathVariable int userId, @RequestBody AppUser appUser,
+                                         Authentication authentication) {
 
         if (userId != appUser.getAppUserId()) {
             return new ResponseEntity<>("path id and user id must match", HttpStatus.CONFLICT);
+        }
+
+        // Only the account holder may edit the account. This check was missing, and
+        // since the update writes email and username — and authentication is by email
+        // — anyone could take over or lock out any other account.
+        AppUser currentUser = resolveUser(authentication);
+        if (currentUser == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if (currentUser.getAppUserId() != userId) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
         Result<AppUser> result = service.update(appUser);
@@ -111,5 +127,18 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    /** The signed-in caller, looked up by username and then email, as the JWT carries one or the other. */
+    private AppUser resolveUser(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        String username = authentication.getName();
+        AppUser user = service.findByUsername(username);
+        if (user == null) {
+            user = service.findByEmail(username);
+        }
+        return user;
     }
 }

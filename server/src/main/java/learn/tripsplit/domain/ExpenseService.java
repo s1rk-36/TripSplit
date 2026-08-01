@@ -24,6 +24,11 @@ public class ExpenseService {
     @Autowired
     private UserExpenseRepository userExpenseRepository;
 
+    /** Expenses across every group the user belongs to. */
+    public List<Expense> findByMemberUserId(int userId) {
+        return expenseRepository.findByMemberUserId(userId);
+    }
+
     public List<Expense> findAll() {
         return expenseRepository.findAll();
     }

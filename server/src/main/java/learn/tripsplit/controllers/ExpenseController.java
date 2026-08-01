@@ -32,22 +32,43 @@ public class ExpenseController {
     @Autowired
     private AppUserService appUserService;
 
+    /**
+     * Expenses from the caller's own groups. This used to return every expense in
+     * the database to any authenticated caller.
+     */
     @GetMapping
-    public List<Expense> findAll() {
-        return expenseService.findAll();
+    public ResponseEntity<Object> findAll(Authentication authentication) {
+        AppUser currentUser = resolveUser(authentication);
+        if (currentUser == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        return ResponseEntity.ok(expenseService.findByMemberUserId(currentUser.getAppUserId()));
     }
 
     @GetMapping("/group/{groupId}")
-    public List<Expense> findByGroupId(@PathVariable int groupId) {
-        return expenseService.findByGroupIdWithUserExpenses(groupId);
+    public ResponseEntity<Object> findByGroupId(@PathVariable int groupId, Authentication authentication) {
+        AppUser currentUser = resolveUser(authentication);
+        if (currentUser == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        if (!groupService.isUserMember(groupId, currentUser.getAppUserId())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        return ResponseEntity.ok(expenseService.findByGroupIdWithUserExpenses(groupId));
     }
 
     @GetMapping("/{expenseId}")
-    public ResponseEntity<Expense> findById(@PathVariable int expenseId) {
-        System.out.println(expenseId);
+    public ResponseEntity<Expense> findById(@PathVariable int expenseId, Authentication authentication) {
+        AppUser currentUser = resolveUser(authentication);
+        if (currentUser == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         Expense expense = expenseService.findById(expenseId);
         if (expense == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        if (!groupService.isUserMember(expense.getGroupId(), currentUser.getAppUserId())) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         return ResponseEntity.ok(expense);
     }
@@ -66,10 +87,19 @@ public class ExpenseController {
             // Set group and created by
             int groupId = Integer.parseInt(requestData.get("groupId").toString());
             Group group = groupService.findById(groupId);
+            if (group == null) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
             expense.setGroupId(group.getGroupId());
 
-            String username = authentication.getName();
-            AppUser currentUser = appUserService.findByUsername(username);
+            AppUser currentUser = resolveUser(authentication);
+            if (currentUser == null) {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
+            // Without this you could attach an expense to a group you are not in.
+            if (!groupService.isUserMember(groupId, currentUser.getAppUserId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
             expense.setCreatedBy(currentUser.getAppUserId());
 
             // Handle userExpenses
@@ -99,9 +129,15 @@ public class ExpenseController {
     }
 
     @PutMapping("/{expenseId}")
-    public ResponseEntity<?> update(@PathVariable int expenseId, @RequestBody Expense expense) {
+    public ResponseEntity<?> update(@PathVariable int expenseId, @RequestBody Expense expense,
+                                    Authentication authentication) {
         if (expenseId != expense.getExpenseId()) {
             return new ResponseEntity<>("Path ID and expense ID must match.", HttpStatus.CONFLICT);
+        }
+
+        ResponseEntity<?> denial = denyUnlessCanModify(expenseId, authentication);
+        if (denial != null) {
+            return denial;
         }
 
         Result<Expense> result = expenseService.update(expense);
@@ -117,10 +153,52 @@ public class ExpenseController {
     }
 
     @DeleteMapping("/{expenseId}")
-    public ResponseEntity<?> deleteById(@PathVariable int expenseId) {
+    public ResponseEntity<?> deleteById(@PathVariable int expenseId, Authentication authentication) {
+        ResponseEntity<?> denial = denyUnlessCanModify(expenseId, authentication);
+        if (denial != null) {
+            return denial;
+        }
+
         if (expenseService.deleteById(expenseId)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Editing and deleting an expense is limited to whoever added it, or an admin of
+     * its group — the same rule the expenses table uses to decide whether to offer
+     * the action. Returns null when the caller is allowed through.
+     */
+    private ResponseEntity<?> denyUnlessCanModify(int expenseId, Authentication authentication) {
+        AppUser currentUser = resolveUser(authentication);
+        if (currentUser == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        Expense existing = expenseService.findById(expenseId);
+        if (existing == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        int userId = currentUser.getAppUserId();
+        boolean allowed = existing.getCreatedBy() == userId
+                || groupService.isUserAdmin(existing.getGroupId(), userId);
+        if (!allowed) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+        return null;
+    }
+
+    private AppUser resolveUser(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        String username = authentication.getName();
+        AppUser user = appUserService.findByUsername(username);
+        if (user == null) {
+            user = appUserService.findByEmail(username);
+        }
+        return user;
     }
 }

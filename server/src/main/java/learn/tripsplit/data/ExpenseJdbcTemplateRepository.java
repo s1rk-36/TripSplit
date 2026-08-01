@@ -66,6 +66,39 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
         );
     }
 
+    /**
+     * The same shape as findAll, restricted to groups the user belongs to. The
+     * unrestricted findAll is what /api/expenses used to return, which handed every
+     * caller the whole system's ledger.
+     */
+    @Override
+    public List<Expense> findByMemberUserId(int userId) {
+        final String sql = "select "
+                + "e.expense_id, e.`name` as expense_name, e.total_cost, e.category, "
+                + "e.`description` as expense_description, e.created_at, "
+                + "g.group_id, g.`name` as group_name, g.`description` as group_description, "
+                + "gcb.user_id as gcb_user_id, gcb.first_name as gcb_first_name, "
+                + "gcb.last_name as gcb_last_name, gcb.email as gcb_email, "
+                + "gcb.username as gcb_username, gcb.password_hash as gcb_password_hash, "
+                + "gcb.disabled as gcb_disabled, "
+                + "ecb.user_id as ecb_user_id, ecb.first_name as ecb_first_name, "
+                + "ecb.last_name as ecb_last_name, ecb.email as ecb_email, "
+                + "ecb.username as ecb_username, ecb.password_hash as ecb_password_hash, "
+                + "ecb.disabled as ecb_disabled "
+                + "from expense e "
+                + "inner join `group` as g on e.group_id = g.group_id "
+                + "inner join `user` as gcb on g.created_by = gcb.user_id "
+                + "inner join `user` as ecb on e.created_by = ecb.user_id "
+                + "where e.group_id in (select ug.group_id from user_group ug where ug.user_id = ?) "
+                + "limit 1000;";
+
+        return jdbcTemplate.query(sql,
+                (rs, rowNum) -> new ExpenseMapper(this)
+                        .mapRow(rs, rowNum, "", "", "gcb_", "ecb_"),
+                userId
+        );
+    }
+
     @Override
     public List<Expense> findByGroupId(int groupId) {
         final String sql = "SELECT e.expense_id, e.name, e.total_cost, e.category, e.description, e.created_at, e.created_by, "
