@@ -208,6 +208,39 @@ at once. A heavy deploy day eats into the headroom.
 
 ---
 
+## 8. Continuous deployment
+
+Render's own **Auto-Deploy** ships every push to `main` whether or not the tests
+passed. The `deploy` job in `.github/workflows/ci.yml` replaces it: it runs only
+after both the server and client jobs go green, so a red build never reaches
+production.
+
+1. On **each** service → Settings → **Auto-Deploy: Off**. Leaving it on means
+   Render still deploys untested commits, and the two paths race each other.
+2. On each service → Settings → **Deploy Hook**, copy the URL. It is a secret —
+   anyone holding it can trigger a deploy.
+3. In GitHub → Settings → Secrets and variables → Actions, add:
+
+   | Secret | Value |
+   | --- | --- |
+   | `RENDER_DEPLOY_HOOK_API` | the `tripsplit-api` hook URL |
+   | `RENDER_DEPLOY_HOOK_WEB` | the `tripsplit-web` hook URL |
+
+Pushes to `main` now build, test, deploy both services, and then poll
+`/api/health` until the API answers `"status":"up"`. Pull requests build and test
+but never deploy.
+
+A hook returns as soon as Render *queues* the build, which is why the job waits on
+the health check afterwards — otherwise a green tick would only mean "deploy
+started". The frontend has no equivalent gate: it is a static site, so a failed
+build simply leaves the previous bundle serving.
+
+> Remember `REACT_APP_API_URL` is compiled into the bundle. Changing it in Render
+> does nothing until the frontend is rebuilt — this pipeline does that on the next
+> push, or use Manual Deploy → Clear build cache & deploy.
+
+---
+
 ## Notes
 
 - **Cold starts:** with the pinger above, only visitors arriving during the nightly

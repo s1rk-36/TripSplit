@@ -119,3 +119,65 @@ jobs:
         env:
           CI: false
         run: npm run build
+
+  # Deploy only after both halves pass, and only from main. Render's own
+  # auto-deploy fires on every push regardless of whether the tests went green,
+  # which is what this replaces — turn "Auto-Deploy" off on both services and let
+  # this job be the only thing that ships.
+  #
+  # Set RENDER_DEPLOY_HOOK_API and RENDER_DEPLOY_HOOK_WEB as repository secrets,
+  # each the service's "Deploy Hook" URL from Render → Settings. Treat them as
+  # passwords: anyone holding one can trigger a deploy.
+  deploy:
+    name: Deploy (Render)
+    needs: [server, client]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # Never let two deploys race; wait rather than cancel, so the newest commit
+    # is not dropped mid-rollout.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy backend
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_API }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_API is not set — add it in Settings → Secrets → Actions."
+            exit 1
+          fi
+          curl -fsS --retry 3 --retry-delay 5 "$HOOK" > /dev/null
+          echo "Backend deploy triggered."
+
+      # The API URL is compiled into the bundle, so the frontend must be rebuilt
+      # whenever it changes — editing the env var alone does nothing.
+      - name: Deploy frontend
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_WEB }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_WEB is not set — add it in Settings → Secrets → Actions."
+            exit 1
+          fi
+          curl -fsS --retry 3 --retry-delay 5 "$HOOK" > /dev/null
+          echo "Frontend deploy triggered."
+
+      # The hooks return as soon as Render queues the build, so a green job means
+      # "deploy started", not "deploy finished". Wait for the API to answer with
+      # the new build before calling it done.
+      - name: Wait for the API to come back healthy
+        run: |
+          for i in $(seq 1 40); do
+            body=$(curl -fsS --max-time 20 https://tripsplit-api-o4s1.onrender.com/api/health || true)
+            case "$body" in
+              *'"status":"up"'*)
+                echo "API healthy: $body"
+                exit 0
+                ;;
+            esac
+            echo "waiting for the API to report healthy… ($i/40)"
+            sleep 15
+          done
+          echo "::error::API did not report healthy within 10 minutes — check the Render logs."
+          exit 1
