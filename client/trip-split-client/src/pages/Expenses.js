@@ -480,7 +480,7 @@ function Expenses() {
           )}
         </div>
       ) : (
-        <div className="card ts-reveal ts-reveal-d1">
+        <div className="card ts-reveal ts-reveal-d1 ts-expenses-card">
           <div className="card-body p-0">
             <div className="table-responsive">
               <table className="table table-hover mb-0">
@@ -614,7 +614,7 @@ function Expenses() {
 
       {/* Activity feed: the group's recent history, ledger-style */}
       {filterGroup !== 'all' && activity.length > 0 && (
-        <div className="card mt-4 ts-reveal">
+        <div className="card mt-4 ts-reveal ts-activity-card">
           <div className="card-header d-flex align-items-center gap-2">
             <FaExchangeAlt size={13} className="text-muted" />
             Activity

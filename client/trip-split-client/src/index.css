@@ -448,6 +448,22 @@ code {
 
 /* Activity feed ------------------------------------------------------------- */
 
+/* The feed sits directly below the expenses table, whose last row opens its action
+   menu downward. Pin the feed to the bottom of the stack so an open menu is never
+   covered, including while the reveal transition is still running. */
+.ts-activity-card {
+  position: relative;
+  z-index: 0;
+}
+
+/* Both cards are stacking contexts while the reveal transition runs, and equal
+   levels resolve by document order, which would still put the feed on top. Rank
+   the table above it so the menu wins in every state. */
+.ts-expenses-card {
+  position: relative;
+  z-index: 1;
+}
+
 .ts-activity {
   list-style: none;
   margin: 0;
@@ -854,6 +870,12 @@ code {
 .ts-reveal.is-visible {
   opacity: 1;
   transform: none;
+  /* will-change creates a stacking context, and leaving it set after the reveal
+     has finished keeps that context alive forever. A later card then paints over
+     a dropdown opened inside an earlier one — the row action menu on the last
+     expense disappeared behind the activity feed. Release it once settled; it is
+     meant to be transient, and holding it also keeps compositor memory pinned. */
+  will-change: auto;
 }
 .ts-reveal-d1 { transition-delay: 0.1s; }
 .ts-reveal-d2 { transition-delay: 0.2s; }
