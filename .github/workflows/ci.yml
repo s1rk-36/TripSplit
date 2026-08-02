@@ -131,7 +131,12 @@ jobs:
   deploy:
     name: Deploy (Render)
     needs: [server, client]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Pushes to main deploy automatically; "Run workflow" on main deploys on demand,
+    # which is the natural way to redeploy after changing a setting in Render rather
+    # than inventing an empty commit. Pull requests never reach here.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     # Never let two deploys race; wait rather than cancel, so the newest commit
     # is not dropped mid-rollout.

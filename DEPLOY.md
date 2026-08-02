@@ -227,7 +227,9 @@ production.
    | `RENDER_DEPLOY_HOOK_WEB` | the `tripsplit-web` hook URL |
 
 Pushes to `main` now build, test, deploy both services, and then poll
-`/api/health` until the API answers `"status":"up"`. Pull requests build and test
+`/api/health` until the API answers `"status":"up"`. **Actions → CI → Run workflow**
+on `main` does the same on demand, which is how to redeploy after changing a
+setting in Render without inventing an empty commit. Pull requests build and test
 but never deploy.
 
 A hook returns as soon as Render *queues* the build, which is why the job waits on
