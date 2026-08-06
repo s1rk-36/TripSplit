@@ -10,6 +10,7 @@ import EditExpenseModal from '../components/modals/EditExpenseModal';
 import ExpenseDetailsModal from '../components/modals/ExpenseDetailsModal';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
+import { disambiguateNames } from '../utils/helpers';
 import { isDemoMode, showDemoNotice } from '../services/demoData';
 import { formatCurrency, getBalanceColor, getBalanceText } from '../utils/helpers';
 
@@ -189,19 +190,26 @@ function Expenses() {
     const results = await Promise.all(missingIds.map(async (userId) => {
       try {
         const userData = await apiService.getUser(userId);
-        return [userId, `${userData.firstName} ${userData.lastName}`];
+        return { id: userId, firstName: userData.firstName, lastName: userData.lastName,
+                 username: userData.username };
       } catch (err) {
         console.error(`Failed to load user ${userId}:`, err);
-        return [userId, 'Unknown User'];
+        return { id: userId, firstName: 'Unknown', lastName: 'User' };
       }
     }));
 
-    results.forEach(([userId, name]) => { newUserCache[userId] = name; });
+    // Cache the raw records, not formatted strings: whether a name needs its
+    // username depends on everyone else in the table, so it can only be decided
+    // once they are all known.
+    results.forEach((user) => { newUserCache[user.id] = user; });
     setUserCache(newUserCache);
   };
 
+  // Two authors can share a name, so resolve against the whole cache.
+  const authorNames = disambiguateNames(Object.values(userCache));
+
   const getUserName = (userId) => {
-    return userCache[userId];
+    return authorNames[userId];
   };
 
   const getGroupName = (groupId) => {

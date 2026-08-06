@@ -264,6 +264,41 @@ public class SettleUpServiceTest {
     // --- helpers ----------------------------------------------------------
 
     @Test
+    void shouldTellApartTwoMembersWithTheSameName() {
+        // Two people called "User 2" in one group. The settle list asks you to hand
+        // one of them money, so the rows have to be distinguishable.
+        List<UserGroup> members = members(1, 2, 3);
+        members.get(2).getUser().setFirstName(members.get(1).getUser().getFirstName());
+        members.get(2).getUser().setLastName(members.get(1).getUser().getLastName());
+
+        Expense expense = expense(1, "Dinner", "90.00",
+                split(1, "90.00", "30.00"),
+                split(2, "0.00", "30.00"),
+                split(3, "0.00", "30.00"));
+        arrange(members, List.of(expense), List.of());
+
+        SettlePlan plan = service.getSettlePlan(GROUP_ID);
+
+        // The clashing pair get their usernames; the unaffected member does not.
+        assertEquals("User 2 (user2)", nameFor(plan, 2));
+        assertEquals("User 2 (user3)", nameFor(plan, 3));
+        assertEquals("User 1", nameFor(plan, 1));
+    }
+
+    @Test
+    void shouldNotSuffixNamesThatAreAlreadyUnique() {
+        Expense expense = expense(1, "Dinner", "60.00",
+                split(1, "60.00", "30.00"),
+                split(2, "0.00", "30.00"));
+        arrange(members(1, 2), List.of(expense), List.of());
+
+        SettlePlan plan = service.getSettlePlan(GROUP_ID);
+
+        assertEquals("User 1", nameFor(plan, 1));
+        assertEquals("User 2", nameFor(plan, 2));
+    }
+
+    @Test
     void shouldNotClaimSettledWhenRoundingLeavesSomeoneOwing() {
         // What an indivisible total used to produce: $100 among 6 stored as 16.67
         // six times, so the shares total 100.02 and the nets sum to -0.02. The plan
@@ -353,6 +388,14 @@ public class SettleUpServiceTest {
     private static Settlement settlement(int settlementId, int payerId, int payeeId, String amount) {
         return new Settlement(settlementId, GROUP_ID, payerId, payeeId,
                 new BigDecimal(amount), LocalDateTime.of(2026, 6, 2, 12, 0));
+    }
+
+    private static String nameFor(SettlePlan plan, int userId) {
+        return plan.getBalances().stream()
+                .filter(b -> b.getUserId() == userId)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no balance for user " + userId))
+                .getName();
     }
 
     private static BigDecimal netOf(SettlePlan plan, int userId) {

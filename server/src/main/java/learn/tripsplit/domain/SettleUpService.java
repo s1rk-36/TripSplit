@@ -2,6 +2,7 @@ package learn.tripsplit.domain;
 
 import learn.tripsplit.data.GroupRepository;
 import learn.tripsplit.data.SettlementRepository;
+import learn.tripsplit.models.AppUser;
 import learn.tripsplit.models.Expense;
 import learn.tripsplit.models.Settlement;
 import learn.tripsplit.models.UserExpense;
@@ -15,6 +16,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,11 +57,12 @@ public class SettleUpService {
 
         // Seed every member at zero so people with no expenses still appear.
         Map<Integer, BigDecimal> nets = new LinkedHashMap<>();
+        Map<Integer, String> display = displayNames(members);
         Map<Integer, String> names = new LinkedHashMap<>();
         for (UserGroup member : members) {
             int id = member.getUser().getAppUserId();
             nets.put(id, BigDecimal.ZERO);
-            names.put(id, member.getUser().getFirstName() + " " + member.getUser().getLastName());
+            names.put(id, nameOf(display, id));
         }
 
         for (Expense expense : expenses) {
@@ -67,7 +70,7 @@ public class SettleUpService {
                 BigDecimal paid = ue.getAmountPaid() == null ? BigDecimal.ZERO : ue.getAmountPaid();
                 BigDecimal owed = ue.getAmountOwed() == null ? BigDecimal.ZERO : ue.getAmountOwed();
                 nets.merge(ue.getUserId(), paid.subtract(owed), BigDecimal::add);
-                names.putIfAbsent(ue.getUserId(), resolveName(members, ue.getUserId()));
+                names.putIfAbsent(ue.getUserId(), nameOf(display, ue.getUserId()));
             }
         }
 
@@ -183,12 +186,13 @@ public class SettleUpService {
      */
     public List<ActivityItem> getActivity(int groupId, int limit) {
         List<UserGroup> members = groupRepository.getGroupMembers(groupId);
+        Map<Integer, String> display = displayNames(members);
         List<ActivityItem> items = new ArrayList<>();
 
         for (Expense expense : expenseService.findByGroupIdWithUserExpenses(groupId)) {
             items.add(new ActivityItem(
                     ActivityItem.Type.EXPENSE,
-                    resolveName(members, expense.getCreatedBy()),
+                    nameOf(display, expense.getCreatedBy()),
                     null,
                     expense.getName(),
                     expense.getTotalCost(),
@@ -196,10 +200,14 @@ public class SettleUpService {
         }
 
         for (Settlement settlement : settlementRepository.findByGroupId(groupId)) {
+            // Resolve through the same map rather than the names the query composed:
+            // the row mapper has no view of the group, so it cannot know a name is
+            // ambiguous, and "Sam Chen paid Sam Chen" is exactly the line that needs
+            // telling apart.
             items.add(new ActivityItem(
                     ActivityItem.Type.SETTLEMENT,
-                    settlement.getPayerName(),
-                    settlement.getPayeeName(),
+                    nameOf(display, settlement.getPayerId()),
+                    nameOf(display, settlement.getPayeeId()),
                     null,
                     settlement.getAmount(),
                     settlement.getCreatedAt()));
@@ -226,12 +234,45 @@ public class SettleUpService {
         return new ArrayDeque<>(side);
     }
 
-    private static String resolveName(List<UserGroup> members, int userId) {
+    /**
+     * Display names for a group, with the username appended when two members share
+     * the same first and last name — "Sam Chen (samc2)". Two people called Sam Chen
+     * is not far-fetched in a group of friends, and the settle-up list asks you to
+     * hand one of them money, so the rows have to be tellable apart.
+     *
+     * Only the ambiguous names carry the suffix; everyone else stays clean.
+     */
+    private static Map<Integer, String> displayNames(List<UserGroup> members) {
+        Map<String, Integer> timesSeen = new HashMap<>();
         for (UserGroup member : members) {
-            if (member.getUser().getAppUserId() == userId) {
-                return member.getUser().getFirstName() + " " + member.getUser().getLastName();
+            if (member.getUser() == null) {
+                continue;
             }
+            timesSeen.merge(fullName(member.getUser()), 1, Integer::sum);
         }
-        return "Member " + userId;
+
+        Map<Integer, String> names = new HashMap<>();
+        for (UserGroup member : members) {
+            AppUser user = member.getUser();
+            if (user == null) {
+                continue;
+            }
+            String full = fullName(user);
+            boolean ambiguous = timesSeen.getOrDefault(full, 0) > 1;
+            String username = user.getUsername();
+            names.put(user.getAppUserId(),
+                    ambiguous && username != null && !username.isBlank()
+                            ? full + " (" + username + ")"
+                            : full);
+        }
+        return names;
+    }
+
+    private static String fullName(AppUser user) {
+        return user.getFirstName() + " " + user.getLastName();
+    }
+
+    private static String nameOf(Map<Integer, String> names, int userId) {
+        return names.getOrDefault(userId, "Member " + userId);
     }
 }

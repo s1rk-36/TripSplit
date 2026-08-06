@@ -2,6 +2,7 @@
 // data, without signing up or hitting the backend. When active, apiService serves
 // the mock data below instead of making network calls (see apiService.js).
 import { auth } from '../utils/auth';
+import { disambiguateNames } from './../utils/helpers';
 
 const DEMO_FLAG = 'tripsplit_demo';
 
@@ -76,10 +77,13 @@ const demoExpenses = [
 // Net for the demo user (id 1): paid 1620 (expenses 1,3,5) − owed 870 (share of all 6) = +750.
 const DEMO_BALANCE = 750.0;
 
-const nameOf = (userId) => {
-  const m = members.find((x) => x.userId === userId);
-  return m ? `${m.firstName} ${m.lastName}` : `Member ${userId}`;
-};
+// Same rule the backend applies: the username only appears where two people would
+// otherwise read identically.
+const demoDisplayNames = disambiguateNames(
+  members.map((m) => ({ id: m.userId, firstName: m.firstName, lastName: m.lastName, username: m.username }))
+);
+
+const nameOf = (userId) => demoDisplayNames[userId] || `Member ${userId}`;
 
 // Recorded cash payments. Vegas (group 3) is fully squared by these, so the demo
 // shows a settled group with the stamp alongside two groups that still owe.
@@ -138,7 +142,9 @@ const computeSettlePlan = (groupId) => {
     balances,
     transfers,
     hasExpenses: groupExpenses.length > 0,
-    settled: groupExpenses.length > 0 && transfers.length === 0,
+    // Matches SettleUpService: an empty transfer list only means the pairing found
+    // no more matches, so ask the balances themselves.
+    settled: groupExpenses.length > 0 && balances.every((b) => Math.abs(b.net) <= 0.01),
   };
 };
 

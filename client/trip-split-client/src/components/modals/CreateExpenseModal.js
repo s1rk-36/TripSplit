@@ -3,7 +3,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { FaReceipt, FaEquals, FaDollarSign } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
 import { apiService } from '../../services/apiService';
-import { splitEvenly } from '../../utils/helpers';
+import { splitEvenly, disambiguateNames } from '../../utils/helpers';
 
 function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSelectedGroup }) {
   const { currentUser } = useAuth();
@@ -43,11 +43,19 @@ function CreateExpenseModal({ show, onHide, onSubmit, groups, categories, preSel
   const loadGroupMembers = async (groupId) => {
     try {
       const userGroups = await apiService.getGroupMembers(groupId);
+      // Two members can share a name, and these rows decide who owes what, so fall
+      // back to the username where the name alone is ambiguous.
+      const names = disambiguateNames(userGroups.map(ug => ({
+        id: ug.user.appUserId,
+        firstName: ug.user.firstName,
+        lastName: ug.user.lastName,
+        username: ug.user.username,
+      })));
       const members = userGroups.map(userGroup => ({
         id: userGroup.user.appUserId,
-        name: `${userGroup.user.firstName} ${userGroup.user.lastName}`,
+        name: names[userGroup.user.appUserId],
         email: userGroup.user.email,
-        isAdmin: userGroup.admin
+        isAdmin: userGroup.isGroupAdmin
       }));
       
       setGroupMembers(members);

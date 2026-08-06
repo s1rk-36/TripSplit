@@ -3,6 +3,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { FaUsers, FaUserMinus, FaCrown, FaUser, FaEnvelope, FaCalendar, FaEdit, FaTrash } from 'react-icons/fa';
 import { useAuth } from '../../utils/auth';
 import { apiService } from '../../services/apiService';
+import { disambiguateNames } from '../../utils/helpers';
 
 function GroupDetailsModal({ show, onHide, group, onEdit, onDelete }) {
   const { currentUser } = useAuth();
@@ -63,6 +64,14 @@ const handleRemoveMember = async (userId) => {
     member.user.appUserId === currentUser?.userId
   );
   const isCurrentUserAdmin = currentUserMembership?.isGroupAdmin || false;
+
+  // Two members can share a name, and this list is where you decide who to remove.
+  const memberNames = disambiguateNames(members.map(m => ({
+    id: m.user.appUserId,
+    firstName: m.user.firstName,
+    lastName: m.user.lastName,
+    username: m.user.username,
+  })));
 
   return (
     <Modal show={show} onHide={onHide} size="lg">
@@ -170,7 +179,7 @@ const handleRemoveMember = async (userId) => {
                         <div>
                           <div className="d-flex align-items-center">
                             <h6 className="mb-0 me-2">
-                              {member.user.firstName} {member.user.lastName}
+                              {memberNames[member.user.appUserId]}
                             </h6>
                             {isMemberAdmin && (
                               <span className="badge bg-warning text-dark">

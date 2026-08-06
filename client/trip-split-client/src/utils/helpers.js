@@ -1,4 +1,28 @@
 /**
+ * Display names for a set of people, with the username appended only where two of
+ * them share the same first and last name — "Sam Chen (samc2)". Mirrors the rule
+ * SettleUpService applies server-side, so a member reads the same everywhere.
+ *
+ * Takes [{ id, firstName, lastName, username }] and returns { [id]: displayName }.
+ */
+export const disambiguateNames = (people = []) => {
+  const fullName = (p) => `${p.firstName || ''} ${p.lastName || ''}`.trim();
+
+  const timesSeen = {};
+  people.forEach((p) => {
+    const name = fullName(p);
+    timesSeen[name] = (timesSeen[name] || 0) + 1;
+  });
+
+  const names = {};
+  people.forEach((p) => {
+    const name = fullName(p);
+    names[p.id] = timesSeen[name] > 1 && p.username ? `${name} (${p.username})` : name;
+  });
+  return names;
+};
+
+/**
  * Splits an amount into `count` shares that sum back to it exactly.
  *
  * Dividing in floats and sending the result meant each share was rounded
