@@ -134,8 +134,8 @@ const makePublicRequest = async (url, options = {}) => {
 export const apiService = {
   async login(credentials) {
     try {
-      console.log('Login attempt with:', { email: credentials.email });
-
+      // Nothing about sign-in is logged: the response carries the bearer token, and
+      // now the account alongside it, neither of which belongs in the console.
       const authResponse = await makePublicRequest('/auth/authenticate', {
         method: 'POST',
         body: JSON.stringify({
@@ -144,29 +144,31 @@ export const apiService = {
         })
       });
 
-      console.log('Auth response:', authResponse);
-
       const token = authResponse.jwt_token;
 
       if (!token) {
         throw new Error('No token received from server');
       }
 
-      console.log('Token received, getting user info...');
+      // Sign-in returns the account alongside the token, so the extra /user/current
+      // round trip is only needed against a backend that predates that. Each round
+      // trip is a noticeable fraction of a second in production.
+      let userData = authResponse.user;
 
-      const userResponse = await fetch(`${API_BASE_URL}/user/current`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
+      if (!userData) {
+        const userResponse = await fetch(`${API_BASE_URL}/user/current`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!userResponse.ok) {
+          throw new Error(`Failed to get user info: ${userResponse.status}`);
         }
-      });
 
-      if (!userResponse.ok) {
-        throw new Error(`Failed to get user info: ${userResponse.status}`);
+        userData = await userResponse.json();
       }
-
-      const userData = await userResponse.json();
-      console.log('User data received:', userData);
 
       return {
         token: token,

@@ -45,11 +45,14 @@ public class AuthController {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<Map<String, String>> authenticate(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<Object> authenticate(@RequestBody Map<String, String> credentials) {
         //first get email of user
         AppUser appUser = appUserService.findByEmail(credentials.get("email"));
         if (appUser == null) {
-            System.out.println("User NOT found in database: " + credentials.get("email"));
+            // Same status and shape as a wrong password on purpose, so the response
+            // cannot be used to find out which email addresses have accounts. Not
+            // logged either — that would put the address in the logs for anyone who
+            // can read them.
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -63,10 +66,11 @@ public class AuthController {
 
                 String jwtToken = converter.getTokenFromUser((User) authentication.getPrincipal());
 
-                HashMap<String, String> map = new HashMap<>();
-                map.put("jwt_token", jwtToken);
-
-                return new ResponseEntity<>(map, HttpStatus.OK);
+                // appUser is the account that was just authenticated: the token above
+                // was built from its username, and we only get here once the manager
+                // has verified the password for it. Returning it now saves the client
+                // an immediate follow-up call to /user/current.
+                return new ResponseEntity<>(new AuthResponse(jwtToken, appUser), HttpStatus.OK);
             }
 
         }
