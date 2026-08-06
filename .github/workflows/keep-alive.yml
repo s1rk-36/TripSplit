@@ -3,6 +3,16 @@ name: Keep backend awake
 # Render spins a free web service down after 15 idle minutes, and Aiven powers off a
 # database that sees no connections. /api/health runs "select 1", so a single ping
 # keeps both ends alive. The hour budget behind this schedule is in DEPLOY.md § 7.
+#
+# MEASURED CAVEAT: the schedule below asks for every 10 minutes, but GitHub actually
+# fires this roughly every 60-90 minutes. Scheduled workflows are best-effort and are
+# delayed or dropped under load, and high-frequency crons on free runners are hit
+# hardest. With a 15-minute sleep timer the service is therefore asleep most of the
+# time, and a visitor arriving cold waits ~52 seconds (measured against production).
+#
+# This workflow is kept because it costs nothing and does help a little, but it is
+# NOT a dependable keep-alive. For a link someone else is going to open, drive
+# /api/health from a dedicated uptime pinger instead — see DEPLOY.md § 7.
 
 on:
   schedule:

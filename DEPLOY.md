@@ -160,6 +160,33 @@ delayed ping before the container sleeps. A 14-minute interval saves no hours at
 Tighten the window only if the dashboard shows you're well under budget. A 75-minute
 quiet window yields ~715 hours — still legal, but ~35 hours of headroom is thin.
 
+### Reality check: GitHub cron is not dependable
+
+Measured against production on 2026-08-06: the workflow below asks for a ping every
+10 minutes, but GitHub fires it roughly **every 60–90 minutes**. Scheduled workflows
+are best-effort — GitHub delays or drops them under load, and high-frequency crons on
+free runners are hit hardest. With Render's 15-minute sleep timer, that means the
+service is asleep most of the time.
+
+What a visitor actually experiences, measured:
+
+| | |
+|---|---|
+| Cold request (service asleep) | **~52 s** |
+| Warm request (`/api/health`) | ~0.5 s |
+| Sign-in, warm | ~1.5–3 s (two round trips plus bcrypt) |
+
+So the single biggest thing you can do for perceived speed is **keep the service
+awake for real**. Use a dedicated uptime pinger hitting `/api/health` every 5–10
+minutes — UptimeRobot, cron-job.org and Better Stack all have free tiers that fire
+reliably, unlike GitHub's scheduler. Keep the nightly quiet window to stay inside the
+750-hour budget: most of these let you pause on a schedule, or you can accept the
+extra hours and skip the window.
+
+Pinging also keeps the JDBC pool warm, which matters because the database is in a
+different region from the service — a fresh connection costs a TCP round trip plus a
+TLS handshake before any query runs.
+
 ### Setting up the pinger
 
 Use a hosted scheduler, **not** a `cron` job on your Mac — a laptop cron only fires
