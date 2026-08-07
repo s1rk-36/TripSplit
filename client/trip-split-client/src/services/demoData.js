@@ -29,6 +29,14 @@ const members = [
   { userId: 5, firstName: 'Morgan', lastName: 'Diaz', username: 'mdiaz', email: 'morgan@example.com' },
 ];
 
+// Same rule the backend applies: the username only appears where two people would
+// otherwise read identically.
+const demoDisplayNames = disambiguateNames(
+  members.map((m) => ({ id: m.userId, firstName: m.firstName, lastName: m.lastName, username: m.username }))
+);
+
+const nameOf = (userId) => demoDisplayNames[userId] || `Member ${userId}`;
+
 // The API returns group members as membership objects: { user: {...}, isGroupAdmin }.
 const mem = (u, isGroupAdmin = false) => ({
   user: {
@@ -62,6 +70,9 @@ const split = (total, groupId, payerId) => {
 
 const expense = (expenseId, name, description, totalCost, category, createdAt, groupId, createdBy) => ({
   expenseId, name, description, totalCost, category, createdAt, groupId, createdBy,
+  // The API attaches the author's name to each expense, so demo data must too or
+  // the table falls back to "Member 3".
+  createdByName: nameOf(createdBy),
   userExpenses: split(totalCost, groupId, createdBy),
 });
 
@@ -77,13 +88,6 @@ const demoExpenses = [
 // Net for the demo user (id 1): paid 1620 (expenses 1,3,5) − owed 870 (share of all 6) = +750.
 const DEMO_BALANCE = 750.0;
 
-// Same rule the backend applies: the username only appears where two people would
-// otherwise read identically.
-const demoDisplayNames = disambiguateNames(
-  members.map((m) => ({ id: m.userId, firstName: m.firstName, lastName: m.lastName, username: m.username }))
-);
-
-const nameOf = (userId) => demoDisplayNames[userId] || `Member ${userId}`;
 
 // Recorded cash payments. Vegas (group 3) is fully squared by these, so the demo
 // shows a settled group with the stamp alongside two groups that still owe.

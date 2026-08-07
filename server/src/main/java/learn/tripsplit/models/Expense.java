@@ -16,6 +16,12 @@ public class Expense {
     private LocalDateTime createdAt;
     private int groupId;
     private int createdBy;
+    /**
+     * Display name of whoever added the expense. The queries already join the
+     * creator, so this costs nothing extra — without it the client had to fetch
+     * /user/{id} separately for every distinct author on the page.
+     */
+    private String createdByName;
     private List<Receipt> receipts;
     private List<Comment> comments;
     private List<UserExpense> userExpenses = new ArrayList<>();
@@ -97,6 +103,14 @@ public class Expense {
 
     public void setCreatedBy(int createdBy) {
         this.createdBy = createdBy;
+    }
+
+    public String getCreatedByName() {
+        return createdByName;
+    }
+
+    public void setCreatedByName(String createdByName) {
+        this.createdByName = createdByName;
     }
 
     public List<Receipt> getReceipts() {

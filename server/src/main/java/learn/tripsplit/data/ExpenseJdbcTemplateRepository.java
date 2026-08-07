@@ -118,6 +118,9 @@ public class ExpenseJdbcTemplateRepository implements ExpenseRepository, RoleFet
             expense.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
             expense.setGroupId(groupId);
             expense.setCreatedBy(rs.getInt("created_by"));
+            // Already joined above; keeping it saves the client a lookup per author.
+            expense.setCreatedByName(
+                    (rs.getString("first_name") + " " + rs.getString("last_name")).trim());
 
             return expense;
         }, groupId);

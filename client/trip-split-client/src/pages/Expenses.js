@@ -10,7 +10,6 @@ import EditExpenseModal from '../components/modals/EditExpenseModal';
 import ExpenseDetailsModal from '../components/modals/ExpenseDetailsModal';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../utils/auth';
-import { disambiguateNames } from '../utils/helpers';
 import { isDemoMode, showDemoNotice } from '../services/demoData';
 import { formatCurrency, getBalanceColor, getBalanceText } from '../utils/helpers';
 
@@ -20,7 +19,6 @@ function Expenses() {
   const [expenses, setExpenses] = useState([]);
   const [groups, setGroups] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [userCache, setUserCache] = useState({}); // Cache for user data
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,11 +88,7 @@ function Expenses() {
       }
       
       setExpenses(expensesData || []);
-      
-      if (expensesData && expensesData.length > 0) {
-        await loadUserData(expensesData);
-      }
-      
+
     } catch (err) {
       console.error('Failed to load expenses:', err);
       setError(err.message || 'Failed to load expenses');
@@ -175,41 +169,14 @@ function Expenses() {
     }
   };
 
-  const loadUserData = async (expensesData) => {
-    const newUserCache = { ...userCache };
-
-    // Only the names not already cached, fetched concurrently. Awaiting these one
-    // at a time meant a full round trip per author before the table could render.
-    const missingIds = [...new Set(expensesData.map(expense => expense.createdBy))]
-      .filter(userId => !newUserCache[userId]);
-
-    if (missingIds.length === 0) {
-      return;
+  // Expenses arrive with their author's name attached, so the table no longer
+  // fetches /user/{id} once per distinct author before it can render.
+  const getUserName = (userId, expense) => {
+    if (expense?.createdByName) {
+      return expense.createdByName;
     }
-
-    const results = await Promise.all(missingIds.map(async (userId) => {
-      try {
-        const userData = await apiService.getUser(userId);
-        return { id: userId, firstName: userData.firstName, lastName: userData.lastName,
-                 username: userData.username };
-      } catch (err) {
-        console.error(`Failed to load user ${userId}:`, err);
-        return { id: userId, firstName: 'Unknown', lastName: 'User' };
-      }
-    }));
-
-    // Cache the raw records, not formatted strings: whether a name needs its
-    // username depends on everyone else in the table, so it can only be decided
-    // once they are all known.
-    results.forEach((user) => { newUserCache[user.id] = user; });
-    setUserCache(newUserCache);
-  };
-
-  // Two authors can share a name, so resolve against the whole cache.
-  const authorNames = disambiguateNames(Object.values(userCache));
-
-  const getUserName = (userId) => {
-    return authorNames[userId];
+    // Older backends omit the name; fall back rather than render blank.
+    return userId ? `Member ${userId}` : 'Unknown';
   };
 
   const getGroupName = (groupId) => {
@@ -559,7 +526,7 @@ function Expenses() {
                         <td>
                           <div className="d-flex align-items-center">
                             <FaUser className="text-muted me-1" size={12} />
-                            {getUserName(expense.createdBy)}
+                            {getUserName(expense.createdBy, expense)}
                             {isCreatedByUser && ' (You)'}
                           </div>
                         </td>

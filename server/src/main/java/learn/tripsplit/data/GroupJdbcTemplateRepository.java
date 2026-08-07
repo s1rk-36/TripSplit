@@ -13,7 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher {
@@ -35,10 +39,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
 
         List<Group> groups = jdbcTemplate.query(sql, new GroupMapper(this));
 
-        // Add users to each group (same as findGroupsByUserId)
-        for (Group group : groups) {
-            addUsers(group);
-        }
+        addUsersToAll(groups);
 
         return groups;
     }
@@ -160,6 +161,73 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
                 + "inner join role r on ur.role_id = r.role_id "
                 + "where ur.user_id = ?";
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("name"), userId);
+    }
+
+    /**
+     * Attaches members to several groups in one query.
+     *
+     * Calling addUsers per group meant the groups page cost one query for the list
+     * plus one for every group on it, run back to back. The database is a network
+     * hop away, so that is a round trip each — the single largest cost in loading
+     * that page.
+     */
+    private void addUsersToAll(List<Group> groups) {
+        if (groups.isEmpty()) {
+            return;
+        }
+
+        String placeholders = groups.stream()
+                .map(g -> "?")
+                .collect(Collectors.joining(","));
+
+        final String sql = "select "
+                + "ug.user_id as ug_user_id, "
+                + "ug.group_id as ug_group_id, "
+                + "ug.is_admin as ug_is_admin, "
+
+                + "u.user_id as u_user_id, "
+                + "u.first_name as u_first_name, "
+                + "u.last_name as u_last_name, "
+                + "u.email as u_email, "
+                + "u.username as u_username, "
+                + "u.password_hash as u_password_hash, "
+                + "u.disabled as u_disabled, "
+
+                + "g.group_id, "
+                + "g.`name` as group_name, "
+                + "g.`description` as group_description, "
+                + "g.invite_code, "
+
+                + "gcb.user_id as gcb_user_id, "
+                + "gcb.first_name as gcb_first_name, "
+                + "gcb.last_name as gcb_last_name, "
+                + "gcb.email as gcb_email, "
+                + "gcb.username as gcb_username, "
+                + "gcb.password_hash as gcb_password_hash, "
+                + "gcb.disabled as gcb_disabled "
+
+                + "from user_group ug "
+                + "inner join `user` u on ug.user_id = u.user_id "
+                + "inner join `group` g on ug.group_id = g.group_id "
+                + "inner join `user` gcb on g.created_by = gcb.user_id "
+                + "where ug.group_id in (" + placeholders + ");";
+
+        UserGroupMapper userGroupMapper = new UserGroupMapper(this);
+        Object[] ids = groups.stream().map(Group::getGroupId).toArray();
+
+        List<UserGroup> all = jdbcTemplate.query(sql,
+                (rs, rowNum) -> userGroupMapper.mapRow(rs, rowNum, "ug_", "u_", "", "gcb_"),
+                ids
+        );
+
+        Map<Integer, List<UserGroup>> byGroup = new HashMap<>();
+        for (UserGroup userGroup : all) {
+            byGroup.computeIfAbsent(userGroup.getGroupId(), k -> new ArrayList<>()).add(userGroup);
+        }
+
+        for (Group group : groups) {
+            group.setUsers(byGroup.getOrDefault(group.getGroupId(), new ArrayList<>()));
+        }
     }
 
     private void addUsers(Group group) {
@@ -312,10 +380,7 @@ public class GroupJdbcTemplateRepository implements GroupRepository, RoleFetcher
 
         List<Group> groups = jdbcTemplate.query(sql, new GroupMapper(this), userId);
 
-        // Add users to each group
-        for (Group group : groups) {
-            addUsers(group);
-        }
+        addUsersToAll(groups);
 
         return groups;
     }

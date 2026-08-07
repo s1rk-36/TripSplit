@@ -41,7 +41,13 @@ public class ExpenseMapper implements RowMapper<Expense> {
         expense.setCreatedAt(resultSet.getTimestamp(expensePrefix + "created_at").toLocalDateTime());
 
         expense.setGroupId(groupMapper.mapRow(resultSet, i, groupPrefix, groupCreatedByPrefix).getGroupId());
-        expense.setCreatedBy(appUserMapper.mapRow(resultSet, i, createdByPrefix).getAppUserId());
+        learn.tripsplit.models.AppUser createdByUser =
+                appUserMapper.mapRow(resultSet, i, createdByPrefix);
+        expense.setCreatedBy(createdByUser.getAppUserId());
+        // The creator is already joined for the id; keep the name too so the client
+        // does not have to fetch /user/{id} for every author on the page.
+        expense.setCreatedByName(
+                (createdByUser.getFirstName() + " " + createdByUser.getLastName()).trim());
 
         return expense;
     }
